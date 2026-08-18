@@ -177,6 +177,20 @@
           <span>Songzeile in die erste, fette Zeile — Titel rutscht nach unten</span>
         </label>
 
+        <label class="toggle indent">
+          <input type="checkbox" id="lyricsSave" />
+          <span>Gefundene Lyrics als Datei speichern</span>
+        </label>
+
+        <p class="hint indent" style="margin-top: 0">
+          Legt jede gefundene Songzeile als <code>.lrc</code> unter
+          <code>%APPDATA%\Overtone\lyrics</code> ab. Beim nächsten Hören ist sie sofort da, ohne
+          Netz — und du hast eine Datei, die du korrigieren kannst, wenn das Timing nicht passt.
+          <strong>Selbst bearbeitete Dateien werden nie überschrieben</strong> und haben Vorrang
+          vor allem anderen. Für Songs, die keine Datenbank kennt, erzeugt
+          <code>tools/transcribe-to-lrc.py</code> aus einer Audiodatei eine passende <code>.lrc</code>.
+        </p>
+
         <label class="field indent">
           <span class="label">Kurze Zeilen zusammenfassen</span>
           <select id="lyricsCombine">

@@ -111,6 +111,13 @@ const DEFAULTS = {
    * which trades away the accuracy the scheduler works for.
    */
   lyricsCombine: 1,
+  /**
+   * Keep a copy of every fetched lyric in %APPDATA%/Overtone/lyrics as a plain
+   * .lrc file, so replaying a song needs no network — and so there is a file to
+   * correct when the timing is off. Files you wrote yourself are never
+   * overwritten, and always take precedence over anything fetched.
+   */
+  lyricsSave: true,
 
   // --- system ---------------------------------------------------------------
   autoStart: false,

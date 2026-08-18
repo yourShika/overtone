@@ -29,6 +29,7 @@ const FIELDS = {
   lyricsMusicOnly: 'bool',
   lyricsProminent: 'bool',
   lyricsCombine: 'number',
+  lyricsSave: 'bool',
   lyricsOffset: 'number',
   enabled: 'bool',
   autoStart: 'bool',
@@ -133,7 +134,7 @@ function updateDependentState() {
   setGroupEnabled(['buttonLabel', 'showChannelButton'], $('showButton').checked);
   const lyricsOn = $('lyricsEnabled').checked;
   setGroupEnabled(
-    ['lyricsSource', 'lyricsMusicOnly', 'lyricsProminent', 'lyricsCombine', 'lyricsOffset'],
+    ['lyricsSource', 'lyricsMusicOnly', 'lyricsProminent', 'lyricsCombine', 'lyricsOffset', 'lyricsSave'],
     lyricsOn,
   );
   // Both the offset and merging need a source we can read ahead in.
@@ -260,6 +261,12 @@ function renderLyricStatus(lyrics) {
     el.textContent = `Aus YouTube-Untertiteln${track}`;
     return;
   }
+  if (lyrics.origin === 'library' && lyrics.lineCount) {
+    const merged = lyrics.merged > 1 ? ` · ${lyrics.merged} Zeilen zusammengefasst` : '';
+    el.textContent = `Aus deiner Lyrics-Bibliothek · ${lyrics.lineCount} Zeilen${merged}`;
+    return;
+  }
+
   if (lyrics.origin === 'lrclib' && lyrics.lineCount) {
     const merged = lyrics.merged > 1 ? ` · ${lyrics.merged} Zeilen zusammengefasst` : '';
     el.textContent = `Aus LRCLIB · ${lyrics.lineCount} Zeilen synchronisiert${merged}`;

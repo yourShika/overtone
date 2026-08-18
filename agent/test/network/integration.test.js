@@ -15,9 +15,9 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const { WebSocket } = require('ws');
 
-const { LyricsProvider } = require('../src/lyrics/lrclib');
-const { Bridge } = require('../src/bridge');
-const { lineAt } = require('../src/lyrics/lrc');
+const { LyricsProvider } = require('../../src/lyrics/lrclib');
+const { Bridge } = require('../../src/bridge');
+const { lineAt } = require('../../src/lyrics/lrc');
 
 const SILENT = { info() {}, warn() {}, debug() {}, error() {} };
 const PORT = 18787; // well away from the default, so a running agent is safe

@@ -70,6 +70,25 @@ Subtitles get neither treatment, because the next line is unknown until YouTube
 renders it. They are read straight from the player as it displays them, which
 is why they need no synchronisation of their own.
 
+### Your own lyrics
+
+Everything Overtone finds is saved as a plain `.lrc` in
+`%APPDATA%\Overtone\lyrics`, so playing a song again needs no network, and so
+there is a file to fix when the timing is off. **A file you have edited is never
+overwritten and outranks every other source** — being able to correct one is the
+whole point.
+
+For songs no database knows, `tools/transcribe-to-lrc.py` turns an audio file
+you already have into a matching `.lrc` using Whisper:
+
+```bash
+python tools/transcribe-to-lrc.py song.mp3 --video-id o33IHl7-g9Y --language pl
+```
+
+It needs `stable-ts` and `faster-whisper`, and transcribes a file you point it
+at — it does not download anything. Whisper guesses, so treat sung lyrics as a
+first draft worth correcting.
+
 ---
 
 ## Install
@@ -158,6 +177,11 @@ away what the rest of the presence is hiding.
   roughly 4 s.
 - **Subtitles must be switched on in the player.** Overtone reads what YouTube
   actually displays; with subtitles off there is nothing to read.
+- **It does not download audio.** Transcribing a song would need the audio,
+  and YouTube blocks that: current yt-dlp gets HTTP 403 on the default client
+  and reports DRM-protected streams on others. Working around copy protection
+  is not something this project does, so transcription runs on files you
+  already have.
 
 ---
 
@@ -180,6 +204,7 @@ lives at `%APPDATA%\Overtone\config.json`.
 | `lyricsMusicOnly` | `false` | Lyrics only on YouTube Music |
 | `lyricsProminent` | `false` | Lyric on the first, bold line |
 | `lyricsCombine` | `1` | Merge strength: `0` off, `1`, `1.5`, `2` |
+| `lyricsSave` | `true` | Save found lyrics as .lrc files |
 | `lyricsOffset` | `0` | Manual trim in seconds; only for skewed LRC files |
 | `highResArtwork` | `true` | `maxresdefault` instead of `hqdefault` |
 

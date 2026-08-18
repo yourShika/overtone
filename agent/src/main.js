@@ -29,6 +29,7 @@ const { DiscordIPC } = require('./discord/ipc');
 const { PresenceController } = require('./discord/presence');
 const { buildActivity } = require('./discord/activity');
 const { LyricsProvider } = require('./lyrics/lrclib');
+const { LyricsLibrary } = require('./lyrics/library');
 const { lyricWindow } = require('./lyrics/lrc');
 const { parseTrack } = require('./lyrics/trackparse');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
@@ -61,6 +62,7 @@ let bridge;
 let discord;
 let presence;
 let lyrics;
+let library;
 let thumbnails;
 
 const session = new Session();
@@ -98,6 +100,12 @@ app.whenReady().then(async () => {
   for (const note of config.migrations) logger.info(`Einstellung angepasst: ${note}`);
 
   thumbnails = new ThumbnailResolver({ logger });
+  library = new LyricsLibrary({
+    directory: path.join(userData, 'lyrics'),
+    logger,
+  });
+  library.ensureDirectory().catch(() => {});
+
   lyrics = new LyricsProvider({
     cacheDir: path.join(userData, 'lyrics-cache'),
     userAgent: `Overtone/${app.getVersion()} (https://github.com/overtone-app/overtone)`,
@@ -375,7 +383,9 @@ function resolveLyric(state, cfg) {
 
     return {
       text: view.text,
-      origin: 'lrclib',
+      // Report where the lines actually came from; the status window shows this
+      // and "LRCLIB" would be a lie for a file the user wrote themselves.
+      origin: lyricState.fromLibrary ? 'library' : 'lrclib',
       nextTime: view.nextTime,
       merged: view.text ? view.text.split(' · ').length : 1,
     };
@@ -416,6 +426,32 @@ function ensureLyricsLoaded(state, cfg) {
     return;
   }
 
+  // Your own file wins over everything. It is the only source you can correct,
+  // so a deliberate correction must not lose to a fetched result.
+  library
+    .find({ videoId: state.videoId, artist: parsed.artistFull, track: parsed.track })
+    .then((hit) => {
+      if (lyricState.trackId !== state.id) return false;
+      if (!hit) return false;
+
+      lyricState.lines = hit.lines;
+      lyricState.status = 'found';
+      lyricState.fromLibrary = true;
+      logger.info(
+        `Lyrics aus der Bibliothek (${hit.lines.length} Zeilen, ${hit.managed ? 'gespeichert' : 'selbst angelegt'})`,
+      );
+      refreshUi();
+      return true;
+    })
+    .catch(() => false)
+    .then((served) => {
+      if (served || lyricState.trackId !== state.id) return;
+      fetchLyrics(state, parsed);
+    });
+}
+
+/** Network lookup, used only when the library has nothing. */
+function fetchLyrics(state, parsed) {
   logger.debug(`Lyrics-Suche: "${parsed.artist}" – "${parsed.track}"`);
 
   lyrics
@@ -432,7 +468,24 @@ function ensureLyricsLoaded(state, cfg) {
       if (result?.synced) {
         lyricState.lines = result.lines;
         lyricState.status = 'found';
+        lyricState.fromLibrary = false;
         logger.info(`Lyrics gefunden (${result.lines.length} Zeilen)`);
+
+        // Keep a copy, so playing this again works without the network — and
+        // gives you a file to correct if the timing is off.
+        if (config.get('lyricsSave')) {
+          library
+            .store({
+              videoId: state.videoId,
+              artist: parsed.artistFull || parsed.artist,
+              track: parsed.track,
+              lines: result.lines,
+            })
+            .then((written) => {
+              if (written) logger.debug('Lyrics in der Bibliothek gespeichert');
+            })
+            .catch(() => {});
+        }
       } else {
         lyricState.lines = null;
         lyricState.status = 'none';
@@ -478,6 +531,7 @@ function resetLyrics() {
   lyricState.origin = null;
   lyricState.nextTime = null;
   lyricState.merged = 1;
+  lyricState.fromLibrary = false;
 }
 
 // ---------------------------------------------------------------------- tray
@@ -537,6 +591,10 @@ function buildTrayMenu() {
     },
     { type: 'separator' },
     { label: 'Einstellungen …', click: () => openSettings() },
+    {
+      label: 'Lyrics-Ordner öffnen',
+      click: () => shell.openPath(path.join(app.getPath('userData'), 'lyrics')),
+    },
     {
       label: 'Log-Ordner öffnen',
       click: () => shell.openPath(path.join(app.getPath('userData'), 'logs')),

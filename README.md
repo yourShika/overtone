@@ -85,7 +85,7 @@ Take the installer from the [latest release](../../releases/latest):
 
 | File | What it does |
 |---|---|
-| `Overtone Setup x.y.z.exe` | Installs with start-menu and desktop shortcuts |
+| `Overtone.Setup.x.y.z.exe` | Installs with start-menu and desktop shortcuts |
 | `Overtone-x.y.z-portable.exe` | Runs without installing |
 
 The settings window opens on first start. Paste the Application ID and you are

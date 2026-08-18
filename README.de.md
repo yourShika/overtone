@@ -61,7 +61,7 @@ Aus `dist/` (nach `npm run build`, siehe [Build](#build)):
 
 | Datei | Was sie tut |
 |---|---|
-| `Overtone Setup 1.4.0.exe` | Installiert mit Startmenü- und Desktop-Verknüpfung |
+| `Overtone.Setup.1.4.0.exe` | Installiert mit Startmenü- und Desktop-Verknüpfung |
 | `Overtone-1.4.0-portable.exe` | Läuft ohne Installation, direkt starten |
 
 Beim ersten Start öffnen sich die Einstellungen. Application ID eintragen, fertig.

@@ -26,6 +26,11 @@ module.exports = {
 
   files: ['src/**/*', 'ui/**/*', 'assets/**/*', 'package.json'],
 
+  // The transcription worker is a Python script run by a separate interpreter,
+  // so it cannot live inside the asar archive — Python cannot read one. It goes
+  // beside it, and main.js resolves the path differently once packaged.
+  extraResources: [{ from: '../tools', to: 'tools', filter: ['**/*.py'] }],
+
   // The agent is a background helper; bundling devDependencies would triple the
   // installer for no benefit.
   npmRebuild: false,

@@ -217,17 +217,24 @@ function renderTranscription(job) {
     transcribe: 'Whisper transkribiert',
   };
 
+  const waiting = job?.queued
+    ? `\n${job.queued} in der Warteschlange: ${job.queue.join(', ')}`
+    : '';
+
   if (job && job.phase) {
     box.dataset.busy = '1';
     line.textContent = `${PHASES[job.phase] || job.phase} — ${job.track || ''}`;
-    detail.textContent = `läuft seit ${formatSeconds(job.elapsed)}`;
+    detail.textContent = `läuft seit ${formatSeconds(job.elapsed)}${waiting}`;
     return;
   }
 
   box.dataset.busy = '0';
-  line.textContent = 'Gerade nichts zu tun';
+  line.textContent = job?.halted
+    ? `Pausiert nach ${job.consecutiveFailures} Fehlschlägen in Folge`
+    : 'Gerade nichts zu tun';
 
   const parts = [];
+  if (waiting) parts.push(waiting.trim());
   if (job?.history?.length) {
     parts.push(
       job.history

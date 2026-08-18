@@ -30,6 +30,7 @@ const { EventEmitter } = require('node:events');
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 const TRANSCRIBE_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_CONSECUTIVE_FAILURES = 3;
+const MAX_QUEUE = 5;
 
 class Transcriber extends EventEmitter {
   /**
@@ -62,6 +63,15 @@ class Transcriber extends EventEmitter {
     this.currentTrack = null;
     /** Finished jobs this session, oldest first, capped. */
     this.history = [];
+    /**
+     * Tracks waiting their turn.
+     *
+     * A job outlives the song that triggered it, so anything played meanwhile
+     * would otherwise be dropped and never looked at again — the lookup that
+     * would have queued it runs once per track.
+     * @type {object[]}
+     */
+    this.queue = [];
     /** Ids already tried this session, successful or not, so we stop retrying. */
     this.attempted = new Set();
     this.lastError = null;
@@ -90,6 +100,34 @@ class Transcriber extends EventEmitter {
   resetFailures() {
     this.consecutiveFailures = 0;
     this.emit('change');
+  }
+
+  /**
+   * Take this track now, or remember it for when the current job finishes.
+   * @returns {'started'|'queued'|'skipped'}
+   */
+  submit(job) {
+    if (!job.videoId) return 'skipped';
+    if (this.attempted.has(job.videoId)) return 'skipped';
+    if (this.halted) return 'skipped';
+    if (this.queue.some((item) => item.videoId === job.videoId)) return 'skipped';
+
+    if (this.busy) {
+      if (this.queue.length >= MAX_QUEUE) return 'skipped';
+      this.queue.push(job);
+      this.emit('change');
+      return 'queued';
+    }
+
+    this.run(job);
+    return 'started';
+  }
+
+  _next() {
+    const job = this.queue.shift();
+    if (!job) return;
+    // Config may have changed while it waited, so re-read rather than reuse.
+    this.run({ ...job, config: job.getConfig ? job.getConfig() : job.config });
   }
 
   get halted() {
@@ -154,6 +192,9 @@ class Transcriber extends EventEmitter {
       this.currentTrack = null;
       this.startedAt = null;
       this._setPhase(null);
+      // Deliberately after the phase reset, so the display never shows two
+      // jobs at once, and only when the setup still looks healthy.
+      if (!this.halted) this._next();
     }
   }
 
@@ -184,6 +225,8 @@ class Transcriber extends EventEmitter {
       consecutiveFailures: this.consecutiveFailures,
       history: this.history.slice(-5).reverse(),
       attempted: this.attempted.size,
+      queued: this.queue.length,
+      queue: this.queue.map((item) => item.track || item.videoId),
     };
   }
 

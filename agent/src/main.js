@@ -86,6 +86,20 @@ let lastError = null;
 /** What the connected browser extension told us it can do. */
 const extension = { version: null, features: [] };
 
+/**
+ * Where the transcription worker lives.
+ *
+ * Packaged, the app source sits inside app.asar, which Python cannot read into
+ * — so the script ships beside the archive as an extra resource instead. From
+ * source it is simply the repo's tools directory.
+ */
+function transcribeScriptPath() {
+  const name = 'transcribe-to-lrc.py';
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'tools', name)
+    : path.join(__dirname, '..', '..', 'tools', name);
+}
+
 // ---------------------------------------------------------------------- boot
 
 app.whenReady().then(async () => {
@@ -111,9 +125,16 @@ app.whenReady().then(async () => {
   transcriber = new Transcriber({
     workDir: path.join(app.getPath('temp'), 'overtone-transcribe'),
     libraryDir: path.join(userData, 'lyrics'),
-    script: path.join(__dirname, '..', '..', 'tools', 'transcribe-to-lrc.py'),
+    script: transcribeScriptPath(),
     logger,
   });
+  if (!require('node:fs').existsSync(transcriber.script)) {
+    logger.warn(
+      `Transkriptions-Skript nicht gefunden: ${transcriber.script} — ` +
+        'lokale Transkription bleibt deaktiviert.',
+    );
+  }
+
   // The .lrc only exists once the job finishes, so re-run the lookup then.
   transcriber.on('done', () => {
     lyricState.trackId = null;
@@ -575,7 +596,7 @@ function maybeTranscribe(state, parsed) {
   // an auto-generated or translated track is not the sung text, which is
   // exactly when someone would want their own transcription anyway.
   if (state.caption && !cfg.transcribeEvenWithCaptions) return;
-  if (!state.videoId || !transcriber.canStart(state.videoId)) return;
+  if (!state.videoId || transcriber.attempted.has(state.videoId) || transcriber.halted) return;
 
   // Skipping through a playlist should not queue a job per track.
   if (state.position < (cfg.transcribeAfterSeconds ?? 45)) {
@@ -584,13 +605,19 @@ function maybeTranscribe(state, parsed) {
   }
   pendingTranscribe = null;
 
-  transcriber.run({
+  const outcome = transcriber.submit({
     videoId: state.videoId,
     url: state.url,
     artist: parsed.artistFull || parsed.artist,
     track: parsed.track,
     config: cfg,
+    // Re-read at start time: a queued job may wait minutes, and the language or
+    // model it should use is whatever is set when it actually runs.
+    getConfig: () => config.all(),
   });
+  if (outcome === 'queued') {
+    logger.info(`Transkription eingereiht: "${parsed.track}" (${transcriber.queue.length} warten)`);
+  }
 }
 
 function resetLyrics() {

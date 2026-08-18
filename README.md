@@ -94,8 +94,10 @@ deleted again — helping the *next* play, never the one that triggered it. It i
 off by default because it saturates every core for a good fraction of the song's
 length, which is not something to start behind your back.
 
-The settings window shows what a job is doing — downloading, transcribing, how
-long it has been running, and how the last few finished. A job takes minutes and
+A job outlives the song that started it: change track and it keeps going, and
+anything played meanwhile joins a queue rather than being dropped. The settings
+window shows what is running — downloading or transcribing, for how long, what
+is waiting, and how the last few finished. A job takes minutes and
 shows nothing until it completes, so without that a working agent and a stuck
 one look identical.
 

@@ -3,7 +3,7 @@
   <desc id="pd">An illustration of the rich presence card: an activity header built from artist and title, the song title, the current lyric line, a progress bar with remaining time, and a button linking to the video.</desc>
 
   <rect width="900" height="300" rx="14" fill="#0f1117"/>
-  <text x="32" y="38" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#6b7488">ILLUSTRATION, NOT A SCREENSHOT</text>
+  <text x="32" y="38" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#6b7488">WHAT EACH PART IS</text>
 
   <rect x="32" y="56" width="470" height="212" rx="10" fill="#232428" stroke="#2f3136"/>
 

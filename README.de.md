@@ -19,6 +19,15 @@ aktuelle Songzeile mit.
 +------------------------------------------+
 ```
 
+<p align="center">
+  <img src="docs/img/overtone-in-discord.gif" alt="Overtone an einem Discord-Profil: eigene Überschrift, Titel, mitlaufende Songzeile und Fortschrittsbalken" width="320">
+</p>
+
+<p align="center">
+  <em>Überschrift, Titel und eine Songzeile, die mitläuft.<br>
+  Diese Lyrics stammen aus einer lokalen Transkription — keine Datenbank kannte den Track.</em>
+</p>
+
 ---
 
 ## Wie es aufgebaut ist

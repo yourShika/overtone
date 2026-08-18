@@ -7,7 +7,14 @@ the channel or artist, the video thumbnail as cover art, a real progress bar
 with time remaining, and a button that opens the video. The current lyric line
 runs alongside it.
 
-![What the Discord profile shows](docs/img/presence.svg)
+<p align="center">
+  <img src="docs/img/overtone-in-discord.gif" alt="Overtone running on a Discord profile: a custom activity header, the song title, a lyric line moving with the music, and a progress bar" width="320">
+</p>
+
+<p align="center">
+  <em>The header, the title, and a lyric line that moves with the song.<br>
+  These lyrics came from a local transcription — no database had this track.</em>
+</p>
 
 ---
 
@@ -166,6 +173,8 @@ message"** has to be on.
 ---
 
 ## The activity header
+
+![What each part of the card is](docs/img/presence.svg)
 
 The header is a prefix plus a name:
 

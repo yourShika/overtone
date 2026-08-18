@@ -30,6 +30,9 @@ const FIELDS = {
   lyricsProminent: 'bool',
   lyricsCombine: 'number',
   lyricsSave: 'bool',
+  transcribeEnabled: 'bool',
+  transcribeLanguage: 'text',
+  transcribeModel: 'text',
   lyricsOffset: 'number',
   enabled: 'bool',
   autoStart: 'bool',
@@ -140,6 +143,9 @@ function updateDependentState() {
   // Both the offset and merging need a source we can read ahead in.
   const canLookAhead = lyricsOn && $('lyricsSource').value !== 'captions';
   setGroupEnabled(['lyricsOffset', 'lyricsCombine'], canLookAhead);
+
+  const transcribeOn = $('transcribeEnabled').checked;
+  setGroupEnabled(['transcribeLanguage', 'transcribeModel'], transcribeOn);
 }
 
 function setGroupEnabled(ids, enabled) {
@@ -261,6 +267,11 @@ function renderLyricStatus(lyrics) {
     el.textContent = `Aus YouTube-Untertiteln${track}`;
     return;
   }
+  if (lyrics.transcribing) {
+    el.textContent = 'Lyrics werden lokal erstellt — beim nächsten Hören sind sie da';
+    return;
+  }
+
   if (lyrics.origin === 'library' && lyrics.lineCount) {
     const merged = lyrics.merged > 1 ? ` · ${lyrics.merged} Zeilen zusammengefasst` : '';
     el.textContent = `Aus deiner Lyrics-Bibliothek · ${lyrics.lineCount} Zeilen${merged}`;

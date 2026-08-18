@@ -30,6 +30,7 @@ const { PresenceController } = require('./discord/presence');
 const { buildActivity } = require('./discord/activity');
 const { LyricsProvider } = require('./lyrics/lrclib');
 const { LyricsLibrary } = require('./lyrics/library');
+const { Transcriber } = require('./lyrics/transcriber');
 const { lyricWindow } = require('./lyrics/lrc');
 const { parseTrack } = require('./lyrics/trackparse');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
@@ -63,6 +64,7 @@ let discord;
 let presence;
 let lyrics;
 let library;
+let transcriber;
 let thumbnails;
 
 const session = new Session();
@@ -105,6 +107,19 @@ app.whenReady().then(async () => {
     logger,
   });
   library.ensureDirectory().catch(() => {});
+
+  transcriber = new Transcriber({
+    workDir: path.join(app.getPath('temp'), 'overtone-transcribe'),
+    libraryDir: path.join(userData, 'lyrics'),
+    script: path.join(__dirname, '..', '..', 'tools', 'transcribe-to-lrc.py'),
+    logger,
+  });
+  // The .lrc only exists once the job finishes, so re-run the lookup then.
+  transcriber.on('done', () => {
+    lyricState.trackId = null;
+    refreshUi();
+  });
+  transcriber.on('change', refreshUi);
 
   lyrics = new LyricsProvider({
     cacheDir: path.join(userData, 'lyrics-cache'),
@@ -294,6 +309,9 @@ let latestImage = null;
 /** Set when the next tick carries a change that must not be deferred. */
 let urgentTick = false;
 
+/** Track waiting for enough listening time before transcription starts. */
+let pendingTranscribe = null;
+
 async function tick() {
   if (ticking) return;
   ticking = true;
@@ -337,6 +355,18 @@ async function runTick() {
   // Kick off the lookup after building, so the first frame is never delayed by
   // a network round-trip.
   ensureLyricsLoaded(state, cfg);
+
+  // A track that waited for enough listening time gets picked up here, once it
+  // has proved it is actually being listened to rather than skipped.
+  if (
+    pendingTranscribe &&
+    pendingTranscribe.videoId === state.videoId &&
+    state.position >= (cfg.transcribeAfterSeconds ?? 45)
+  ) {
+    const { parsed } = pendingTranscribe;
+    pendingTranscribe = null;
+    maybeTranscribe(state, parsed);
+  }
 }
 
 /** Character budget for the lyric, leaving room for the "♪ " prefix. */
@@ -389,6 +419,12 @@ function resolveLyric(state, cfg) {
       nextTime: view.nextTime,
       merged: view.text ? view.text.split(' · ').length : 1,
     };
+  }
+
+  // Something is being made — say so, rather than leaving the line blank for
+  // the minutes a transcription takes.
+  if (transcriber?.busyWith && transcriber.busyWith === state.videoId) {
+    return { text: 'Lyrics werden erstellt …', origin: 'transcribing', nextTime: null, merged: 1 };
   }
 
   // Subtitles: whatever YouTube is showing this instant. Covers everything the
@@ -490,6 +526,7 @@ function fetchLyrics(state, parsed) {
         lyricState.lines = null;
         lyricState.status = 'none';
         logger.debug('Keine synchronisierten Lyrics gefunden');
+        maybeTranscribe(state, parsed);
       }
       refreshUi();
     })
@@ -521,6 +558,36 @@ function nextLyricChangeAt(state, cfg) {
   const effective = state.position + cfg.lyricsOffset;
   const rate = state.playbackRate || 1;
   return Date.now() + ((boundary - effective) / rate) * 1000;
+}
+
+/**
+ * Start a transcription, but only when it is genuinely the last option.
+ *
+ * Deliberately conservative: this pins every CPU core for minutes, so it waits
+ * until the track has actually been listened to rather than skipped past, and
+ * never runs while subtitles are already supplying a line.
+ */
+function maybeTranscribe(state, parsed) {
+  const cfg = config.all();
+  if (!cfg.transcribeEnabled || !cfg.lyricsEnabled) return;
+  if (cfg.lyricsSource === 'captions') return;
+  if (state.caption) return; // subtitles are already doing the job, for free
+  if (!state.videoId || !transcriber.canStart(state.videoId)) return;
+
+  // Skipping through a playlist should not queue a job per track.
+  if (state.position < (cfg.transcribeAfterSeconds ?? 45)) {
+    pendingTranscribe = { videoId: state.videoId, parsed };
+    return;
+  }
+  pendingTranscribe = null;
+
+  transcriber.run({
+    videoId: state.videoId,
+    url: state.url,
+    artist: parsed.artistFull || parsed.artist,
+    track: parsed.track,
+    config: cfg,
+  });
 }
 
 function resetLyrics() {
@@ -726,6 +793,8 @@ function statusSnapshot() {
       lineCount: lyricState.lines?.length ?? 0,
       origin: lyricState.origin,
       merged: lyricState.merged,
+      transcribing: transcriber?.busyWith === session.state?.videoId,
+      transcribeError: transcriber?.lastError || null,
       captionsAvailable: Boolean(state?.caption),
       captionTrack: state?.captionTrack || null,
     },

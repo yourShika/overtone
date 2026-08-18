@@ -69,6 +69,11 @@ def transcribe(path: str, model_name: str, language, device: str):
 
     print('Transcribing (this takes a while on CPU) ...', file=sys.stderr)
     result = model.transcribe_stable(path, language=language, regroup=False)
+    model_info = getattr(result, 'ori_dict', None) or {}
+    model_info = type('Info', (), {
+        'language': model_info.get('language', language or '?'),
+        'language_probability': model_info.get('language_probability', 1.0),
+    })()
 
     # Regrouping decides where one lyric line ends. Sung lines follow breaths
     # and phrases rather than punctuation, which Whisper rarely emits for
@@ -81,8 +86,39 @@ def transcribe(path: str, model_name: str, language, device: str):
         .split_by_gap(0.6)
         .split_by_length(90)
     )
-    return result
+    return result, model_info
 
+
+def check_quality(lines, info, forced_language):
+    """
+    Reject output that is obviously wrong, rather than filing it as lyrics.
+
+    Whisper fails on music in two recognisable ways, both seen while building
+    this. It misidentifies the language and returns fluent nonsense in the wrong
+    script, and it falls into a repetition loop that emits one phrase for the
+    whole song. Both look like a normal result to the caller, so they have to be
+    caught here — a bad .lrc is worse than none, because it silently replaces a
+    working source and looks deliberate.
+
+    Returns a list of complaints; empty means the result looks usable.
+    """
+    problems = []
+    texts = [text for _, text in lines]
+
+    if len(texts) >= 6:
+        unique = len(set(texts))
+        if unique / len(texts) < 0.5:
+            problems.append(
+                'repetition loop: only %d distinct lines out of %d'
+                % (unique, len(texts)))
+
+    probability = getattr(info, 'language_probability', 1.0) or 1.0
+    if not forced_language and probability < 0.5:
+        problems.append(
+            'unsure of the language: %s at %.0f%% confidence - pass --language to pin it'
+            % (getattr(info, 'language', '?'), probability * 100))
+
+    return problems
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
@@ -96,6 +132,8 @@ def main() -> int:
     parser.add_argument('--out', help='output directory (default: Overtone lyrics folder)')
     parser.add_argument('--title', default='', help='[ti:] tag')
     parser.add_argument('--artist', default='', help='[ar:] tag')
+    parser.add_argument('--force', action='store_true',
+                        help='write even if the result looks wrong')
     args = parser.parse_args()
 
     if not os.path.isfile(args.audio):
@@ -103,7 +141,7 @@ def main() -> int:
     if not args.video_id and not args.name:
         raise SystemExit('Give --video-id (preferred) or --name, so Overtone can find the file.')
 
-    result = transcribe(args.audio, args.model, args.language, args.device)
+    result, info = transcribe(args.audio, args.model, args.language, args.device)
 
     lines = []
     for segment in result.to_dict()['segments']:
@@ -113,6 +151,14 @@ def main() -> int:
 
     if not lines:
         raise SystemExit('Whisper returned nothing usable.')
+
+    problems = check_quality(lines, info, args.language)
+    if problems and not args.force:
+        for problem in problems:
+            print('Rejected - %s' % problem, file=sys.stderr)
+        raise SystemExit(
+            'Nothing written. Re-run with --language <code> to pin the language, '
+            'or --force to keep this result anyway.')
 
     out_dir = args.out or lyrics_dir()
     os.makedirs(out_dir, exist_ok=True)

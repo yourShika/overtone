@@ -138,6 +138,53 @@
         </label>
       </section>
 
+      <!-- Local transcription -------------------------------------------------->
+      <section class="card">
+        <h2>Lokal transkribieren</h2>
+        <p class="muted small">
+          Für Songs, die weder LRCLIB kennt noch Untertitel haben: Overtone lädt das Audio,
+          lässt Whisper darüber laufen, legt eine <code>.lrc</code> in der Bibliothek ab und
+          <strong>löscht das Audio wieder</strong>. Das hilft erst beim <em>nächsten</em> Hören —
+          fertig wird es nie rechtzeitig für den laufenden Song.
+        </p>
+
+        <label class="toggle">
+          <input type="checkbox" id="transcribeEnabled" />
+          <span>Fehlende Lyrics lokal erzeugen</span>
+        </label>
+
+        <p class="hint indent" style="margin-top: 0">
+          Braucht <code>yt-dlp</code>, <code>ffmpeg</code> und Python mit
+          <code>stable-ts</code>. Lastet für etwa ein Drittel bis eine Songlänge alle CPU-Kerne
+          aus — beim Spielen spürbar. Startet erst, wenn ein Titel wirklich gehört statt
+          übersprungen wurde, und immer nur einer gleichzeitig.
+        </p>
+
+        <label class="field indent">
+          <span class="label">Sprache</span>
+          <input type="text" id="transcribeLanguage" maxlength="5" placeholder="leer = automatisch, z. B. pl" />
+          <span class="hint">
+            <strong>Der wichtigste Regler hier.</strong> Gemessen an einem polnischen Track:
+            automatisch erkannt wurde „Russisch", das Ergebnis war kyrillischer Unsinn — mit
+            <code>pl</code> festgelegt kam lesbares Polnisch heraus, und zwar schneller.
+            Offensichtlich unbrauchbare Ergebnisse werden ohnehin verworfen statt gespeichert.
+          </span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Modell</span>
+          <select id="transcribeModel">
+            <option value="tiny">tiny — am schnellsten, am ungenauesten</option>
+            <option value="base">base</option>
+            <option value="small">small</option>
+            <option value="medium">medium — Standard, beste Spracherkennung</option>
+          </select>
+          <span class="hint">
+            Größere Modelle erkennen die Sprache zuverlässiger, brauchen aber länger.
+          </span>
+        </label>
+      </section>
+
       <!-- Lyrics -------------------------------------------------------------->
       <section class="card">
         <h2>Lyrics</h2>

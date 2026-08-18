@@ -119,6 +119,37 @@ const DEFAULTS = {
    */
   lyricsSave: true,
 
+  // --- local transcription --------------------------------------------------
+  /**
+   * Transcribe songs nothing else knows, using yt-dlp and Whisper locally.
+   *
+   * Off by default: it saturates every CPU core for roughly a third of the
+   * song's length, which is not something to start behind someone's back while
+   * they might be gaming. The result lands in the library, so it helps the
+   * *next* play — never the one that triggered it.
+   */
+  transcribeEnabled: false,
+  /**
+   * Language code such as 'pl' or 'de'. Empty lets Whisper detect it.
+   *
+   * Only worth setting for the smaller models. `small` misidentified a Polish
+   * track as Russian and returned Cyrillic nonsense until the language was
+   * pinned; `medium` gets it right on its own, which is why it is the default
+   * despite being slower.
+   */
+  transcribeLanguage: '',
+  /**
+   * tiny | base | small | medium.
+   *
+   * 'medium' because language detection is what decides whether the output is
+   * usable at all, and it is the first size that gets that right on music.
+   */
+  transcribeModel: 'medium',
+  /** Only start after this many seconds of listening, so skipped tracks are ignored. */
+  transcribeAfterSeconds: 45,
+  pythonPath: 'python',
+  ytdlpPath: 'yt-dlp',
+
   // --- system ---------------------------------------------------------------
   autoStart: false,
   startMinimised: true,

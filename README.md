@@ -85,9 +85,28 @@ you already have into a matching `.lrc` using Whisper:
 python tools/transcribe-to-lrc.py song.mp3 --video-id o33IHl7-g9Y --language pl
 ```
 
-It needs `stable-ts` and `faster-whisper`, and transcribes a file you point it
-at — it does not download anything. Whisper guesses, so treat sung lyrics as a
-first draft worth correcting.
+It needs `stable-ts` and `faster-whisper`. Whisper guesses, so treat sung
+lyrics as a first draft worth correcting.
+
+Overtone can also do this by itself. Switch on **Fehlende Lyrics lokal erzeugen**
+and a song nothing else covers gets downloaded, transcribed, filed and the audio
+deleted again — helping the *next* play, never the one that triggered it. It is
+off by default because it saturates every core for a good fraction of the song's
+length, which is not something to start behind your back.
+
+Two things decided quality here, both measured rather than assumed:
+
+**Language detection is the weak link, not Whisper.** On a Polish track, letting
+it guess produced fluent Russian nonsense in 125 s; pinning `pl` gave readable
+Polish in 52 s — faster *and* correct. The bigger `medium` model detects
+languages far better, which is why it is the default, but it is not immune: on
+the same track it also chose Russian and fell into a repetition loop, emitting
+one phrase eleven times for the whole song.
+
+**So bad output is rejected rather than filed.** A wrong `.lrc` is worse than
+none: it silently outranks every other source and looks deliberate. Overtone
+refuses results that repeat one line throughout or come from a language guess it
+is not confident about — while leaving genuine choruses alone.
 
 ---
 
@@ -177,11 +196,12 @@ away what the rest of the presence is hiding.
   roughly 4 s.
 - **Subtitles must be switched on in the player.** Overtone reads what YouTube
   actually displays; with subtitles off there is nothing to read.
-- **It does not download audio.** Transcribing a song would need the audio,
-  and YouTube blocks that: current yt-dlp gets HTTP 403 on the default client
-  and reports DRM-protected streams on others. Working around copy protection
-  is not something this project does, so transcription runs on files you
-  already have.
+- **Transcription is not live.** Whisper needs a good fraction of the song's
+  length on CPU, so lyrics it produces arrive for the next play. The presence
+  says so while a job runs.
+- **It does not break copy protection.** Audio comes from the one player client
+  that still serves it plainly; clients that offer only DRM-protected streams
+  are left alone.
 
 ---
 
@@ -205,6 +225,9 @@ lives at `%APPDATA%\Overtone\config.json`.
 | `lyricsProminent` | `false` | Lyric on the first, bold line |
 | `lyricsCombine` | `1` | Merge strength: `0` off, `1`, `1.5`, `2` |
 | `lyricsSave` | `true` | Save found lyrics as .lrc files |
+| `transcribeEnabled` | `false` | Transcribe songs nothing else covers |
+| `transcribeLanguage` | – | Pin the language, e.g. `pl`; empty detects |
+| `transcribeModel` | `medium` | tiny, base, small, medium |
 | `lyricsOffset` | `0` | Manual trim in seconds; only for skewed LRC files |
 | `highResArtwork` | `true` | `maxresdefault` instead of `hqdefault` |
 
@@ -217,6 +240,7 @@ npm install                # also generates the icons
 npm start                  # run the agent from source
 npm test                   # unit tests
 npm run test:integration   # hits the live LRCLIB API
+python agent/test/quality.test.py   # transcription quality guard
 npm run build              # installer + portable exe into dist/
 ```
 

@@ -1,0 +1,195 @@
+:root {
+  --bg: #14141d;
+  --card: #1e1e2b;
+  --border: #2c2c3c;
+  --text: #ececf4;
+  --dim: #9a9ab2;
+  --accent: #7b6cf6;
+  --good: #3ba55d;
+  --bad: #ed4245;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 0 0 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  flex: 1;
+}
+
+.mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #7b6cf6, #c86cf6);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bad);
+  box-shadow: 0 0 0 3px rgba(237, 66, 69, 0.16);
+}
+
+.dot.on {
+  background: var(--good);
+  box-shadow: 0 0 0 3px rgba(59, 165, 93, 0.16);
+}
+
+section {
+  padding: 12px 14px 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.empty {
+  margin: 0;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+.track {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px;
+}
+
+#art {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #26263a;
+  flex: none;
+}
+
+.meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.meta p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.sub {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.lyric {
+  font-size: 11.5px;
+  color: #b8a9ff;
+  font-style: italic;
+  margin-top: 2px !important;
+}
+
+.status p {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.toggle input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: #a89bff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.advanced {
+  margin: 12px 14px 0;
+  font-size: 12px;
+}
+
+.advanced summary {
+  cursor: pointer;
+  color: var(--dim);
+  user-select: none;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.field input {
+  width: 92px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #10101a;
+  color: var(--text);
+  font: inherit;
+}
+
+.hint {
+  margin: 6px 0 0;
+  color: var(--dim);
+  font-size: 11px;
+}

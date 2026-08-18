@@ -1,0 +1,22 @@
+{
+  "name": "overtone",
+  "version": "1.4.0",
+  "description": "Discord Rich Presence for YouTube and YouTube Music — with time-synced lyrics.",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace overtone-agent",
+    "dev": "npm run dev --workspace overtone-agent",
+    "build": "npm run build --workspace overtone-agent",
+    "test": "npm test --workspace overtone-agent",
+    "test:integration": "npm run test:integration --workspace overtone-agent",
+    "icons": "node tools/make-icons.mjs",
+    "postinstall": "node tools/make-icons.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

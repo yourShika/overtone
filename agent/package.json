@@ -1,0 +1,26 @@
+{
+  "name": "overtone-agent",
+  "productName": "Overtone",
+  "version": "1.4.0",
+  "description": "Discord Rich Presence agent for YouTube and YouTube Music, with synced lyrics.",
+  "main": "src/main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --verbose",
+    "test": "node --test test/core.test.js test/log.test.js",
+    "test:integration": "node --test test/integration.test.js",
+    "build": "electron-builder --win --config electron-builder.config.js",
+    "build:portable": "electron-builder --win portable --config electron-builder.config.js",
+    "pack": "electron-builder --dir --config electron-builder.config.js"
+  },
+  "author": "Kamil Bura",
+  "dependencies": {
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
+  }
+}

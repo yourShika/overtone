@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" role="img" aria-labelledby="t d">
+  <title id="t">Overtone architecture</title>
+  <desc id="d">A browser extension reads the YouTube player and sends state over a local WebSocket to a tray agent, which resolves lyrics and pushes a Rich Presence to the Discord desktop client over a named pipe.</desc>
+
+  <rect width="900" height="560" rx="14" fill="#0f1117"/>
+
+  <!-- Browser column -->
+  <rect x="28" y="28" width="360" height="330" rx="10" fill="#161a24" stroke="#2a3040"/>
+  <text x="48" y="56" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#7c8cf8">BROWSER</text>
+  <text x="48" y="74" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">Chrome · Brave · Edge</text>
+
+  <rect x="48" y="92" width="320" height="72" rx="8" fill="#1d2331" stroke="#333c52"/>
+  <text x="64" y="114" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#e6e9ef">probe.js</text>
+  <text x="64" y="132" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">MAIN world — YouTube's own player API</text>
+  <text x="64" y="150" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">title · position · artwork · captions</text>
+
+  <rect x="48" y="176" width="320" height="60" rx="8" fill="#1d2331" stroke="#333c52"/>
+  <text x="64" y="198" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#e6e9ef">bridge.js</text>
+  <text x="64" y="216" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">isolated world — sends only on real change</text>
+
+  <rect x="48" y="248" width="320" height="60" rx="8" fill="#1d2331" stroke="#333c52"/>
+  <text x="64" y="270" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#e6e9ef">service worker</text>
+  <text x="64" y="288" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">picks the winning tab · reconnects</text>
+
+  <text x="48" y="336" font-family="system-ui,sans-serif" font-size="11" fill="#6b7488">Only the browser can reach the player.</text>
+
+  <!-- Agent column -->
+  <rect x="512" y="28" width="360" height="330" rx="10" fill="#161a24" stroke="#2a3040"/>
+  <text x="532" y="56" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4ade80">TRAY AGENT</text>
+  <text x="532" y="74" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">Electron · no terminal window</text>
+
+  <rect x="532" y="92" width="320" height="60" rx="8" fill="#1d2331" stroke="#333c52"/>
+  <text x="548" y="114" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#e6e9ef">session</text>
+  <text x="548" y="132" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">interpolates position between reports</text>
+
+  <rect x="532" y="164" width="320" height="60" rx="8" fill="#1d2331" stroke="#333c52"/>
+  <text x="548" y="186" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#e6e9ef">lyrics</text>
+  <text x="548" y="204" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">LRCLIB, else YouTube subtitles</text>
+
+  <rect x="532" y="236" width="320" height="72" rx="8" fill="#1d2331" stroke="#f0b23a"/>
+  <text x="548" y="258" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#f0b23a">presence</text>
+  <text x="548" y="276" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">5 updates / 20 s — the binding limit</text>
+  <text x="548" y="294" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">sends aligned to lyric boundaries</text>
+
+  <text x="532" y="336" font-family="system-ui,sans-serif" font-size="11" fill="#6b7488">Only a desktop app can reach the pipe.</text>
+
+  <!-- Link between the two -->
+  <line x1="388" y1="200" x2="512" y2="200" stroke="#7c8cf8" stroke-width="2"/>
+  <polygon points="512,200 502,195 502,205" fill="#7c8cf8"/>
+  <rect x="392" y="150" width="116" height="42" rx="6" fill="#1a1f2b" stroke="#3a4358"/>
+  <text x="450" y="168" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#c9d1e3">127.0.0.1:8787</text>
+  <text x="450" y="184" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#8b93a7">extension origins only</text>
+
+  <!-- Discord -->
+  <rect x="512" y="404" width="360" height="120" rx="10" fill="#161a24" stroke="#5865f2"/>
+  <text x="532" y="432" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#5865f2">DISCORD DESKTOP</text>
+  <text x="532" y="458" font-family="ui-monospace,monospace" font-size="11" fill="#c9d1e3">\.\pipe\discord-ipc-0</text>
+  <text x="532" y="480" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">SET_ACTIVITY over raw IPC frames,</text>
+  <text x="532" y="498" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">no third-party RPC library</text>
+
+  <line x1="692" y1="358" x2="692" y2="404" stroke="#5865f2" stroke-width="2"/>
+  <polygon points="692,404 687,394 697,394" fill="#5865f2"/>
+
+  <!-- LRCLIB -->
+  <rect x="28" y="404" width="360" height="120" rx="10" fill="#161a24" stroke="#2a3040"/>
+  <text x="48" y="432" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#8b93a7">LRCLIB.NET</text>
+  <text x="48" y="458" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">Free synced-lyrics database, no API key.</text>
+  <text x="48" y="480" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">Coverage drops off outside the</text>
+  <text x="48" y="498" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">mainstream — subtitles cover the rest.</text>
+
+  <line x1="532" y1="194" x2="392" y2="440" stroke="#3a4358" stroke-width="1.5" stroke-dasharray="4 4"/>
+</svg>

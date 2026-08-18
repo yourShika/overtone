@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://i.ytimg.com https://lh3.googleusercontent.com data:; font-src 'self';"
+    />
+    <title>Overtone — Einstellungen</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <div>
+          <h1>Overtone</h1>
+          <p class="version" id="version">—</p>
+        </div>
+      </div>
+      <div class="pills">
+        <span class="pill" id="pill-discord" data-state="off">Discord</span>
+        <span class="pill" id="pill-browser" data-state="off">Browser</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Live preview ------------------------------------------------------->
+      <section class="card preview" id="preview-card">
+        <h2>Aktuell</h2>
+        <div class="preview-body" id="preview-empty">
+          <p class="muted">Nichts läuft. Öffne ein YouTube-Video im Browser.</p>
+        </div>
+        <div class="preview-body hidden" id="preview-live">
+          <img class="art" id="preview-art" alt="" />
+          <div class="preview-text">
+            <p class="line1" id="preview-title">—</p>
+            <p class="line2" id="preview-state">—</p>
+            <p class="line3" id="preview-time">—</p>
+          </div>
+        </div>
+        <p class="lyric-status" id="lyric-status"></p>
+        <p class="warning hidden" id="extension-warning"></p>
+      </section>
+
+      <!-- Connection ---------------------------------------------------------->
+      <section class="card">
+        <h2>Verbindung</h2>
+
+        <label class="field">
+          <span class="label">Discord Client-ID</span>
+          <input id="clientId" type="text" inputmode="numeric" placeholder="z. B. 1234567890123456789" />
+          <span class="hint">
+            Aus dem
+            <a href="#" data-external="https://discord.com/developers/applications">Discord Developer Portal</a>.
+            Der <em>Name</em> der Application ist die Überschrift der Aktivität — nenne sie „YouTube“,
+            wenn dort „Schaut YouTube“ stehen soll.
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="label">Bridge-Port</span>
+          <input id="port" type="number" min="1024" max="65535" />
+          <span class="hint">Muss mit dem Port in den Extension-Optionen übereinstimmen.</span>
+        </label>
+
+        <div class="row">
+          <button class="btn" id="btn-reconnect">Discord neu verbinden</button>
+          <span class="error" id="last-error"></span>
+        </div>
+      </section>
+
+      <!-- Presentation -------------------------------------------------------->
+      <section class="card">
+        <h2>Darstellung</h2>
+
+        <label class="field">
+          <span class="label">Aktivitätstyp</span>
+          <select id="activityType">
+            <option value="auto">Automatisch — Video „Schaut“, Musik „Hört“</option>
+            <option value="listening">Immer „Hört …“ (Listening to)</option>
+            <option value="watching">Immer „Schaut …“ (Watching)</option>
+            <option value="playing">Immer „Spielt …“ (Playing)</option>
+          </select>
+          <span class="hint">
+            Bestimmt nur das Präfix — „Hört“, „Schaut“, „Spielt“. Was dahinter steht, legt das
+            Feld darunter fest.
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="label">Überschrift der Aktivität</span>
+          <input type="text" id="activityName" placeholder="{artist} - {title}" />
+          <span class="hint">
+            Was in der Kopfzeile hinter „Hört … zu" steht. Leer lassen für den Namen deiner
+            Discord-Application (also z. B. immer „YouTube"). Platzhalter:
+            <code>{artist}</code>, <code>{title}</code>, <code>{channel}</code>.
+            Mehrere Künstler werden zur Komma-Form normalisiert —
+            <code>doli x szevczor</code> wird zu <code>doli, szevczor</code>.
+            Im Privat-Modus wird die Überschrift nicht ersetzt.
+          </span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="showTimestamps" />
+          <span>Fortschrittsbalken / Restzeit anzeigen</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="highResArtwork" />
+          <span>Hochauflösendes Thumbnail verwenden</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="showButton" />
+          <span>Button zum Video anzeigen</span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Button-Beschriftung</span>
+          <input id="buttonLabel" type="text" maxlength="32" placeholder="Auf YouTube ansehen" />
+          <span class="hint">Leer lassen für den automatischen Text.</span>
+        </label>
+
+        <label class="toggle indent">
+          <input type="checkbox" id="showChannelButton" />
+          <span>Zweiten Button zum Kanal anzeigen</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="hideWhenPaused" />
+          <span>Presence ausblenden, wenn pausiert</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="privacyMode" />
+          <span>Privat-Modus — Titel und Thumbnail verbergen</span>
+        </label>
+      </section>
+
+      <!-- Lyrics -------------------------------------------------------------->
+      <section class="card">
+        <h2>Lyrics</h2>
+        <p class="muted small">
+          Die aktuelle Songzeile erscheint in der Rich Presence — wahlweise aus der
+          Lyrics-Datenbank <a href="#" data-external="https://lrclib.net">LRCLIB</a>
+          oder direkt aus den YouTube-Untertiteln.
+        </p>
+
+        <label class="toggle">
+          <input type="checkbox" id="lyricsEnabled" />
+          <span>Lyrics als Status anzeigen</span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Quelle</span>
+          <select id="lyricsSource">
+            <option value="auto">Automatisch — LRCLIB, sonst YouTube-Untertitel</option>
+            <option value="captions">Nur YouTube-Untertitel</option>
+            <option value="lrclib">Nur LRCLIB-Datenbank</option>
+          </select>
+          <span class="hint">
+            Untertitel greifen auch bei Songs, die keine Datenbank kennt, und funktionieren mit
+            automatisch erzeugten wie übersetzten Spuren — <strong>sie müssen im YouTube-Player
+            aber eingeschaltet sein</strong>, sonst gibt es nichts zu lesen. LRCLIB hat dafür einen
+            Vorlauf und gleicht Discords Verzögerung besser aus.
+          </span>
+        </label>
+
+        <label class="toggle indent">
+          <input type="checkbox" id="lyricsMusicOnly" />
+          <span>Nur auf YouTube Music (nicht bei normalen Videos)</span>
+        </label>
+
+        <label class="toggle indent">
+          <input type="checkbox" id="lyricsProminent" />
+          <span>Songzeile in die erste, fette Zeile — Titel rutscht nach unten</span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Kurze Zeilen zusammenfassen</span>
+          <select id="lyricsCombine">
+            <option value="0">Aus — immer nur eine Zeile</option>
+            <option value="1">Standard — nur was sonst verloren ginge</option>
+            <option value="1.5">Mehr — weniger Auslassungen</option>
+            <option value="2">Maximal — kaum Auslassungen, dafür früher</option>
+          </select>
+          <span class="hint">
+            Discord erlaubt etwa ein Update alle 4 Sekunden; bei schnellen Songs wechselt die Zeile
+            alle 2 — ohne Zusammenfassen fällt jede zweite aus. <strong>Gekürzt wird nie</strong>:
+            eine Zeile passt ganz oder wartet aufs nächste Update. Je höher die Stufe, desto
+            vollständiger die Lyrics, aber desto früher stehen spätere Zeilen schon da.
+            Nur mit LRCLIB möglich — bei Untertiteln ist die nächste Zeile unbekannt.
+          </span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Feinabstimmung <output id="lyricsOffsetOut">0,0</output> s</span>
+          <input id="lyricsOffset" type="range" min="-5" max="5" step="0.25" />
+          <span class="hint">
+            Normalerweise auf <strong>0</strong> lassen. Overtone legt die Updates von sich aus
+            auf die Zeilenwechsel, statt sie mit einem festen Vorlauf zu verschieben — der könnte
+            immer nur an einer Stelle im Zeitfenster passen und wäre sonst zu früh oder zu spät.
+            Nur nachjustieren, wenn eine bestimmte LRC-Datei selbst verschoben ist.
+          </span>
+        </label>
+
+        <div class="row">
+          <button class="btn" id="btn-clear-cache">Lyrics-Cache leeren</button>
+        </div>
+      </section>
+
+      <!-- System -------------------------------------------------------------->
+      <section class="card">
+        <h2>System</h2>
+        <label class="toggle">
+          <input type="checkbox" id="enabled" />
+          <span>Rich Presence aktiv</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="autoStart" />
+          <span>Beim Anmelden automatisch starten</span>
+        </label>
+        <div class="row">
+          <button class="btn danger" id="btn-reset">Auf Standard zurücksetzen</button>
+        </div>
+      </section>
+
+      <!-- Log ----------------------------------------------------------------->
+      <section class="card">
+        <h2>Protokoll</h2>
+        <pre class="log" id="log"></pre>
+      </section>
+    </main>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

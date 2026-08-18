@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" role="img" aria-labelledby="tt td">
+  <title id="tt">Why lyric timing needs a scheduler</title>
+  <desc id="td">Discord allows one presence update roughly every four seconds. Sending as soon as the limiter opens makes the delay depend on where the lyric boundary falls, so a fixed lead-in is early in one case and late in the other. Aligning sends to the boundaries removes both.</desc>
+
+  <rect width="900" height="420" rx="14" fill="#0f1117"/>
+
+  <text x="32" y="42" font-family="system-ui,sans-serif" font-size="15" font-weight="600" fill="#e6e9ef">One update per 4 s, lyric lines every 2 s</text>
+  <text x="32" y="64" font-family="system-ui,sans-serif" font-size="12" fill="#8b93a7">Discord permits 5 SET_ACTIVITY calls per 20 seconds. That budget, not the network, is the constraint.</text>
+
+  <text x="32" y="112" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#9aa3b8">Song</text>
+  <rect x="120" y="96" width="150" height="26" rx="4" fill="#1d2331" stroke="#333c52"/>
+  <rect x="274" y="96" width="150" height="26" rx="4" fill="#1d2331" stroke="#333c52"/>
+  <rect x="428" y="96" width="150" height="26" rx="4" fill="#1d2331" stroke="#333c52"/>
+  <rect x="582" y="96" width="150" height="26" rx="4" fill="#1d2331" stroke="#333c52"/>
+  <text x="195" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c9d1e3">line A</text>
+  <text x="349" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c9d1e3">line B</text>
+  <text x="503" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c9d1e3">line C</text>
+  <text x="657" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c9d1e3">line D</text>
+
+  <text x="32" y="184" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#f87171">Send when allowed</text>
+  <text x="32" y="200" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">half the lines lost</text>
+  <line x1="120" y1="168" x2="810" y2="168" stroke="#2a3040" stroke-width="1"/>
+  <rect x="120" y="156" width="300" height="26" rx="4" fill="#2a1c1e" stroke="#f87171"/>
+  <text x="270" y="174" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#fca5a5">shows A - B never appears</text>
+  <rect x="428" y="156" width="300" height="26" rx="4" fill="#2a1c1e" stroke="#f87171"/>
+  <text x="578" y="174" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#fca5a5">shows C - D never appears</text>
+
+  <text x="32" y="252" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#f0b23a">Fixed lead-in</text>
+  <text x="32" y="268" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">wrong in both directions</text>
+  <line x1="120" y1="236" x2="810" y2="236" stroke="#2a3040" stroke-width="1"/>
+  <rect x="120" y="224" width="180" height="26" rx="4" fill="#2b2413" stroke="#f0b23a"/>
+  <text x="210" y="242" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#fcd34d">too early</text>
+  <rect x="470" y="224" width="180" height="26" rx="4" fill="#2b2413" stroke="#f0b23a"/>
+  <text x="560" y="242" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#fcd34d">too late</text>
+  <text x="672" y="242" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">one constant cannot fit both</text>
+
+  <text x="32" y="320" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#4ade80">Overtone</text>
+  <text x="32" y="336" font-family="system-ui,sans-serif" font-size="11" fill="#8b93a7">aligned and merged</text>
+  <line x1="120" y1="304" x2="810" y2="304" stroke="#2a3040" stroke-width="1"/>
+  <rect x="120" y="292" width="300" height="26" rx="4" fill="#14261b" stroke="#4ade80"/>
+  <text x="270" y="310" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#86efac">A and B share one update</text>
+  <rect x="428" y="292" width="300" height="26" rx="4" fill="#14261b" stroke="#4ade80"/>
+  <text x="578" y="310" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#86efac">sent exactly at C's cue</text>
+
+  <line x1="120" y1="88" x2="120" y2="330" stroke="#4b5568" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="428" y1="88" x2="428" y2="330" stroke="#4b5568" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <text x="32" y="384" font-family="system-ui,sans-serif" font-size="11" fill="#6b7488">Merging never shortens a line: it either fits whole, or waits for the next update. Measured over 24 lines at a</text>
+  <text x="32" y="400" font-family="system-ui,sans-serif" font-size="11" fill="#6b7488">two-second cadence, lines shown rose from 12 of 24 to 18 of 24, staying inside Discord's 128-character limit.</text>
+</svg>

@@ -1,0 +1,66 @@
+/**
+ * electron-builder configuration.
+ *
+ * This lives in a .js file rather than package.json for one reason: npm
+ * workspaces hoist `electron` to the repository root node_modules, where
+ * electron-builder's version detection does not look. It then refuses to build,
+ * because it needs an exact version to download the matching platform binaries
+ * and cannot resolve a "^43.4.0" range on its own.
+ *
+ * Reading the version from the installed package solves it permanently —
+ * bumping electron in package.json needs no change here.
+ */
+
+const { version: electronVersion } = require('electron/package.json');
+
+module.exports = {
+  appId: 'com.overtone.agent',
+  productName: 'Overtone',
+  copyright: `Copyright © ${new Date().getFullYear()} Kamil Bura`,
+  electronVersion,
+
+  directories: {
+    output: '../dist',
+    buildResources: 'assets',
+  },
+
+  files: ['src/**/*', 'ui/**/*', 'assets/**/*', 'package.json'],
+
+  // The agent is a background helper; bundling devDependencies would triple the
+  // installer for no benefit.
+  npmRebuild: false,
+
+  win: {
+    target: [
+      { target: 'nsis', arch: ['x64'] },
+      { target: 'portable', arch: ['x64'] },
+    ],
+    icon: 'assets/icon-256.png',
+  },
+
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: 'Overtone',
+    // Leaving config and lyrics cache behind on uninstall is surprising.
+    deleteAppDataOnUninstall: true,
+  },
+
+  portable: {
+    artifactName: 'Overtone-${version}-portable.exe',
+  },
+
+  linux: {
+    target: ['AppImage'],
+    category: 'Utility',
+    icon: 'assets/icon-256.png',
+  },
+
+  mac: {
+    target: ['dmg'],
+    category: 'public.app-category.utilities',
+  },
+};

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Overtone</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <span class="mark" aria-hidden="true"></span>
+      <h1>Overtone</h1>
+      <span class="dot" id="dot" title="Agent-Verbindung"></span>
+    </header>
+
+    <section class="now" id="now">
+      <p class="empty" id="empty">Kein YouTube-Tab aktiv.</p>
+
+      <div class="track hidden" id="track">
+        <img id="art" alt="" />
+        <div class="meta">
+          <p class="title" id="title"></p>
+          <p class="sub" id="sub"></p>
+          <p class="lyric" id="lyric"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="status" id="status">
+      <p id="status-line">Verbinde …</p>
+    </section>
+
+    <section class="controls">
+      <label class="toggle">
+        <input type="checkbox" id="enabled" />
+        <span>Aktiv</span>
+      </label>
+      <button class="link" id="open-settings">Einstellungen</button>
+    </section>
+
+    <details class="advanced">
+      <summary>Erweitert</summary>
+      <label class="field">
+        <span>Bridge-Port</span>
+        <input type="number" id="port" min="1024" max="65535" />
+      </label>
+      <p class="hint">Muss mit dem Port im Overtone-Agent übereinstimmen.</p>
+    </details>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

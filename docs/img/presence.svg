@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300" role="img" aria-labelledby="pt pd">
+  <title id="pt">What the Discord profile shows</title>
+  <desc id="pd">An illustration of the rich presence card: an activity header built from artist and title, the song title, the current lyric line, a progress bar with remaining time, and a button linking to the video.</desc>
+
+  <rect width="900" height="300" rx="14" fill="#0f1117"/>
+  <text x="32" y="38" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#6b7488">ILLUSTRATION, NOT A SCREENSHOT</text>
+
+  <rect x="32" y="56" width="470" height="212" rx="10" fill="#232428" stroke="#2f3136"/>
+
+  <text x="56" y="88" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#b5bac1">Listening to doli, szevczor, yokinashi - 162020</text>
+
+  <rect x="56" y="104" width="96" height="96" rx="8" fill="#1a1c20" stroke="#3a3d44"/>
+  <circle cx="104" cy="152" r="26" fill="#2b2f38"/>
+  <circle cx="104" cy="152" r="7" fill="#1a1c20"/>
+  <text x="104" y="222" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#6b7488">artwork</text>
+
+  <text x="172" y="124" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#f2f3f5">162020</text>
+  <text x="172" y="148" font-family="system-ui,sans-serif" font-size="12" fill="#dbdee1">nie poznaje siebie i to jest okropne</text>
+
+  <rect x="172" y="164" width="300" height="4" rx="2" fill="#4e5058"/>
+  <rect x="172" y="164" width="186" height="4" rx="2" fill="#f2f3f5"/>
+  <text x="172" y="186" font-family="system-ui,sans-serif" font-size="10" fill="#b5bac1">01:41</text>
+  <text x="472" y="186" text-anchor="end" font-family="system-ui,sans-serif" font-size="10" fill="#b5bac1">02:56</text>
+
+  <rect x="172" y="202" width="300" height="32" rx="6" fill="#4e5058"/>
+  <text x="322" y="223" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#ffffff">Watch on YouTube</text>
+
+  <line x1="502" y1="84" x2="558" y2="84" stroke="#7c8cf8" stroke-width="1.5"/>
+  <text x="568" y="88" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">header from your own template</text>
+
+  <line x1="502" y1="144" x2="558" y2="144" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="568" y="148" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">lyric, timed to the line change</text>
+
+  <line x1="502" y1="166" x2="558" y2="166" stroke="#f0b23a" stroke-width="1.5"/>
+  <text x="568" y="170" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">real progress bar, follows seeks</text>
+
+  <line x1="502" y1="218" x2="558" y2="218" stroke="#8b93a7" stroke-width="1.5"/>
+  <text x="568" y="215" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">the artwork is not clickable;</text>
+  <text x="568" y="231" font-family="system-ui,sans-serif" font-size="11" fill="#9aa3b8">Discord only makes buttons links</text>
+</svg>

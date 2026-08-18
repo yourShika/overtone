@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Overtone",
+  "version": "1.4.0",
+  "description": "Zeigt dein YouTube- und YouTube-Music-Playback als Discord Rich Presence — inklusive synchronisierter Lyrics.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://music.youtube.com/*"
+      ],
+      "js": [
+        "src/content/probe.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://music.youtube.com/*"
+      ],
+      "js": [
+        "src/content/bridge.js"
+      ],
+      "world": "ISOLATED",
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Overtone",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

@@ -571,7 +571,10 @@ function maybeTranscribe(state, parsed) {
   const cfg = config.all();
   if (!cfg.transcribeEnabled || !cfg.lyricsEnabled) return;
   if (cfg.lyricsSource === 'captions') return;
-  if (state.caption) return; // subtitles are already doing the job, for free
+  // Subtitles are free and instant, so they normally make a job pointless — but
+  // an auto-generated or translated track is not the sung text, which is
+  // exactly when someone would want their own transcription anyway.
+  if (state.caption && !cfg.transcribeEvenWithCaptions) return;
   if (!state.videoId || !transcriber.canStart(state.videoId)) return;
 
   // Skipping through a playlist should not queue a job per track.
@@ -787,6 +790,7 @@ function statusSnapshot() {
        */
       captionsUnsupported: Boolean(state) && !state.captionCapable,
     },
+    transcription: transcriber ? transcriber.report() : null,
     lyrics: {
       status: lyricState.status,
       line: lyricState.current,
@@ -794,7 +798,6 @@ function statusSnapshot() {
       origin: lyricState.origin,
       merged: lyricState.merged,
       transcribing: transcriber?.busyWith === session.state?.videoId,
-      transcribeError: transcriber?.lastError || null,
       captionsAvailable: Boolean(state?.caption),
       captionTrack: state?.captionTrack || null,
     },

@@ -148,10 +148,26 @@
           fertig wird es nie rechtzeitig für den laufenden Song.
         </p>
 
+        <div class="job" id="transcribe-job">
+          <p class="job-line" id="transcribe-phase">Gerade nichts zu tun</p>
+          <p class="job-detail" id="transcribe-detail"></p>
+        </div>
+
         <label class="toggle">
           <input type="checkbox" id="transcribeEnabled" />
           <span>Fehlende Lyrics lokal erzeugen</span>
         </label>
+
+        <label class="toggle indent">
+          <input type="checkbox" id="transcribeEvenWithCaptions" />
+          <span>Auch dann, wenn YouTube-Untertitel vorhanden sind</span>
+        </label>
+
+        <p class="hint indent" style="margin-top: 0">
+          Normalerweise übernehmen vorhandene Untertitel — sie kosten nichts und sind sofort da.
+          Sinnvoll einzuschalten, wenn die verfügbare Spur automatisch erzeugt ist und die Wörter
+          verstümmelt, oder eine Übersetzung statt des gesungenen Textes zeigt.
+        </p>
 
         <p class="hint indent" style="margin-top: 0">
           Braucht <code>yt-dlp</code>, <code>ffmpeg</code> und Python mit

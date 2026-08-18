@@ -145,10 +145,27 @@ const DEFAULTS = {
    * usable at all, and it is the first size that gets that right on music.
    */
   transcribeModel: 'medium',
+  /**
+   * Transcribe even when YouTube is already showing subtitles.
+   *
+   * Off by default, because subtitles are free, instant and often the actual
+   * lyrics. Worth turning on when the available track is an auto-generated one
+   * that garbles the words, or a translation rather than the sung text.
+   */
+  transcribeEvenWithCaptions: false,
   /** Only start after this many seconds of listening, so skipped tracks are ignored. */
   transcribeAfterSeconds: 45,
   pythonPath: 'python',
   ytdlpPath: 'yt-dlp',
+  /**
+   * JavaScript runtime yt-dlp uses to solve YouTube's challenge.
+   *
+   * Required, not cosmetic: without one the embedded player client offers no
+   * audio-only format and the download fails with "Requested format is not
+   * available", which looks like a format problem and is not. Set empty only if
+   * yt-dlp is configured with a runtime of its own.
+   */
+  ytdlpJsRuntime: 'node',
 
   // --- system ---------------------------------------------------------------
   autoStart: false,

@@ -29,6 +29,7 @@ const { EventEmitter } = require('node:events');
 
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 const TRANSCRIBE_TIMEOUT_MS = 15 * 60 * 1000;
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 class Transcriber extends EventEmitter {
   /**
@@ -47,18 +48,52 @@ class Transcriber extends EventEmitter {
 
     /** @type {string|null} video id currently being worked on */
     this.busyWith = null;
+    /**
+     * What the current job is doing: 'download' | 'transcribe' | null.
+     *
+     * A job runs for minutes with nothing to show for it until the very end, so
+     * the phase is worth reporting — otherwise a working agent and a stuck one
+     * look identical.
+     */
+    this.phase = null;
+    /** Epoch ms the current job started, for an elapsed-time readout. */
+    this.startedAt = null;
+    /** Human-readable name of what is being worked on. */
+    this.currentTrack = null;
+    /** Finished jobs this session, oldest first, capped. */
+    this.history = [];
     /** Ids already tried this session, successful or not, so we stop retrying. */
     this.attempted = new Set();
     this.lastError = null;
+    /** Failures in a row; a broken setup fails every track alike. */
+    this.consecutiveFailures = 0;
   }
 
   get busy() {
     return this.busyWith !== null;
   }
 
-  /** Whether this track is worth starting a job for right now. */
+  /**
+   * Whether this track is worth starting a job for right now.
+   *
+   * Stops after a run of failures. When the cause is the setup rather than the
+   * song — yt-dlp missing, Python missing, YouTube changing again — every
+   * further track fails identically, and retrying each one only buries the real
+   * error under noise.
+   */
   canStart(videoId) {
-    return Boolean(videoId) && !this.busy && !this.attempted.has(videoId);
+    if (!videoId || this.busy || this.attempted.has(videoId)) return false;
+    return this.consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
+  }
+
+  /** Clear the failure stop, e.g. after the user fixed a path in settings. */
+  resetFailures() {
+    this.consecutiveFailures = 0;
+    this.emit('change');
+  }
+
+  get halted() {
+    return this.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
   }
 
   /**
@@ -78,7 +113,9 @@ class Transcriber extends EventEmitter {
     this.busyWith = videoId;
     this.attempted.add(videoId);
     this.lastError = null;
-    this.emit('change');
+    this.startedAt = Date.now();
+    this.currentTrack = track || videoId;
+    this._setPhase('download');
 
     let audioFile = null;
     try {
@@ -87,15 +124,26 @@ class Transcriber extends EventEmitter {
       this.logger.info?.(`Transkription: lade Audio für "${track || videoId}" …`);
       audioFile = await this._download(videoId, url, config);
 
+      this._setPhase('transcribe');
       this.logger.info?.('Transkription: Whisper läuft (dauert etwa ein Drittel der Songlänge) …');
       await this._transcribe({ audioFile, videoId, artist, track, config });
 
       this.logger.info?.('Transkription fertig — beim nächsten Hören sind die Lyrics da.');
+      this.consecutiveFailures = 0;
+      this._record(track || videoId, 'ok', null);
       this.emit('done', { videoId });
       return true;
     } catch (err) {
       this.lastError = err.message;
       this.logger.warn?.(`Transkription fehlgeschlagen: ${err.message}`);
+      this.consecutiveFailures += 1;
+      if (this.halted) {
+        this.logger.warn?.(
+          `Transkription pausiert nach ${this.consecutiveFailures} Fehlschlägen in Folge — ` +
+            'sieht nach einem Einrichtungsproblem aus, nicht nach dem Song.',
+        );
+      }
+      this._record(track || videoId, 'failed', err.message);
       return false;
     } finally {
       // The audio is a means to an end and must not linger, whether the run
@@ -103,8 +151,40 @@ class Transcriber extends EventEmitter {
       if (audioFile) await fs.rm(audioFile, { force: true }).catch(() => {});
       await this._cleanWorkDir();
       this.busyWith = null;
-      this.emit('change');
+      this.currentTrack = null;
+      this.startedAt = null;
+      this._setPhase(null);
     }
+  }
+
+  _setPhase(phase) {
+    this.phase = phase;
+    this.emit('change');
+  }
+
+  _record(label, outcome, detail) {
+    this.history.push({
+      label,
+      outcome,
+      detail,
+      seconds: this.startedAt ? Math.round((Date.now() - this.startedAt) / 1000) : null,
+    });
+    if (this.history.length > 20) this.history.shift();
+  }
+
+  /** Everything the settings window needs to show what is going on. */
+  report() {
+    return {
+      phase: this.phase,
+      videoId: this.busyWith,
+      track: this.currentTrack,
+      elapsed: this.startedAt ? Math.round((Date.now() - this.startedAt) / 1000) : 0,
+      lastError: this.lastError,
+      halted: this.halted,
+      consecutiveFailures: this.consecutiveFailures,
+      history: this.history.slice(-5).reverse(),
+      attempted: this.attempted.size,
+    };
   }
 
   async _download(videoId, url, config) {
@@ -117,8 +197,14 @@ class Transcriber extends EventEmitter {
       // Measured: the default client 403s, this one delivers.
       '--extractor-args',
       'youtube:player_client=web_embedded',
+      // Not optional. Without a JS runtime this client exposes no audio-only
+      // format at all and the download dies on "Requested format is not
+      // available" — which reads like a format problem and is not one.
+      ...(config.ytdlpJsRuntime ? ['--js-runtimes', config.ytdlpJsRuntime] : []),
+      // Fall back to a combined stream: Whisper reads it through ffmpeg either
+      // way, so a video track is wasteful rather than fatal.
       '-f',
-      'bestaudio',
+      'bestaudio/best',
       '-o',
       template,
       url || `https://www.youtube.com/watch?v=${videoId}`,

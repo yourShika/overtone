@@ -94,6 +94,16 @@ deleted again — helping the *next* play, never the one that triggered it. It i
 off by default because it saturates every core for a good fraction of the song's
 length, which is not something to start behind your back.
 
+The settings window shows what a job is doing — downloading, transcribing, how
+long it has been running, and how the last few finished. A job takes minutes and
+shows nothing until it completes, so without that a working agent and a stuck
+one look identical.
+
+By default a song with subtitles is left alone, since those are free and
+instant. Turn on **Auch dann, wenn YouTube-Untertitel vorhanden sind** when the
+available track is auto-generated and garbles the words, or is a translation
+rather than the sung text.
+
 Two things decided quality here, both measured rather than assumed:
 
 **Language detection is the weak link, not Whisper.** On a Polish track, letting
@@ -228,6 +238,8 @@ lives at `%APPDATA%\Overtone\config.json`.
 | `transcribeEnabled` | `false` | Transcribe songs nothing else covers |
 | `transcribeLanguage` | – | Pin the language, e.g. `pl`; empty detects |
 | `transcribeModel` | `medium` | tiny, base, small, medium |
+| `transcribeEvenWithCaptions` | `false` | Transcribe even when subtitles exist |
+| `ytdlpJsRuntime` | `node` | JS runtime yt-dlp needs; empty to leave it alone |
 | `lyricsOffset` | `0` | Manual trim in seconds; only for skewed LRC files |
 | `highResArtwork` | `true` | `maxresdefault` instead of `hqdefault` |
 

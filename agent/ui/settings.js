@@ -31,6 +31,7 @@ const FIELDS = {
   lyricsCombine: 'number',
   lyricsSave: 'bool',
   transcribeEnabled: 'bool',
+  transcribeEvenWithCaptions: 'bool',
   transcribeLanguage: 'text',
   transcribeModel: 'text',
   lyricsOffset: 'number',
@@ -145,7 +146,7 @@ function updateDependentState() {
   setGroupEnabled(['lyricsOffset', 'lyricsCombine'], canLookAhead);
 
   const transcribeOn = $('transcribeEnabled').checked;
-  setGroupEnabled(['transcribeLanguage', 'transcribeModel'], transcribeOn);
+  setGroupEnabled(['transcribeLanguage', 'transcribeModel', 'transcribeEvenWithCaptions'], transcribeOn);
 }
 
 function setGroupEnabled(ids, enabled) {
@@ -173,6 +174,7 @@ function applyStatus(status) {
   renderNowPlaying(status);
   renderLyricStatus(status.lyrics);
   renderExtensionWarning(status);
+  renderTranscription(status.transcription);
 }
 
 /**
@@ -196,6 +198,54 @@ function renderExtensionWarning(status) {
     'Dieser YouTube-Tab läuft mit einem veralteten Content-Script und kann keine ' +
     'Untertitel senden. In brave://extensions bzw. chrome://extensions auf ↻ klicken ' +
     'und danach den YouTube-Tab neu laden (F5).';
+}
+
+/**
+ * What the transcriber is doing right now.
+ *
+ * A job takes minutes and produces nothing visible until it finishes, so
+ * without this a working agent and a stuck one look exactly the same.
+ */
+function renderTranscription(job) {
+  const box = document.getElementById('transcribe-job');
+  const line = document.getElementById('transcribe-phase');
+  const detail = document.getElementById('transcribe-detail');
+  if (!box) return;
+
+  const PHASES = {
+    download: 'Audio wird geladen',
+    transcribe: 'Whisper transkribiert',
+  };
+
+  if (job && job.phase) {
+    box.dataset.busy = '1';
+    line.textContent = `${PHASES[job.phase] || job.phase} — ${job.track || ''}`;
+    detail.textContent = `läuft seit ${formatSeconds(job.elapsed)}`;
+    return;
+  }
+
+  box.dataset.busy = '0';
+  line.textContent = 'Gerade nichts zu tun';
+
+  const parts = [];
+  if (job?.history?.length) {
+    parts.push(
+      job.history
+        .map((h) =>
+          h.outcome === 'ok'
+            ? `✓ ${h.label} (${formatSeconds(h.seconds)})`
+            : `✗ ${h.label} — ${h.detail || 'fehlgeschlagen'}`,
+        )
+        .join('\n'),
+    );
+  }
+  detail.textContent = parts.join('\n');
+}
+
+function formatSeconds(total) {
+  const seconds = Math.max(0, Math.round(total || 0));
+  if (seconds < 60) return `${seconds} s`;
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} min`;
 }
 
 function setPill(id, on, label) {

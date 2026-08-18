@@ -334,3 +334,28 @@ a {
 .log .debug {
   color: #7d7d95;
 }
+
+/* Transcription activity ------------------------------------------------- */
+.job {
+  background: var(--surface-2, #1b1e26);
+  border: 1px solid var(--border, #2a3040);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.job[data-busy='1'] {
+  border-color: #f0b23a;
+}
+.job-line {
+  margin: 0;
+  font-size: 13px;
+}
+.job[data-busy='1'] .job-line {
+  color: #f0b23a;
+}
+.job-detail {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.7;
+  white-space: pre-line;
+}

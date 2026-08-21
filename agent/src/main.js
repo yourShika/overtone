@@ -218,6 +218,7 @@ function setupDiscord() {
       if (!config.get('enabled') || !session.active) return null;
       const state = session.state;
       const cfg = config.all();
+      if (state.idle) return buildActivity({ state, config: cfg });
       return buildActivity({
         state,
         config: cfg,
@@ -333,6 +334,9 @@ let urgentTick = false;
 /** Track waiting for enough listening time before transcription starts. */
 let pendingTranscribe = null;
 
+/** Last track whose length we already complained about, to log it once. */
+let transcribeSkipNoted = null;
+
 async function tick() {
   if (ticking) return;
   ticking = true;
@@ -361,6 +365,16 @@ async function runTick() {
 
   const state = session.state;
   const cfg = config.all();
+
+  // Browsing has no track, so none of the per-track machinery applies: no
+  // lyrics to look up, no artwork to resolve, nothing to transcribe.
+  if (state.idle) {
+    if (lyricState.trackId !== null) resetLyrics();
+    latestImage = null;
+    presence.setNextChangeAt(null);
+    presence.set(buildActivity({ state, config: cfg }));
+    return;
+  }
 
   const line = currentLyricLine(state, cfg);
   latestImage = await thumbnails.resolve(state, cfg.highResArtwork).catch(() => null);
@@ -445,7 +459,11 @@ function resolveLyric(state, cfg) {
   // Something is being made — say so, rather than leaving the line blank for
   // the minutes a transcription takes.
   if (transcriber?.busyWith && transcriber.busyWith === state.videoId) {
-    return { text: 'Lyrics werden erstellt …', origin: 'transcribing', nextTime: null, merged: 1 };
+    // Name the phase. "Being made" for minutes on end looks indistinguishable
+    // from stuck, and downloading versus transcribing is the useful difference.
+    const label =
+      transcriber.phase === 'download' ? 'Lyrics: Audio wird geladen …' : 'Lyrics werden erstellt …';
+    return { text: label, origin: 'transcribing', nextTime: null, merged: 1 };
   }
 
   // Subtitles: whatever YouTube is showing this instant. Covers everything the
@@ -598,9 +616,24 @@ function maybeTranscribe(state, parsed) {
   if (state.caption && !cfg.transcribeEvenWithCaptions) return;
   if (!state.videoId || transcriber.attempted.has(state.videoId) || transcriber.halted) return;
 
+  // Cost scales with length: a two-hour mix would hold the queue for an hour
+  // and yield something nobody wants as a lyric line.
+  const capMinutes = cfg.transcribeMaxMinutes ?? 0;
+  if (capMinutes > 0 && state.duration > capMinutes * 60) {
+    if (transcribeSkipNoted !== state.videoId) {
+      transcribeSkipNoted = state.videoId;
+      logger.info(
+        `Transkription übersprungen: "${parsed.track}" ist ${Math.round(state.duration / 60)} min ` +
+          `lang, Grenze steht bei ${capMinutes} min.`,
+      );
+    }
+    return;
+  }
+
   // Skipping through a playlist should not queue a job per track.
-  if (state.position < (cfg.transcribeAfterSeconds ?? 45)) {
-    pendingTranscribe = { videoId: state.videoId, parsed };
+  const after = cfg.transcribeAfterSeconds ?? 45;
+  if (state.position < after) {
+    pendingTranscribe = { videoId: state.videoId, parsed, startsAt: after };
     return;
   }
   pendingTranscribe = null;
@@ -817,7 +850,23 @@ function statusSnapshot() {
        */
       captionsUnsupported: Boolean(state) && !state.captionCapable,
     },
-    transcription: transcriber ? transcriber.report() : null,
+    transcription: transcriber
+      ? {
+          ...transcriber.report(),
+          // A job that has not started yet is the most common reason the whole
+          // thing "seems delayed"; without this the window shows only idleness.
+          waitingFor:
+            pendingTranscribe && session.state
+              ? {
+                  track: pendingTranscribe.parsed?.track || null,
+                  inSeconds: Math.max(
+                    0,
+                    Math.round(pendingTranscribe.startsAt - (session.state.position || 0)),
+                  ),
+                }
+              : null,
+        }
+      : null,
     lyrics: {
       status: lyricState.status,
       line: lyricState.current,

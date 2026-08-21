@@ -42,7 +42,7 @@
       return domFallback();
     }
 
-    if (!data.video_id) return null;
+    if (!data.video_id) return browsing();
 
     let position = 0;
     let duration = 0;
@@ -55,8 +55,9 @@
       /* player mid-teardown */
     }
 
-    // An unstarted or cued player has metadata but nothing to report yet.
-    if (state === -1 || state === 5) return null;
+    // An unstarted or cued player has metadata but nothing to report yet —
+    // which on YouTube usually means the person is simply looking around.
+    if (state === -1 || state === 5) return browsing();
 
     const video = document.querySelector('video');
     // `isLive` is not always set; a live stream also reports duration 0 while
@@ -80,16 +81,73 @@
       live,
       caption: captionText(),
       captionTrack: captionTrack(player),
+      loop: loopEnabled(video),
+    };
+  }
+
+  /**
+   * Whether the current track will repeat.
+   *
+   * On YouTube the right-click "Loop" option sets the media element's own flag,
+   * which is exact. YouTube Music has its own repeat control instead, and its
+   * markup has changed more than once, so several spellings are tried and a
+   * miss simply means "not looping" rather than an error.
+   */
+  function loopEnabled(video) {
+    if (video && video.loop) return true;
+    if (!isMusic) return false;
+
+    try {
+      const bar = document.querySelector('ytmusic-player-bar');
+      const mode = bar && bar.getAttribute('repeat-mode_');
+      if (mode && mode !== 'NONE') return true;
+
+      const button = document.querySelector('ytmusic-player-bar .repeat, ytmusic-player-bar [aria-label*="epeat"]');
+      if (!button) return false;
+      if (button.getAttribute('aria-pressed') === 'true') return true;
+      // The label itself carries the state once repeat is on.
+      const label = button.getAttribute('aria-label') || button.title || '';
+      return /off/i.test(label) === false && /repeat/i.test(label) && button.hasAttribute('active');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * A YouTube tab with nothing playing.
+   *
+   * Reported rather than swallowed so the presence can say "watching YouTube"
+   * while browsing. Only from a visible tab: a forgotten background tab would
+   * otherwise claim the profile indefinitely.
+   */
+  function browsing() {
+    if (document.visibilityState !== 'visible') return null;
+
+    const path = location.pathname;
+    let page = 'browsing';
+    if (path === '/' || path === '') page = 'home';
+    else if (path.startsWith('/results')) page = 'search';
+    else if (path.startsWith('/feed/subscriptions')) page = 'subscriptions';
+    else if (path.startsWith('/feed/history')) page = 'history';
+    else if (path.startsWith('/playlist')) page = 'playlist';
+    else if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) page = 'channel';
+    else if (path.startsWith('/shorts')) page = 'shorts';
+
+    return {
+      idle: true,
+      source: isMusic ? 'ytmusic' : 'youtube',
+      page,
+      url: location.origin + location.pathname,
     };
   }
 
   /** Last resort when the player API is unavailable (very early page load). */
   function domFallback() {
     const video = document.querySelector('video');
-    if (!video || !video.src) return null;
+    if (!video || !video.src) return browsing();
 
     const videoId = videoIdFromLocation();
-    if (!videoId) return null;
+    if (!videoId) return browsing();
 
     const title =
       document.querySelector('#title h1 yt-formatted-string, ytd-watch-metadata h1')?.textContent ||

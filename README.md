@@ -25,6 +25,8 @@ runs alongside it.
 - **Real progress** — Discord's own bar with time remaining, following pauses and seeks
 - **Lyrics from two sources** — [LRCLIB](https://lrclib.net) when it has the song, YouTube's own subtitle track when it does not, including auto-generated and auto-translated tracks
 - **Live streams** — elapsed time instead of remaining
+- **A state badge** — a small corner icon for playing, paused, looping or live
+- **Browsing too** — keeps a presence while a YouTube tab is open with nothing playing
 - **Privacy mode** — shows that you are watching something without saying what
 - **Several tabs** — a playing video wins over a paused one
 - Autostart, tray menu, log window
@@ -100,6 +102,10 @@ and a song nothing else covers gets downloaded, transcribed, filed and the audio
 deleted again — helping the *next* play, never the one that triggered it. It is
 off by default because it saturates every core for a good fraction of the song's
 length, which is not something to start behind your back.
+
+Anything longer than `transcribeMaxMinutes` is skipped: cost scales with length,
+so a two-hour mix would hold the queue for an hour and produce nothing anyone
+wants as a lyric line.
 
 A job outlives the song that started it: change track and it keeps going, and
 anything played meanwhile joins a queue rather than being dropped. The settings
@@ -239,6 +245,9 @@ lives at `%APPDATA%\Overtone\config.json`.
 | `activityName` | `{artist} - {title}` | Header name; empty = application name |
 | `showTimestamps` | `true` | Progress bar |
 | `showButton` | `true` | Button to the video |
+| `showStateBadge` | `true` | Corner icon for playing/paused/loop/live |
+| `stateIconBase` | repo URL | Where those icons are served from |
+| `showWhenBrowsing` | `true` | Presence while browsing YouTube |
 | `privacyMode` | `false` | Hide title and artwork |
 | `lyricsEnabled` | `true` | Lyric line in the presence |
 | `lyricsSource` | `auto` | `auto`, `lrclib`, `captions` |
@@ -250,6 +259,7 @@ lives at `%APPDATA%\Overtone\config.json`.
 | `transcribeLanguage` | – | Pin the language, e.g. `pl`; empty detects |
 | `transcribeModel` | `medium` | tiny, base, small, medium |
 | `transcribeEvenWithCaptions` | `false` | Transcribe even when subtitles exist |
+| `transcribeMaxMinutes` | `7` | Skip anything longer; 0 disables the limit |
 | `ytdlpJsRuntime` | `node` | JS runtime yt-dlp needs; empty to leave it alone |
 | `lyricsOffset` | `0` | Manual trim in seconds; only for skewed LRC files |
 | `highResArtwork` | `true` | `maxresdefault` instead of `hqdefault` |

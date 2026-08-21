@@ -37,6 +37,72 @@ function clamp(value, max = MAX_TEXT) {
   return text;
 }
 
+/** Page names for the browsing presence. */
+const PAGE_LABELS = {
+  home: 'Startseite',
+  search: 'Suche',
+  subscriptions: 'Abos',
+  history: 'Verlauf',
+  playlist: 'Playlist',
+  channel: 'Kanal',
+  shorts: 'Shorts',
+  browsing: 'Unterwegs',
+};
+
+/**
+ * A YouTube tab is open but nothing is playing.
+ *
+ * Deliberately sparse: no timestamps, no buttons, no artwork. Scrolling the
+ * home page does not warrant a progress bar, and a stale one would be worse
+ * than none. The header falls back to the application name, so it reads
+ * "Watching YouTube" rather than naming a song that is not playing.
+ */
+function buildBrowsing(state, config) {
+  if (!config.showWhenBrowsing) return null;
+
+  const isMusic = state.source === 'ytmusic';
+  return {
+    type: ActivityType.WATCHING,
+    details: clamp(isMusic ? 'YouTube Music' : 'Auf YouTube unterwegs'),
+    state: clamp(PAGE_LABELS[state.page] || PAGE_LABELS.browsing),
+  };
+}
+
+/**
+ * The little corner badge: playing, paused, looping, live.
+ *
+ * Prefers asset keys when the user uploaded their own, since those render
+ * without a trip through Discord's image proxy. Otherwise it points at the
+ * icons shipped with the project — Discord accepts external URLs here just as
+ * it does for the large image, so nobody has to upload art assets to their own
+ * application before this works.
+ */
+function stateBadge(state, config) {
+  if (!config.showStateBadge || state.idle) return null;
+
+  let name;
+  let text;
+  if (state.paused) {
+    name = 'paused';
+    text = 'Pausiert';
+  } else if (state.live) {
+    name = 'live';
+    text = 'Live';
+  } else if (state.loop) {
+    name = 'loop';
+    text = 'Wiederholung';
+  } else {
+    name = 'playing';
+    text = state.source === 'ytmusic' ? 'YouTube Music' : 'YouTube';
+  }
+
+  const custom = state.paused ? config.pausedAssetKey : config.sourceAssetKey;
+  const base = String(config.stateIconBase || '').replace(/\/+$/, '');
+  const image = custom || (base ? base + '/' + name + '.png' : undefined);
+
+  return image ? { image, text } : null;
+}
+
 /**
  * The activity header — the line Discord renders as "Hört <name> zu".
  *
@@ -83,7 +149,9 @@ function resolveName(state, config) {
  * @returns {object|null} activity payload, or null when nothing should show
  */
 function buildActivity({ state, config, lyric = null, image = null }) {
-  if (!state || !state.title) return null;
+  if (!state) return null;
+  if (state.idle) return buildBrowsing(state, config);
+  if (!state.title) return null;
   if (state.paused && config.hideWhenPaused) return null;
 
   const isMusic = state.source === 'ytmusic';
@@ -147,12 +215,10 @@ function buildActivity({ state, config, lyric = null, image = null }) {
     assets.large_text = clamp(byline || 'Overtone');
   }
 
-  if (state.paused) {
-    assets.small_image = config.pausedAssetKey || undefined;
-    assets.small_text = clamp('Pausiert');
-  } else if (config.sourceAssetKey) {
-    assets.small_image = config.sourceAssetKey;
-    assets.small_text = clamp(isMusic ? 'YouTube Music' : 'YouTube');
+  const badge = stateBadge(state, config);
+  if (badge) {
+    assets.small_image = badge.image;
+    assets.small_text = clamp(badge.text);
   }
 
   if (Object.keys(assets).length) activity.assets = assets;

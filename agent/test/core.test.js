@@ -276,6 +276,97 @@ test('buildActivity clamps an over-long header', () => {
   assert.ok(activity.name.length <= 128);
 });
 
+// ---------------------------------------------------- state badge + browsing
+
+const ICONS = DEFAULTS.stateIconBase;
+
+test('the badge names the playback state', () => {
+  const cases = [
+    [{}, 'playing.png', 'YouTube'],
+    [{ paused: true }, 'paused.png', 'Pausiert'],
+    [{ live: true, duration: 0 }, 'live.png', 'Live'],
+    [{ loop: true }, 'loop.png', 'Wiederholung'],
+  ];
+
+  for (const [patch, file, text] of cases) {
+    const activity = buildActivity({ state: { ...BASE_STATE, ...patch }, config: DEFAULTS });
+    assert.equal(activity.assets.small_image, `${ICONS}/${file}`);
+    assert.equal(activity.assets.small_text, text);
+  }
+});
+
+test('paused outranks looping — the pause is the thing worth knowing', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, paused: true, loop: true },
+    config: DEFAULTS,
+  });
+  assert.equal(activity.assets.small_image, `${ICONS}/paused.png`);
+});
+
+test('an uploaded asset key wins over the hosted icon', () => {
+  const activity = buildActivity({
+    state: BASE_STATE,
+    config: { ...DEFAULTS, sourceAssetKey: 'mein_eigenes' },
+  });
+  assert.equal(activity.assets.small_image, 'mein_eigenes');
+});
+
+test('the badge can be switched off entirely', () => {
+  const activity = buildActivity({
+    state: BASE_STATE,
+    config: { ...DEFAULTS, showStateBadge: false },
+  });
+  assert.equal(activity.assets.small_image, undefined);
+});
+
+test('browsing YouTube shows a presence without progress or buttons', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, idle: true, page: 'home', title: '' },
+    config: DEFAULTS,
+  });
+
+  assert.equal(activity.type, 3, 'watching');
+  assert.equal(activity.details, 'Auf YouTube unterwegs');
+  assert.equal(activity.state, 'Startseite');
+  assert.equal(activity.timestamps, undefined, 'kein Fortschritt ohne Wiedergabe');
+  assert.equal(activity.buttons, undefined, 'kein Link auf ein Video, das nicht laeuft');
+  assert.equal(activity.assets, undefined, 'kein Zustands-Badge ohne Zustand');
+});
+
+test('browsing names the kind of page', () => {
+  const pages = [
+    ['search', 'Suche'],
+    ['channel', 'Kanal'],
+    ['subscriptions', 'Abos'],
+    ['unbekannt', 'Unterwegs'],
+  ];
+  for (const [page, label] of pages) {
+    const activity = buildActivity({
+      state: { ...BASE_STATE, idle: true, page, title: '' },
+      config: DEFAULTS,
+    });
+    assert.equal(activity.state, label);
+  }
+});
+
+test('browsing can be switched off', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, idle: true, page: 'home', title: '' },
+    config: { ...DEFAULTS, showWhenBrowsing: false },
+  });
+  assert.equal(activity, null);
+});
+
+test('a browsing state never carries a title through', () => {
+  // Guards against the idle branch being skipped because a stale title lingers.
+  const activity = buildActivity({
+    state: { ...BASE_STATE, idle: true, page: 'home' },
+    config: DEFAULTS,
+  });
+  assert.equal(activity.details, 'Auf YouTube unterwegs');
+  assert.notEqual(activity.details, BASE_STATE.title);
+});
+
 // ---------------------------------------------------------------- trackparse
 
 test('stripNoise removes promo brackets but keeps meaningful ones', () => {

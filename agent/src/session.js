@@ -101,6 +101,12 @@ function normalise(snapshot) {
     playbackRate: num(snapshot.playbackRate, 1) || 1,
     paused: Boolean(snapshot.paused),
     live: Boolean(snapshot.live),
+    /** The track will repeat; shown as a badge rather than in the text. */
+    loop: Boolean(snapshot.loop),
+    /** No playback at all — a YouTube tab is simply open and in front. */
+    idle: Boolean(snapshot.idle),
+    /** Which kind of page, when idle: home, search, channel, … */
+    page: str(snapshot.page),
     /** Subtitle line YouTube is rendering right now; '' when captions are off. */
     caption: str(snapshot.caption),
     captionTrack: str(snapshot.captionTrack),

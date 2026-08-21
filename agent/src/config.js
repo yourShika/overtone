@@ -53,6 +53,22 @@ const DEFAULTS = {
   showChannelButton: false,
   channelButtonLabel: 'Kanal öffnen',
   hideWhenPaused: false,
+  /**
+   * Show a small badge on the artwork for playing, paused, looping or live.
+   *
+   * Served from the project repository, because Discord proxies external asset
+   * URLs — which spares every user from uploading art assets to their own
+   * application before the badges work.
+   */
+  showStateBadge: true,
+  stateIconBase: 'https://raw.githubusercontent.com/yourShika/overtone/main/docs/img/state',
+  /**
+   * Keep a presence while a YouTube tab is open but nothing is playing.
+   *
+   * Only ever from a visible tab, so a forgotten background tab cannot claim
+   * the profile indefinitely.
+   */
+  showWhenBrowsing: true,
   /** Suppress titles/artwork but keep "is watching something" visible. */
   privacyMode: false,
 
@@ -153,6 +169,14 @@ const DEFAULTS = {
    * that garbles the words, or a translation rather than the sung text.
    */
   transcribeEvenWithCaptions: false,
+  /**
+   * Skip anything longer than this many minutes.
+   *
+   * Transcription cost scales with length, so a podcast or a two-hour mix would
+   * occupy the queue for an hour and produce something no one wants as a lyric
+   * line. 0 disables the limit.
+   */
+  transcribeMaxMinutes: 7,
   /** Only start after this many seconds of listening, so skipped tracks are ignored. */
   transcribeAfterSeconds: 45,
   pythonPath: 'python',

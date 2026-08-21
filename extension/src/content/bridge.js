@@ -35,6 +35,18 @@
   });
 
   function handle(snapshot) {
+    // A browsing snapshot has no title by design; it says "a YouTube tab is
+    // open and in front" and nothing more.
+    if (snapshot && snapshot.idle) {
+      if (!last || !last.idle || last.page !== snapshot.page || overdue()) {
+        last = snapshot;
+        lastSentAt = Date.now();
+        lastSentPosition = 0;
+        send({ type: 'state', payload: snapshot });
+      }
+      return;
+    }
+
     if (!snapshot || !snapshot.title) {
       if (last) {
         last = null;
@@ -53,8 +65,13 @@
     }
   }
 
+  function overdue() {
+    return Date.now() - lastSentAt >= HEARTBEAT_MS;
+  }
+
   function shouldSend(snapshot) {
     if (!last) return true;
+    if (last.idle) return true; // coming back from browsing is always news
     if (snapshot.videoId !== last.videoId) return true;
     if (snapshot.paused !== last.paused) return true;
     if (snapshot.title !== last.title) return true;

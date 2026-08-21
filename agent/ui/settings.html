@@ -128,6 +128,22 @@
         </label>
 
         <label class="toggle">
+          <input type="checkbox" id="showStateBadge" />
+          <span>Zustands-Symbol auf dem Bild (läuft, pausiert, Wiederholung, Live)</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="showWhenBrowsing" />
+          <span>Auch anzeigen, wenn YouTube offen ist, aber nichts läuft</span>
+        </label>
+
+        <p class="hint indent" style="margin-top: 0">
+          Zeigt dann „Auf YouTube unterwegs" samt Seitenart — Startseite, Suche, Kanal.
+          Nur aus einem sichtbaren Tab, damit ein vergessener Hintergrund-Tab nicht dauerhaft
+          dein Profil belegt.
+        </p>
+
+        <label class="toggle">
           <input type="checkbox" id="hideWhenPaused" />
           <span>Presence ausblenden, wenn pausiert</span>
         </label>
@@ -184,6 +200,16 @@
             automatisch erkannt wurde „Russisch", das Ergebnis war kyrillischer Unsinn — mit
             <code>pl</code> festgelegt kam lesbares Polnisch heraus, und zwar schneller.
             Offensichtlich unbrauchbare Ergebnisse werden ohnehin verworfen statt gespeichert.
+          </span>
+        </label>
+
+        <label class="field indent">
+          <span class="label">Höchstlänge in Minuten</span>
+          <input type="number" id="transcribeMaxMinutes" min="0" max="180" />
+          <span class="hint">
+            Längeres wird übersprungen. Der Aufwand wächst mit der Länge, ein Zwei-Stunden-Mix
+            würde die Warteschlange eine Stunde blockieren — und ergäbe nichts, was man als
+            Songzeile sehen will. 0 hebt die Grenze auf.
           </span>
         </label>
 

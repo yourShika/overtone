@@ -23,6 +23,8 @@ const FIELDS = {
   buttonLabel: 'text',
   showChannelButton: 'bool',
   hideWhenPaused: 'bool',
+  showStateBadge: 'bool',
+  showWhenBrowsing: 'bool',
   privacyMode: 'bool',
   lyricsEnabled: 'bool',
   lyricsSource: 'text',
@@ -34,6 +36,7 @@ const FIELDS = {
   transcribeEvenWithCaptions: 'bool',
   transcribeLanguage: 'text',
   transcribeModel: 'text',
+  transcribeMaxMinutes: 'number',
   lyricsOffset: 'number',
   enabled: 'bool',
   autoStart: 'bool',
@@ -146,7 +149,10 @@ function updateDependentState() {
   setGroupEnabled(['lyricsOffset', 'lyricsCombine'], canLookAhead);
 
   const transcribeOn = $('transcribeEnabled').checked;
-  setGroupEnabled(['transcribeLanguage', 'transcribeModel', 'transcribeEvenWithCaptions'], transcribeOn);
+  setGroupEnabled(
+    ['transcribeLanguage', 'transcribeModel', 'transcribeEvenWithCaptions', 'transcribeMaxMinutes'],
+    transcribeOn,
+  );
 }
 
 function setGroupEnabled(ids, enabled) {
@@ -225,6 +231,15 @@ function renderTranscription(job) {
     box.dataset.busy = '1';
     line.textContent = `${PHASES[job.phase] || job.phase} — ${job.track || ''}`;
     detail.textContent = `läuft seit ${formatSeconds(job.elapsed)}${waiting}`;
+    return;
+  }
+
+  // The commonest reason the whole thing "seems delayed": the job has not
+  // started yet, because the track has not been listened to long enough.
+  if (job?.waitingFor) {
+    box.dataset.busy = '0';
+    line.textContent = `Wartet auf „${job.waitingFor.track || '…'}"`;
+    detail.textContent = `startet in ${formatSeconds(job.waitingFor.inSeconds)} Wiedergabezeit`;
     return;
   }
 

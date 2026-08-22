@@ -18,6 +18,13 @@
 
 (() => {
   const CHANNEL = '__overtone__';
+  /**
+   * How long to let a navigation settle before reading the player.
+   *
+   * Long enough that YouTube's own handlers have run, short enough that a new
+   * track still shows up promptly.
+   */
+  const SETTLE_MS = 250;
   const POLL_MS = 1000;
 
   const isMusic = location.hostname === 'music.youtube.com';
@@ -294,13 +301,39 @@
 
   const timer = setInterval(publish, POLL_MS);
 
-  // YouTube is a single-page app: react to its own navigation event so a new
-  // video is picked up without waiting a full poll interval.
-  for (const event of ['yt-navigate-finish', 'yt-player-updated']) {
-    document.addEventListener(event, publish, true);
+  let settleTimer = null;
+
+  /**
+   * Read the player *after* YouTube has finished what it was doing.
+   *
+   * This used to listen in the capture phase and call the player API straight
+   * from inside YouTube's own event dispatch — so this script ran before
+   * YouTube's handlers and reached into `movie_player` while it was still being
+   * reconfigured, which `yt-player-updated` announces by definition. Deferring
+   * out of the dispatch removes any chance of interleaving with that work, and
+   * costs only a fraction of a second before a new track is picked up.
+   *
+   * Repeated events coalesce: a playlist advance fires several in a row.
+   */
+  function scheduleProbe() {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(publish, SETTLE_MS);
   }
 
-  window.addEventListener('pagehide', () => clearInterval(timer), { once: true });
+  // YouTube is a single-page app, so its own navigation event is what tells us
+  // a new video started. Bubble phase, deliberately: YouTube goes first.
+  for (const event of ['yt-navigate-finish', 'yt-player-updated']) {
+    document.addEventListener(event, scheduleProbe);
+  }
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      clearInterval(timer);
+      clearTimeout(settleTimer);
+    },
+    { once: true },
+  );
 
   publish();
 })();

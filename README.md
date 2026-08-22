@@ -51,6 +51,12 @@ Playback data comes from YouTube's own player API through a content script in
 the **MAIN world**, not from scraping the DOM — `getVideoData()` returns the
 video id, title and author directly, and survives layout changes.
 
+Sharing a JavaScript context with the page is a privilege worth handling
+carefully. The probe only ever reads, caches no reference to the player, and
+never calls the player API from inside YouTube's own event dispatch: navigation
+events merely schedule a read for a moment later, so nothing of ours can
+interleave with YouTube reconfiguring its player.
+
 ---
 
 ## Lyrics, and why timing is the hard part

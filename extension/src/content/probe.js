@@ -89,6 +89,7 @@
       caption: captionText(),
       captionTrack: captionTrack(player),
       loop: loopEnabled(video),
+      fault: faultReport(video, state),
     };
   }
 
@@ -145,6 +146,45 @@
       source: isMusic ? 'ytmusic' : 'youtube',
       page,
       url: location.origin + location.pathname,
+    };
+  }
+
+  /**
+   * What the media element says when playback is broken.
+   *
+   * The reported fault — black picture, nothing plays, the timer flipping
+   * between 0:00 and the full duration — is a media-pipeline failure, not a
+   * scripting one, and the pipeline states it plainly if anyone asks. Reading
+   * it at the moment it happens beats guessing afterwards:
+   *
+   *   error.code 4        the format cannot be played (codec or DRM)
+   *   error.code 2        the segments failed to load (network or refused)
+   *   networkState 3      no usable source at all
+   *   readyState 0 or 1   metadata may exist, media data does not — which is
+   *                       exactly what makes the timer jump about
+   *
+   * @returns {object|null} null while playback looks healthy
+   */
+  function faultReport(video, playerState) {
+    if (!video) return null;
+
+    const error = video.error || null;
+    const starved = video.readyState < 2 && video.networkState === 3;
+    // Claiming to play while holding no data is the state behind the symptom.
+    const stalled = playerState === PLAYING && video.readyState < 2;
+
+    if (!error && !starved && !stalled) return null;
+
+    return {
+      errorCode: error ? error.code : null,
+      errorMessage: error && error.message ? String(error.message).slice(0, 200) : '',
+      networkState: video.networkState,
+      readyState: video.readyState,
+      buffered: video.buffered ? video.buffered.length : 0,
+      currentTime: Number(video.currentTime) || 0,
+      duration: Number.isFinite(video.duration) ? video.duration : 0,
+      hasSource: Boolean(video.currentSrc),
+      playerState,
     };
   }
 
@@ -289,6 +329,8 @@
 
   // --- pump -----------------------------------------------------------------
 
+  let lastSerialised = null;
+
   function publish() {
     let payload = null;
     try {
@@ -296,6 +338,19 @@
     } catch {
       payload = null;
     }
+
+    // Skip identical repeats. Over a day this is tens of thousands of messages
+    // into the page's own context, and the overwhelming majority say nothing
+    // new; the agent interpolates position between reports anyway.
+    let serialised;
+    try {
+      serialised = JSON.stringify(payload);
+    } catch {
+      serialised = null;
+    }
+    if (serialised !== null && serialised === lastSerialised) return;
+    lastSerialised = serialised;
+
     window.postMessage({ [CHANNEL]: true, snapshot: payload }, location.origin);
   }
 

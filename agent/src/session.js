@@ -107,6 +107,8 @@ function normalise(snapshot) {
     idle: Boolean(snapshot.idle),
     /** Which kind of page, when idle: home, search, channel, … */
     page: str(snapshot.page),
+    /** Media-pipeline trouble the page reported; null while healthy. */
+    fault: snapshot.fault && typeof snapshot.fault === 'object' ? snapshot.fault : null,
     /** Subtitle line YouTube is rendering right now; '' when captions are off. */
     caption: str(snapshot.caption),
     captionTrack: str(snapshot.captionTrack),

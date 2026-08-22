@@ -244,6 +244,8 @@ async function setupBridge() {
     if (!config.get('enabled')) return;
 
     const change = session.update(payload);
+    reportFault(payload);
+
     if (change.trackChanged) {
       logger.info(`Neu: ${payload.title || '(ohne Titel)'}`);
       resetLyrics();
@@ -336,6 +338,9 @@ let pendingTranscribe = null;
 
 /** Last track whose length we already complained about, to log it once. */
 let transcribeSkipNoted = null;
+
+/** Last logged player fault, so a stuck tab does not fill the log. */
+let faultNoted = null;
 
 async function tick() {
   if (ticking) return;
@@ -651,6 +656,34 @@ function maybeTranscribe(state, parsed) {
   if (outcome === 'queued') {
     logger.info(`Transkription eingereiht: "${parsed.track}" (${transcriber.queue.length} warten)`);
   }
+}
+
+/**
+ * Log a stuck player once per track.
+ *
+ * Investigated from a real occurrence: the pipeline sat in kStarting for
+ * 36 seconds, picked up a duration after 18, and never played — no error code
+ * anywhere. The demuxer was simply never fed. Recording readyState and
+ * networkState at that moment says which layer gave up, so the next occurrence
+ * explains itself instead of needing someone watching.
+ */
+function reportFault(payload) {
+  const fault = payload?.fault;
+  if (!fault) {
+    faultNoted = null;
+    return;
+  }
+  const key = `${payload.videoId}:${fault.errorCode ?? 'none'}:${fault.readyState}`;
+  if (faultNoted === key) return;
+  faultNoted = key;
+
+  logger.warn(
+    `Der YouTube-Player kommt nicht in Gang: readyState=${fault.readyState} ` +
+      `networkState=${fault.networkState} buffered=${fault.buffered} ` +
+      `error=${fault.errorCode ?? 'keiner'}${fault.errorMessage ? ` (${fault.errorMessage})` : ''}. ` +
+      'Ohne Fehlercode und ohne gepufferte Daten liegt es daran, dass YouTube dem ' +
+      'Player keine Segmente liefert — nicht am Dekodieren.',
+  );
 }
 
 function resetLyrics() {

@@ -1,327 +1,112 @@
 # Overtone
 
-**Discord Rich Presence for YouTube and YouTube Music, with time-synced lyrics.**
-
-Shows what you are watching or listening to on your Discord profile: the title,
-the channel or artist, the video thumbnail as cover art, a real progress bar
-with time remaining, and a button that opens the video. The current lyric line
-runs alongside it.
+**Show what you're watching on YouTube — on your Discord profile.**
 
 <p align="center">
-  <img src="docs/img/overtone-in-discord.gif" alt="Overtone running on a Discord profile: a custom activity header, the song title, a lyric line moving with the music, and a progress bar" width="320">
+  <img src="docs/img/overtone-in-discord.gif" alt="Overtone on a Discord profile: the artist and song in the header, the title, a lyric line moving with the music, and a progress bar" width="320">
 </p>
 
 <p align="center">
-  <em>The header, the title, and a lyric line that moves with the song.<br>
-  These lyrics came from a local transcription — no database had this track.</em>
+  <a href="../../releases/latest"><b>⬇ Download for Windows</b></a> &nbsp;·&nbsp;
+  <a href="#setup">Setup</a> &nbsp;·&nbsp;
+  <a href="#something-not-working">Help</a> &nbsp;·&nbsp;
+  <a href="README.de.md">Deutsch</a>
 </p>
 
 ---
 
 ## What it does
 
-- **YouTube and YouTube Music** — video thumbnail or album art, title, channel or artist
-- **A header you control** — `Listening to doli, szevczor, yokinashi - 162020`, not just `Listening to YouTube`
-- **Real progress** — Discord's own bar with time remaining, following pauses and seeks
-- **Lyrics from two sources** — [LRCLIB](https://lrclib.net) when it has the song, YouTube's own subtitle track when it does not, including auto-generated and auto-translated tracks
-- **Live streams** — elapsed time instead of remaining
-- **A state badge** — a small corner icon for playing, paused, looping or live
-- **Browsing too** — keeps a presence while a YouTube tab is open with nothing playing
-- **Recovers a wedged player** — reloads the tab when YouTube claims to be playing but never feeds the decoder
-- **Privacy mode** — shows that you are watching something without saying what
-- **Several tabs** — a playing video wins over a paused one
-- Autostart, tray menu, log window
+Your friends see the song, not just "watching YouTube".
+
+- 🎵 **The song in the header** — `Listening to doli, szevczor - 162020`, instead of the same "YouTube" for everything
+- 🖼️ **Cover art** — the video thumbnail, or the album art on YouTube Music
+- ⏱️ **A real progress bar** — with time remaining, following pauses and skips
+- 🎤 **The lyrics, line by line** — moving along with the song
+- ▶️ **A little badge** — playing, paused, on repeat, or live
+- 🔗 **A button to the video** — one click and they're watching it too
+- 🔒 **Shy mode** — show that you're watching something, without saying what
 
 ---
 
-## How it works
+## Setup
 
-Overtone is two pieces, and that is forced rather than chosen:
+About five minutes, once.
 
-![Architecture](docs/img/architecture.svg)
+### 1 · Install the app
 
-Discord's RPC runs over a local named pipe (`\\.\pipe\discord-ipc-0`). A browser
-extension cannot open one. A desktop app, in turn, cannot see inside a YouTube
-tab. So the extension reads the player, the agent talks to Discord, and a
-WebSocket on `127.0.0.1:8787` sits between them.
+Download from the [latest release](../../releases/latest) and run it.
 
-That socket is reachable from any page you visit, so the agent checks the
-`Origin` header and accepts extension origins only; `http(s)://` gets a 403.
+Windows will warn you that it doesn't recognise the program — that's because the file isn't signed with a paid certificate, not because anything is wrong with it. Click **More info → Run anyway**.
 
-Playback data comes from YouTube's own player API through a content script in
-the **MAIN world**, not from scraping the DOM — `getVideoData()` returns the
-video id, title and author directly, and survives layout changes.
+Overtone then sits quietly in your system tray, next to the clock.
 
-Sharing a JavaScript context with the page is a privilege worth handling
-carefully. The probe only ever reads, caches no reference to the player, and
-never calls the player API from inside YouTube's own event dispatch: navigation
-events merely schedule a read for a moment later, so nothing of ours can
-interleave with YouTube reconfiguring its player.
+### 2 · Get your Discord ID
 
----
+Discord needs to know who's asking before it will show anything.
 
-## Lyrics, and why timing is the hard part
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and sign in
+2. Click **New Application**, give it any name, agree, **Create**
+3. Copy the **Application ID**
+4. Paste it into Overtone's settings window (it opens on first start)
 
-Discord allows **5 presence updates per 20 seconds**. Lyric lines change every
-two to five. That budget, not the network, is what makes this difficult.
+That's the only fiddly bit, and you never have to touch it again.
 
-![Why lyric timing needs a scheduler](docs/img/timing.svg)
+### 3 · Add it to your browser
 
-Two things follow from it.
+1. Open `brave://extensions` or `chrome://extensions`
+2. Switch on **Developer mode**, top right
+3. Click **Load unpacked** and pick the `extension` folder
+4. Reload any YouTube tabs you already had open
 
-**Sends are aligned to line boundaries.** Sending as soon as the rate limiter
-opens makes the visible lag depend on where the line change happens to fall
-inside the window — so a fixed lead-in is too early in one case and too late in
-the other. Because LRCLIB provides the whole timeline up front, the scheduler
-knows when the next line starts and waits for it whenever waiting costs less
-than sending text that is already stale.
+### 4 · One Discord setting
 
-**Short lines share an update.** At a two-second cadence half the lines would
-never appear at all. When consecutive lines fit together inside Discord's
-128-character limit, one update carries both. Nothing is ever shortened: a line
-either fits whole or waits for the next update. Merging also stops at a blank
-LRC cue, since that marks deliberate silence.
+**Settings → Activity Privacy → "Display current activity as a status message"** has to be switched on. It usually already is.
 
-Subtitles get neither treatment, because the next line is unknown until YouTube
-renders it. They are read straight from the player as it displays them, which
-is why they need no synchronisation of their own.
-
-### Your own lyrics
-
-Everything Overtone finds is saved as a plain `.lrc` in
-`%APPDATA%\Overtone\lyrics`, so playing a song again needs no network, and so
-there is a file to fix when the timing is off. **A file you have edited is never
-overwritten and outranks every other source** — being able to correct one is the
-whole point.
-
-For songs no database knows, `tools/transcribe-to-lrc.py` turns an audio file
-you already have into a matching `.lrc` using Whisper:
-
-```bash
-python tools/transcribe-to-lrc.py song.mp3 --video-id o33IHl7-g9Y --language pl
-```
-
-It needs `stable-ts` and `faster-whisper`. Whisper guesses, so treat sung
-lyrics as a first draft worth correcting.
-
-Overtone can also do this by itself. Switch on **Fehlende Lyrics lokal erzeugen**
-and a song nothing else covers gets downloaded, transcribed, filed and the audio
-deleted again — helping the *next* play, never the one that triggered it. It is
-off by default because it saturates every core for a good fraction of the song's
-length, which is not something to start behind your back.
-
-Anything longer than `transcribeMaxMinutes` is skipped: cost scales with length,
-so a two-hour mix would hold the queue for an hour and produce nothing anyone
-wants as a lyric line.
-
-A job outlives the song that started it: change track and it keeps going, and
-anything played meanwhile joins a queue rather than being dropped. The settings
-window shows what is running — downloading or transcribing, for how long, what
-is waiting, and how the last few finished. A job takes minutes and
-shows nothing until it completes, so without that a working agent and a stuck
-one look identical.
-
-By default a song with subtitles is left alone, since those are free and
-instant. Turn on **Auch dann, wenn YouTube-Untertitel vorhanden sind** when the
-available track is auto-generated and garbles the words, or is a translation
-rather than the sung text.
-
-Two things decided quality here, both measured rather than assumed:
-
-**Language detection is the weak link, not Whisper.** On a Polish track, letting
-it guess produced fluent Russian nonsense in 125 s; pinning `pl` gave readable
-Polish in 52 s — faster *and* correct. The bigger `medium` model detects
-languages far better, which is why it is the default, but it is not immune: on
-the same track it also chose Russian and fell into a repetition loop, emitting
-one phrase eleven times for the whole song.
-
-**So bad output is rejected rather than filed.** A wrong `.lrc` is worse than
-none: it silently outranks every other source and looks deliberate. Overtone
-refuses results that repeat one line throughout or come from a language guess it
-is not confident about — while leaving genuine choruses alone.
+Play something. Your profile should show it within a few seconds.
 
 ---
 
-## Install
+## About the lyrics
 
-### 1. Create a Discord application
+Overtone looks in three places, in this order:
 
-1. [Discord Developer Portal](https://discord.com/developers/applications) → **New Application**
-2. Copy the **Application ID**
+**1. A lyrics database.** [LRCLIB](https://lrclib.net) is free and covers most well-known music, with the timing already right.
 
-### 2. Install the agent
+**2. YouTube's own subtitles.** Plenty of music videos have the lyrics as a subtitle track. This catches songs no database knows — but the subtitles have to be **switched on in the player**, otherwise there's nothing to read.
 
-Take the installer from the [latest release](../../releases/latest):
+**3. Your PC works it out.** Optional, and off by default. Overtone can listen to the song and write the lyrics itself. This takes a few minutes and works your processor hard, so it never helps the song that's playing — but the lyrics are saved, and they're there the next time you play it.
 
-| File | What it does |
-|---|---|
-| `Overtone.Setup.x.y.z.exe` | Installs with start-menu and desktop shortcuts |
-| `Overtone-x.y.z-portable.exe` | Runs without installing |
-
-The settings window opens on first start. Paste the Application ID and you are
-done; Overtone then lives in the tray.
-
-> Windows SmartScreen warns on first run because the binary is not commercially
-> signed. **More info → Run anyway.** A certificate costs money annually and
-> changes nothing about the program.
-
-From source instead: `npm install && npm start`.
-
-### 3. Load the extension
-
-1. Open `chrome://extensions` (or `brave://extensions`)
-2. Enable **Developer mode**
-3. **Load unpacked** → select the `extension/` folder
-
-> After updating the extension files, click **↻** *and reload open YouTube
-> tabs*. Unpacked extensions never reload themselves, and content scripts are
-> not injected into tabs that are already open. The agent warns when the
-> extension it is talking to is out of date.
-
-### 4. Check one Discord setting
-
-**User Settings → Activity Privacy → "Display current activity as a status
-message"** has to be on.
+Everything found is kept as a small text file on your PC. Play the song again and it's instant. If the timing is slightly off, you can open the file and fix it — and **Overtone will never overwrite something you've edited**.
 
 ---
 
-## The activity header
+## Good to know
 
-![What each part of the card is](docs/img/presence.svg)
-
-The header is a prefix plus a name:
-
-| `activityType` | Prefix |
-|---|---|
-| `auto` | video → `Watching …`, music → `Listening to …` |
-| `listening` | `Listening to …` |
-| `watching` | `Watching …` |
-| `playing` | `Playing …` |
-
-Discord normally fills the name with your application's name, which is why it
-would read the same for every song. RPC does accept an explicit name and the
-desktop client renders it, so `activityName` is a template for it:
-
-```
-{artist} - {title}    ->    Listening to doli, szevczor, yokinashi - 162020
-```
-
-Placeholders: `{artist}`, `{title}`, `{channel}`. Multiple artists are
-normalised to the comma form Spotify uses — `doli x szevczor x yokinashi`
-becomes `doli, szevczor, yokinashi`. Leave the template empty to fall back to
-the application name. It is skipped in privacy mode, so the header cannot give
-away what the rest of the presence is hiding.
+- **The cover art isn't clickable.** Discord doesn't allow that for any app — only buttons can be links. That's why there's a button underneath.
+- **Lyrics can lag a little.** Discord only allows an update every few seconds, so a fast rap track won't be perfectly in step. Overtone times its updates as well as that limit allows.
+- **Your custom status stays yours.** Overtone doesn't touch the status text on your profile. Changing that automatically would mean handing over your account password, essentially — so it doesn't go near it.
+- **Windows only, for now.**
 
 ---
 
-## When YouTube's player wedges
+## Something not working?
 
-YouTube occasionally leaves the player claiming to play while the media
-pipeline was never fed: black picture, and a timer flipping between 0:00 and
-the full duration. Reloading clears it; the next track in a playlist brings it
-back.
+**Nothing shows up on Discord**
+Is the desktop Discord app running? The browser version can't do this. Then check the Overtone settings window — it says whether Discord and your browser are connected.
 
-Overtone can reload the tab by itself (**Hängenden Player automatisch neu
-laden**, in the extension popup). Because this acts on your browser unasked,
-every rule errs towards inaction: it needs the player to claim playback, admit
-it holds no data, *and* make no progress, all together for twenty seconds. It
-never fires while you are typing, never more than once every two minutes, and
-gives up after three attempts — if reloading were the cure, three would have
-been enough.
+**It says "YouTube" instead of the song**
+Your browser is still running the old version of the add-on. Click ↻ next to Overtone in `brave://extensions`, then reload your YouTube tabs.
 
-Those rules live in [`extension/src/content/watchdog.js`](extension/src/content/watchdog.js),
-apart from the code that carries them out, so they can be tested. Most of those
-tests assert that it does *nothing*: buffering, pausing and slow playback each
-resemble the fault from one angle.
+**No lyrics**
+Some songs simply aren't in any database. Try switching subtitles on in the YouTube player — Overtone can read those.
 
-**This is a workaround, not a fix.** The underlying cause is YouTube not
-delivering media segments, usually a quarrel between an ad blocker and
-YouTube's anti-adblock. Turning Shields off for youtube.com is the real
-remedy; the watchdog only spares you the manual reload.
+**Friends can't see the button**
+Discord sometimes hides buttons when you look at your *own* profile. Ask someone else what they see.
 
-## What it cannot do
-
-- **The cover art is not clickable.** Discord never turns the large image into a
-  link; only buttons are links. Hence the button underneath.
-- **It does not touch your custom status.** The status field on your profile can
-  only be set with your user token — self-botting, against Discord's terms, and
-  the token grants full access to the account. Overtone does not go near it. The
-  closest legitimate equivalent is **"lyric on the first line"**, which puts the
-  lyric in bold at the top and moves the title below it.
-- **You may not see the buttons on your own profile.** Discord sometimes hides
-  them in your own preview. Other people see them.
-- **Lyrics can lag.** With LRCLIB the scheduler keeps the error under about
-  0.6 s on average and never sends early. Subtitles have no lookahead, so up to
-  roughly 4 s.
-- **Subtitles must be switched on in the player.** Overtone reads what YouTube
-  actually displays; with subtitles off there is nothing to read.
-- **Transcription is not live.** Whisper needs a good fraction of the song's
-  length on CPU, so lyrics it produces arrive for the next play. The presence
-  says so while a job runs.
-- **It does not break copy protection.** Audio comes from the one player client
-  that still serves it plainly; clients that offer only DRM-protected streams
-  are left alone.
+Still stuck? [Open an issue](../../issues) and say what you expected and what happened instead.
 
 ---
 
-## Configuration
-
-Everything is reachable from the settings window or the tray menu. The file
-lives at `%APPDATA%\Overtone\config.json`.
-
-| Setting | Default | Meaning |
-|---|---|---|
-| `clientId` | – | Discord Application ID |
-| `port` | `8787` | Bridge port; must match the extension |
-| `activityType` | `auto` | Header prefix |
-| `activityName` | `{artist} - {title}` | Header name; empty = application name |
-| `showTimestamps` | `true` | Progress bar |
-| `showButton` | `true` | Button to the video |
-| `showStateBadge` | `true` | Corner icon for playing/paused/loop/live |
-| `stateIconBase` | repo URL | Where those icons are served from |
-| `showWhenBrowsing` | `true` | Presence while browsing YouTube |
-| `privacyMode` | `false` | Hide title and artwork |
-| `lyricsEnabled` | `true` | Lyric line in the presence |
-| `lyricsSource` | `auto` | `auto`, `lrclib`, `captions` |
-| `lyricsMusicOnly` | `false` | Lyrics only on YouTube Music |
-| `lyricsProminent` | `false` | Lyric on the first, bold line |
-| `lyricsCombine` | `1` | Merge strength: `0` off, `1`, `1.5`, `2` |
-| `lyricsSave` | `true` | Save found lyrics as .lrc files |
-| `transcribeEnabled` | `false` | Transcribe songs nothing else covers |
-| `transcribeLanguage` | – | Pin the language, e.g. `pl`; empty detects |
-| `transcribeModel` | `medium` | tiny, base, small, medium |
-| `transcribeEvenWithCaptions` | `false` | Transcribe even when subtitles exist |
-| `transcribeMaxMinutes` | `7` | Skip anything longer; 0 disables the limit |
-| `ytdlpJsRuntime` | `node` | JS runtime yt-dlp needs; empty to leave it alone |
-| `lyricsOffset` | `0` | Manual trim in seconds; only for skewed LRC files |
-| `highResArtwork` | `true` | `maxresdefault` instead of `hqdefault` |
-
----
-
-## Development
-
-```bash
-npm install                # also generates the icons
-npm start                  # run the agent from source
-npm test                   # unit tests
-npm run test:integration   # hits the live LRCLIB API
-python agent/test/quality.test.py   # transcription quality guard
-npm run build              # installer + portable exe into dist/
-```
-
-The build config lives in `agent/electron-builder.config.js` rather than in
-`package.json`, because npm workspaces hoist `electron` into the root
-`node_modules` where electron-builder cannot find its version.
-
-Architecture notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-Bridge protocol: [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
-
----
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
-
-Not affiliated with Discord, YouTube or Google.
-
-*[Deutsche Fassung](README.de.md)*
+<sub>Free and open source ([MIT](LICENSE)). Not affiliated with Discord, YouTube or Google.<br>
+Building or tinkering? See [`docs/`](docs/) for the settings reference and how it works inside.</sub>

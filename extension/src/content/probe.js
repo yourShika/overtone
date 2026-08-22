@@ -169,11 +169,22 @@
     if (!video) return null;
 
     const error = video.error || null;
-    const starved = video.readyState < 2 && video.networkState === 3;
-    // Claiming to play while holding no data is the state behind the symptom.
-    const stalled = playerState === PLAYING && video.readyState < 2;
 
-    if (!error && !starved && !stalled) return null;
+    // Wanting to play while holding no usable data is the situation behind the
+    // symptom. Both states count: a pipeline stuck in kStarting reports
+    // BUFFERING, not PLAYING, and its networkState stays at LOADING rather than
+    // reaching NO_SOURCE — so requiring either of those narrower signals missed
+    // the very case this exists for.
+    //
+    // Reporting generously is right here, because deciding whether it is
+    // pathological is not this function's job: the watchdog additionally
+    // demands twenty seconds without progress, which ordinary buffering never
+    // survives.
+    const wantsToPlay = playerState === PLAYING || playerState === BUFFERING;
+    const starved = wantsToPlay && video.readyState < 2;
+    const sourceless = video.networkState === 3;
+
+    if (!error && !starved && !sourceless) return null;
 
     return {
       errorCode: error ? error.code : null,

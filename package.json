@@ -1,6 +1,6 @@
 {
   "name": "overtone",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Discord Rich Presence for YouTube and YouTube Music — with time-synced lyrics.",
   "private": true,
   "license": "MIT",

@@ -696,7 +696,13 @@ function reportFault(payload) {
   if (faultNoted === key) return;
   faultNoted = key;
 
-  logger.warn(
+  // Now that a fault is reported for ordinary buffering too, only a genuine
+  // dead end warrants a warning; the rest is background noise until the
+  // watchdog decides it has lasted too long.
+  const serious = fault.errorCode != null || fault.networkState === 3;
+  const say = serious ? logger.warn.bind(logger) : logger.debug.bind(logger);
+
+  say(
     `Der YouTube-Player kommt nicht in Gang: readyState=${fault.readyState} ` +
       `networkState=${fault.networkState} buffered=${fault.buffered} ` +
       `error=${fault.errorCode ?? 'keiner'}${fault.errorMessage ? ` (${fault.errorMessage})` : ''}. ` +

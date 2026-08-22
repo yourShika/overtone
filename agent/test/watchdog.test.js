@@ -195,3 +195,57 @@ test('the reported fault must actually mean no data', () => {
   });
   assert.equal(result.action, 'reset');
 });
+
+// --------------------------------------------- the case that was being missed
+
+test('a player stuck in BUFFERING is caught, not only one claiming to PLAY', () => {
+  // Reproduces the reported fault from its media-internals trace: the pipeline
+  // sat in kStarting, so the player reported BUFFERING (3) and networkState
+  // stayed at LOADING (2). Requiring PLAYING or NO_SOURCE meant the watchdog
+  // never started its clock, which is why it helped only sometimes.
+  const buffering = {
+    videoId: 'abc',
+    title: 'T',
+    paused: false,
+    idle: false,
+    position: 0,
+    fault: { readyState: 1, networkState: 2, playerState: 3, buffered: 0, errorCode: null },
+  };
+
+  const first = RULES.evaluate({ ...base, snapshot: buffering });
+  assert.equal(first.action, 'wait', 'die Uhr muss überhaupt starten');
+
+  const later = RULES.evaluate({
+    ...base,
+    snapshot: buffering,
+    now: NOW + RULES.STUCK_AFTER_MS + 1,
+    troubleSince: first.troubleSince,
+    troublePosition: first.troublePosition,
+  });
+  assert.equal(later.action, 'reload');
+});
+
+test('normal buffering at the start of a video is not reloaded', () => {
+  // Same shape, but the position advances once data arrives — which is what
+  // separates a slow start from a wedged one.
+  const buffering = (position) => ({
+    videoId: 'abc',
+    title: 'T',
+    paused: false,
+    idle: false,
+    position,
+    fault: { readyState: 1, networkState: 2, playerState: 3, buffered: 0, errorCode: null },
+  });
+
+  let result = RULES.evaluate({ ...base, snapshot: buffering(0) });
+  for (let i = 1; i <= 40; i++) {
+    result = RULES.evaluate({
+      ...base,
+      snapshot: buffering(i * 1.5),
+      now: NOW + i * 1000,
+      troubleSince: result.troubleSince,
+      troublePosition: result.troublePosition,
+    });
+    assert.notEqual(result.action, 'reload', `Sekunde ${i} hätte nicht neu laden dürfen`);
+  }
+});

@@ -13,9 +13,18 @@ let refreshTimer = null;
 init();
 
 async function init() {
-  const { enabled, port } = await chrome.storage.local.get({ enabled: true, port: 8787 });
+  const { enabled, port, autoReload } = await chrome.storage.local.get({
+    enabled: true,
+    port: 8787,
+    autoReload: true,
+  });
   $('enabled').checked = enabled;
   $('port').value = port;
+
+  $('autoReload').checked = autoReload;
+  $('autoReload').addEventListener('change', (event) => {
+    chrome.storage.local.set({ autoReload: event.target.checked });
+  });
 
   $('enabled').addEventListener('change', (event) => {
     chrome.storage.local.set({ enabled: event.target.checked });

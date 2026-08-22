@@ -22,9 +22,31 @@
   /** Position drift beyond this means the user seeked. */
   const SEEK_TOLERANCE_S = 2;
 
+  // Decision rules live in watchdog.js so they can be tested; this file only
+  // carries them out. See that file for why each guard exists.
+  const RULES = globalThis.OvertoneWatchdog;
+  const STORE_KEY = 'overtone.watchdog';
+
   let last = null;
   let lastSentAt = 0;
   let lastSentPosition = 0;
+
+  /** When the current uninterrupted stretch of trouble began. */
+  let troubleSince = null;
+  /** Last position seen while in trouble, to tell stuck from merely slow. */
+  let troublePosition = null;
+  let watchdogEnabled = true;
+
+  chrome.storage.local
+    .get({ autoReload: true })
+    .then(({ autoReload }) => {
+      watchdogEnabled = autoReload;
+    })
+    .catch(() => {});
+
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.autoReload) watchdogEnabled = changes.autoReload.newValue;
+  });
 
   window.addEventListener('message', (event) => {
     if (event.source !== window) return;
@@ -35,6 +57,8 @@
   });
 
   function handle(snapshot) {
+    watchdog(snapshot);
+
     // A browsing snapshot has no title by design; it says "a YouTube tab is
     // open and in front" and nothing more.
     if (snapshot && snapshot.idle) {
@@ -62,6 +86,93 @@
       send({ type: 'state', payload: snapshot });
     } else {
       last = snapshot;
+    }
+  }
+
+  /**
+   * Apply the decision from watchdog.js.
+   *
+   * Counters live in sessionStorage so they survive the reload they cause,
+   * which is the only way to notice that reloading did not help.
+   */
+  function watchdog(snapshot) {
+    if (!RULES) return;
+
+    const stored = readState();
+    const active = document.activeElement;
+    const decision = RULES.evaluate({
+      snapshot,
+      now: Date.now(),
+      troubleSince,
+      troublePosition,
+      attempts: stored.count || 0,
+      lastAttemptAt: stored.lastAt || 0,
+      enabled: watchdogEnabled,
+      typing: Boolean(
+        active &&
+          (active.isContentEditable || /^(input|textarea|select)$/i.test(active.tagName || '')),
+      ),
+    });
+
+    troubleSince = decision.troubleSince;
+    troublePosition = decision.troublePosition;
+
+    if (decision.action === 'forgive') {
+      writeState({});
+      return;
+    }
+
+    if (decision.action === 'giveup') {
+      once('give-up', () =>
+        report('watchdog:gave-up', { videoId: snapshot.videoId, attempts: stored.count }),
+      );
+      return;
+    }
+
+    if (decision.action !== 'reload') return;
+
+    const attempt = (stored.count || 0) + 1;
+    writeState({ count: attempt, lastAt: Date.now() });
+    report('watchdog:reloading', {
+      videoId: snapshot.videoId,
+      title: snapshot.title,
+      attempt,
+      readyState: snapshot.fault?.readyState,
+      networkState: snapshot.fault?.networkState,
+    });
+
+    // Let the message reach the agent before the page goes away.
+    setTimeout(() => location.reload(), 250);
+  }
+
+  function readState() {
+    try {
+      return JSON.parse(sessionStorage.getItem(STORE_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function writeState(state) {
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify(state));
+    } catch {
+      /* storage disabled; the caps simply stop applying */
+    }
+  }
+
+  const said = new Set();
+  function once(key, fn) {
+    if (said.has(key)) return;
+    said.add(key);
+    fn();
+  }
+
+  function report(type, payload) {
+    try {
+      chrome.runtime.sendMessage({ type, payload });
+    } catch {
+      /* worker asleep; the reload still happens */
     }
   }
 

@@ -240,6 +240,25 @@ function setupDiscord() {
 async function setupBridge() {
   bridge = new Bridge({ port: config.get('port'), logger });
 
+  // The extension reloads a wedged YouTube tab by itself; say so, because a
+  // page vanishing without explanation is alarming rather than reassuring.
+  bridge.on('watchdog', (type, payload) => {
+    if (type === 'watchdog:reloading') {
+      logger.warn(
+        `YouTube hing fest bei "${payload.title || payload.videoId}" ` +
+          `(readyState=${payload.readyState}, networkState=${payload.networkState}) — ` +
+          `Seite wird neu geladen (Versuch ${payload.attempt}).`,
+      );
+    } else {
+      logger.warn(
+        `Neu laden hat nicht geholfen (${payload.attempts} Versuche). Der Wächter ruht jetzt. ` +
+          'Das liegt dann nicht am Tab, sondern daran, dass YouTube diesem Browser keine ' +
+          'Videodaten liefert — Shields für youtube.com testweise abschalten.',
+      );
+    }
+    refreshUi();
+  });
+
   bridge.on('state', (payload) => {
     if (!config.get('enabled')) return;
 

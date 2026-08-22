@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Overtone",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "description": "Zeigt dein YouTube- und YouTube-Music-Playback als Discord Rich Presence — inklusive synchronisierter Lyrics.",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -30,6 +30,7 @@
         "*://music.youtube.com/*"
       ],
       "js": [
+        "src/content/watchdog.js",
         "src/content/bridge.js"
       ],
       "world": "ISOLATED",

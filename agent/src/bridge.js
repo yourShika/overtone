@@ -174,6 +174,11 @@ class Bridge extends EventEmitter {
         this.emit('clear', message.payload || {}, socket);
         return;
 
+      case 'watchdog:reloading':
+      case 'watchdog:gave-up':
+        this.emit('watchdog', message.type, message.payload || {}, socket);
+        return;
+
       case 'command':
         if (typeof message.payload?.name === 'string') {
           this.emit('command', message.payload.name, message.payload.args || {}, socket);

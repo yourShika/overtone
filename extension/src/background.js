@@ -82,6 +82,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
 // ------------------------------------------------------------------- messages
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // The watchdog speaks up rarely and only about trouble, so it goes straight
+  // through rather than waiting for the next state report.
+  if (message?.type === 'watchdog:reloading' || message?.type === 'watchdog:gave-up') {
+    send({ type: message.type, payload: { ...message.payload, tabId: sender.tab?.id } });
+    sendResponse({ ok: true });
+    return true;
+  }
+
   // Popup queries.
   if (message?.type === 'popup:status') {
     sendResponse({

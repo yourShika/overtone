@@ -27,6 +27,7 @@ runs alongside it.
 - **Live streams** — elapsed time instead of remaining
 - **A state badge** — a small corner icon for playing, paused, looping or live
 - **Browsing too** — keeps a presence while a YouTube tab is open with nothing playing
+- **Recovers a wedged player** — reloads the tab when YouTube claims to be playing but never feeds the decoder
 - **Privacy mode** — shows that you are watching something without saying what
 - **Several tabs** — a playing video wins over a paused one
 - Autostart, tray menu, log window
@@ -212,6 +213,31 @@ the application name. It is skipped in privacy mode, so the header cannot give
 away what the rest of the presence is hiding.
 
 ---
+
+## When YouTube's player wedges
+
+YouTube occasionally leaves the player claiming to play while the media
+pipeline was never fed: black picture, and a timer flipping between 0:00 and
+the full duration. Reloading clears it; the next track in a playlist brings it
+back.
+
+Overtone can reload the tab by itself (**Hängenden Player automatisch neu
+laden**, in the extension popup). Because this acts on your browser unasked,
+every rule errs towards inaction: it needs the player to claim playback, admit
+it holds no data, *and* make no progress, all together for twenty seconds. It
+never fires while you are typing, never more than once every two minutes, and
+gives up after three attempts — if reloading were the cure, three would have
+been enough.
+
+Those rules live in [`extension/src/content/watchdog.js`](extension/src/content/watchdog.js),
+apart from the code that carries them out, so they can be tested. Most of those
+tests assert that it does *nothing*: buffering, pausing and slow playback each
+resemble the fault from one angle.
+
+**This is a workaround, not a fix.** The underlying cause is YouTube not
+delivering media segments, usually a quarrel between an ad blocker and
+YouTube's anti-adblock. Turning Shields off for youtube.com is the real
+remedy; the watchdog only spares you the manual reload.
 
 ## What it cannot do
 

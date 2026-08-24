@@ -185,6 +185,8 @@
     if (last.idle) return true; // coming back from browsing is always news
     if (snapshot.videoId !== last.videoId) return true;
     if (snapshot.paused !== last.paused) return true;
+    // Starting or ending a stall changes whether the position may be trusted.
+    if (snapshot.buffering !== last.buffering) return true;
     if (snapshot.title !== last.title) return true;
     // A new subtitle line is the whole point when captions drive the lyrics —
     // the agent cannot predict it, so it has to be pushed.

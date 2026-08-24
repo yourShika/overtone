@@ -29,7 +29,13 @@ module.exports = {
   // The transcription worker is a Python script run by a separate interpreter,
   // so it cannot live inside the asar archive — Python cannot read one. It goes
   // beside it, and main.js resolves the path differently once packaged.
-  extraResources: [{ from: '../tools', to: 'tools', filter: ['**/*.py'] }],
+  extraResources: [
+    { from: '../tools', to: 'tools', filter: ['**/*.py'] },
+    // The licence and third-party notices travel with the binary, because the
+    // components inside it require their terms to accompany distribution.
+    { from: '../LICENSE', to: 'LICENSE' },
+    { from: '../THIRD-PARTY-NOTICES.md', to: 'THIRD-PARTY-NOTICES.md' },
+  ],
 
   // The agent is a background helper; bundling devDependencies would triple the
   // installer for no benefit.

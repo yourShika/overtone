@@ -58,7 +58,10 @@ class Session {
   /** Interpolated playback position in seconds. */
   get position() {
     if (!this.raw) return 0;
-    if (this.raw.paused) return this.raw.position;
+    // A stalled video advances no further than a paused one. Extrapolating
+    // through a buffer would put the presence ahead of what is on screen, and
+    // the gap grows for as long as the stall lasts.
+    if (this.raw.paused || this.raw.buffering) return this.raw.position;
 
     const elapsed = (Date.now() - this.receivedAt) / 1000;
     const projected = this.raw.position + elapsed * (this.raw.playbackRate || 1);
@@ -101,6 +104,8 @@ function normalise(snapshot) {
     playbackRate: num(snapshot.playbackRate, 1) || 1,
     paused: Boolean(snapshot.paused),
     live: Boolean(snapshot.live),
+    /** Waiting for data: neither playing nor paused, and the position is frozen. */
+    buffering: Boolean(snapshot.buffering),
     /** The track will repeat; shown as a badge rather than in the text. */
     loop: Boolean(snapshot.loop),
     /** No playback at all — a YouTube tab is simply open and in front. */

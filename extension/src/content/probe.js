@@ -85,6 +85,11 @@
       position,
       playbackRate: video?.playbackRate || 1,
       paused: !(state === PLAYING || state === BUFFERING),
+      // Buffering is not paused and not playing. Reported separately because
+      // the position stands still while it lasts: treating it as playback made
+      // the agent extrapolate a position the video never reached, which is why
+      // the presence timer drifted ahead of YouTube on a slow start.
+      buffering: state === BUFFERING,
       live,
       caption: captionText(),
       captionTrack: captionTrack(player),

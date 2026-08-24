@@ -57,7 +57,8 @@ def timestamp(seconds: float) -> str:
     return '[%02d:%05.2f]' % (minutes, seconds - minutes * 60)
 
 
-def transcribe(path: str, model_name: str, language, device: str):
+def transcribe(path: str, model_name: str, language, device: str,
+               max_line: int = 60, gap: float = 0.6):
     from stable_whisper import load_faster_whisper
 
     print('Loading Whisper %r on %s ...' % (model_name, device), file=sys.stderr)
@@ -77,14 +78,18 @@ def transcribe(path: str, model_name: str, language, device: str):
 
     # Regrouping decides where one lyric line ends. Sung lines follow breaths
     # and phrases rather than punctuation, which Whisper rarely emits for
-    # singing, so gaps carry most of the signal here. The length cap keeps a
-    # line inside Discord's 128-character field.
+    # singing, so gaps carry most of the signal here.
+    #
+    # The default cap is 60 rather than the field limit of 128: Overtone packs
+    # several lines into one update, and short lines pack far better. One
+    # 120-character line fills a block on its own, where two 60-character lines
+    # share it and read as a couplet.
     (
         result
         .clamp_max()
         .split_by_punctuation([('.', ' '), '?', ('!', ' ')])
-        .split_by_gap(0.6)
-        .split_by_length(90)
+        .split_by_gap(gap)
+        .split_by_length(max_line)
     )
     return result, model_info
 
@@ -132,6 +137,10 @@ def main() -> int:
     parser.add_argument('--out', help='output directory (default: Overtone lyrics folder)')
     parser.add_argument('--title', default='', help='[ti:] tag')
     parser.add_argument('--artist', default='', help='[ar:] tag')
+    parser.add_argument('--max-line', type=int, default=60, dest='max_line',
+                        help='longest lyric line in characters (default: 60)')
+    parser.add_argument('--gap', type=float, default=0.6,
+                        help='silence in seconds that ends a line (default: 0.6)')
     parser.add_argument('--force', action='store_true',
                         help='write even if the result looks wrong')
     args = parser.parse_args()
@@ -141,7 +150,10 @@ def main() -> int:
     if not args.video_id and not args.name:
         raise SystemExit('Give --video-id (preferred) or --name, so Overtone can find the file.')
 
-    result, info = transcribe(args.audio, args.model, args.language, args.device)
+    result, info = transcribe(
+        args.audio, args.model, args.language, args.device,
+        max_line=args.max_line, gap=args.gap,
+    )
 
     lines = []
     for segment in result.to_dict()['segments']:

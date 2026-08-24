@@ -15,7 +15,14 @@
  */
 
 /** Trouble must persist this long before a reload is considered. */
-const STUCK_AFTER_MS = 20000;
+/**
+ * Seconds of frozen playback before the tab is reloaded.
+ *
+ * Twelve rather than twenty: the recovery itself is a full page load, so every
+ * second spent waiting first is added to a wait that is already long. A stall
+ * lasting this long has not been observed to recover on its own.
+ */
+const STUCK_AFTER_MS = 12000;
 /** Playback moving less than this counts as not moving. */
 const PROGRESS_EPSILON_S = 0.5;
 /** Never reload more often than this, however bad it looks. */

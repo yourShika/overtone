@@ -171,6 +171,102 @@ function lyricWindow(lines, position, options = {}) {
   };
 }
 
+/**
+ * Pack the whole song into blocks of a few lines each.
+ *
+ * The line-at-a-time mode spends one Discord update per lyric line, and Discord
+ * only grants five per twenty seconds — so a talkative song burns the entire
+ * budget on text nobody reads twice. A block instead shows several lines at
+ * once and stands until its last line has been sung, which costs one update per
+ * *paragraph* rather than per line.
+ *
+ * Blocks are derived from the timings alone, so the same song always breaks in
+ * the same places: no flicker when the position is re-anchored, and the
+ * scheduler can aim at the next block exactly as it aimed at the next line.
+ *
+ * A blank cue ends a block, because an instrumental break is a natural pause
+ * and joining across it would glue unrelated verses together.
+ *
+ * @param {Array<{ time: number, text: string }>} lines
+ * @param {object} [options]
+ * @param {number} [options.maxChars] character budget for one block
+ * @param {string} [options.separator] joins lines inside a block
+ * @returns {Array<{ start: number, end: number, text: string, lines: number }>}
+ */
+function buildBlocks(lines, options = {}) {
+  const { maxChars = 120, separator = ' · ' } = options;
+  if (!Array.isArray(lines) || !lines.length) return [];
+
+  const packed = [];
+  let current = null;
+
+  const flush = () => {
+    if (current) packed.push(current);
+    current = null;
+  };
+
+  for (const line of lines) {
+    if (!line.text) {
+      flush(); // deliberate silence: let the block end here
+      continue;
+    }
+
+    if (!current) {
+      current = { start: line.time, texts: [line.text], length: line.text.length };
+      continue;
+    }
+
+    const cost = separator.length + line.text.length;
+    if (current.length + cost > maxChars) {
+      flush();
+      current = { start: line.time, texts: [line.text], length: line.text.length };
+    } else {
+      current.texts.push(line.text);
+      current.length += cost;
+    }
+  }
+  flush();
+
+  return packed.map((block, index) => ({
+    start: block.start,
+    // A block stands until the next one begins; the last one until the song ends.
+    end: index + 1 < packed.length ? packed[index + 1].start : Infinity,
+    text: block.texts.join(separator),
+    lines: block.texts.length,
+  }));
+}
+
+/**
+ * The block covering this position, or null before the first one.
+ *
+ * @param {ReturnType<typeof buildBlocks>} blocks
+ * @param {number} position seconds
+ * @param {object} [options]
+ * @param {number} [options.offset] manual trim, seconds
+ * @returns {{ text: string, start: number, end: number, lines: number }|null}
+ */
+function blockAt(blocks, position, options = {}) {
+  const { offset = 0 } = options;
+  if (!Array.isArray(blocks) || !blocks.length) return null;
+
+  const target = position + offset;
+  let low = 0;
+  let high = blocks.length - 1;
+  let found = -1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (blocks[mid].start <= target) {
+      found = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return found === -1 ? null : blocks[found];
+}
+
 /** Binary search: index of the last entry with time <= target, or -1. */
 function lastIndexAtOrBefore(lines, target) {
   let low = 0;
@@ -189,4 +285,4 @@ function lastIndexAtOrBefore(lines, target) {
   return found;
 }
 
-module.exports = { parseLrc, lineAt, nextLineTime, lyricWindow };
+module.exports = { parseLrc, lineAt, nextLineTime, lyricWindow, buildBlocks, blockAt };

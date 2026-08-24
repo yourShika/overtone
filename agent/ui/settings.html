@@ -6,335 +6,394 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://i.ytimg.com https://lh3.googleusercontent.com data:; font-src 'self';"
     />
-    <title>Overtone — Einstellungen</title>
+    <title>Overtone</title>
     <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <span class="mark" aria-hidden="true"></span>
-        <div>
-          <h1>Overtone</h1>
-          <p class="version" id="version">—</p>
+    <div class="win">
+      <!-- title bar ------------------------------------------------------->
+      <header class="titlebar">
+        <div class="brand">
+          <span class="mark" aria-hidden="true"></span>
+          <span class="brand-name">Overtone</span>
         </div>
-      </div>
-      <div class="pills">
-        <span class="pill" id="pill-discord" data-state="off">Discord</span>
-        <span class="pill" id="pill-browser" data-state="off">Browser</span>
-      </div>
-    </header>
+        <div class="titlebar-right">
+          <button class="theme-pill" id="theme-toggle" type="button">
+            <span id="theme-icon" aria-hidden="true">☾</span>
+            <span id="theme-label">Dunkel</span>
+          </button>
+          <button class="winbtn" id="win-min" type="button" aria-label="Minimieren">—</button>
+          <button class="winbtn" id="win-max" type="button" aria-label="Maximieren">▢</button>
+          <button class="winbtn close" id="win-close" type="button" aria-label="Schließen">✕</button>
+        </div>
+      </header>
 
-    <main>
-      <!-- Live preview ------------------------------------------------------->
-      <section class="card preview" id="preview-card">
-        <h2>Aktuell</h2>
-        <div class="preview-body" id="preview-empty">
-          <p class="muted">Nichts läuft. Öffne ein YouTube-Video im Browser.</p>
-        </div>
-        <div class="preview-body hidden" id="preview-live">
-          <img class="art" id="preview-art" alt="" />
-          <div class="preview-text">
-            <p class="line1" id="preview-title">—</p>
-            <p class="line2" id="preview-state">—</p>
-            <p class="line3" id="preview-time">—</p>
+      <div class="body">
+        <!-- sidebar ------------------------------------------------------->
+        <nav class="sidebar">
+          <label class="search">
+            <span aria-hidden="true">⌕</span>
+            <input id="search" type="text" placeholder="Einstellung suchen" autocomplete="off" />
+          </label>
+
+          <div class="nav" id="nav" role="tablist">
+            <button class="nav-item" role="tab" data-panel="conn" aria-selected="true" type="button">
+              Verbindung
+              <span class="nav-tail"><span class="dot" id="nav-dot-conn"></span></span>
+            </button>
+            <button class="nav-item" role="tab" data-panel="look" aria-selected="false" type="button">
+              Darstellung
+            </button>
+            <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button">
+              Lyrics
+            </button>
+            <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button">
+              Transkription
+              <span class="nav-tail"><span class="chip" id="nav-badge-tr">AUS</span></span>
+            </button>
+            <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button">
+              System
+            </button>
+            <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button">
+              Protokoll
+            </button>
           </div>
+
+          <div class="side-foot">
+            <div class="row"><span class="dot" id="foot-discord"></span><span id="foot-discord-text">Discord</span></div>
+            <div class="row"><span class="dot" id="foot-browser"></span><span id="foot-browser-text">Browser</span></div>
+            <div class="row"><span>Version</span><span id="foot-version" class="tag">—</span></div>
+          </div>
+        </nav>
+
+        <!-- content ------------------------------------------------------->
+        <div class="content">
+          <div class="scroll" id="scroll">
+            <!-- Verbindung -->
+            <section class="panel" id="panel-conn" data-title="Verbindung Discord Client-ID Bridge-Port">
+              <h2>Verbindung</h2>
+              <p class="sub">Wem Overtone die Presence schickt, und worüber der Browser es erreicht.</p>
+
+              <div class="notice bad" id="notice-discord" hidden>
+                <strong>Discord nicht erreichbar.</strong>
+                <span id="notice-discord-text"></span>
+                <div class="row"><button class="btn" id="btn-reconnect" type="button">Erneut versuchen</button></div>
+              </div>
+
+              <div class="card">
+                <label class="field">
+                  <span class="field-head">
+                    <span class="label">Discord Client-ID</span>
+                    <button class="more" type="button" data-more="clientId">Mehr ▾</button>
+                  </span>
+                  <input id="clientId" type="text" inputmode="numeric" placeholder="19 Ziffern aus dem Developer Portal" />
+                  <span class="collapse" data-collapse="clientId">
+                    <span class="hint">
+                      Aus dem Developer Portal: <em>New Application</em>, Namen vergeben, dann die
+                      <em>Application ID</em> kopieren. Der Name der Application ist der Rückfall für
+                      die Überschrift, falls du unter „Darstellung“ keine eigene Vorlage setzt.
+                    </span>
+                  </span>
+                </label>
+
+                <div class="row">
+                  <button class="btn primary" id="btn-reconnect2" type="button">Discord neu verbinden</button>
+                  <a class="btn" href="#" data-external="https://discord.com/developers/applications">Portal öffnen</a>
+                </div>
+              </div>
+
+              <div class="card">
+                <label class="field">
+                  <span class="field-head">
+                    <span class="label">Bridge-Port</span>
+                    <span class="chip" id="port-chip"></span>
+                    <button class="more" type="button" data-more="port">Mehr ▾</button>
+                  </span>
+                  <input id="port" class="narrow" type="number" min="1024" max="65535" placeholder="8787" />
+                  <span class="collapse" data-collapse="port">
+                    <span class="hint">
+                      Der lokale Kanal zwischen Browser-Erweiterung und Programm. Nur ändern, wenn
+                      ein anderes Programm den Port belegt — die Erweiterung muss denselben nutzen.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </section>
+
+            <!-- Darstellung -->
+            <section class="panel" id="panel-look" hidden data-title="Darstellung Aktivitätstyp Überschrift Fortschritt Thumbnail Button Zustand Privat">
+              <h2>Darstellung</h2>
+              <p class="sub">Was an deinem Profil steht und wie es aussieht.</p>
+
+              <div class="card">
+                <div class="field">
+                  <span class="field-head"><span class="label">Aktivitätstyp</span></span>
+                  <div class="segmented" data-seg="activityType">
+                    <button type="button" data-value="auto">Automatisch</button>
+                    <button type="button" data-value="listening">Hört …</button>
+                    <button type="button" data-value="watching">Schaut …</button>
+                    <button type="button" data-value="playing">Spielt …</button>
+                  </div>
+                  <p class="hint">Bestimmt nur das Präfix. Was dahinter steht, legt das Feld darunter fest.</p>
+                </div>
+
+                <label class="field">
+                  <span class="field-head">
+                    <span class="label">Überschrift der Aktivität</span>
+                    <button class="more" type="button" data-more="activityName">Mehr ▾</button>
+                  </span>
+                  <input id="activityName" type="text" placeholder="{artist} - {title}" />
+                  <span class="row" style="margin-top: 8px">
+                    <button class="token" type="button" data-token="{artist}">{artist}</button>
+                    <button class="token" type="button" data-token="{title}">{title}</button>
+                    <button class="token" type="button" data-token="{channel}">{channel}</button>
+                  </span>
+                  <span class="collapse" data-collapse="activityName">
+                    <span class="hint">
+                      Leer lassen für den Namen deiner Discord-Application. Mehrere Künstler werden
+                      zur Komma-Form normalisiert. Im Privat-Modus greift die Vorlage nicht.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="card">
+                <div class="switch-row" data-switch="showTimestamps"><span class="text">Fortschrittsbalken &amp; Restzeit</span></div>
+                <div class="switch-row" data-switch="highResArtwork"><span class="text">Hochauflösendes Thumbnail</span></div>
+                <div class="switch-row" data-switch="showButton"><span class="text">Button zum Video</span></div>
+                <div class="subblock" data-sub="showButton">
+                  <label class="field">
+                    <span class="field-head"><span class="label">Button-Beschriftung</span></span>
+                    <input id="buttonLabel" type="text" maxlength="32" placeholder="Auf YouTube ansehen" />
+                  </label>
+                  <div class="switch-row" data-switch="showChannelButton"><span class="text">Zweiter Button zum Kanal</span></div>
+                </div>
+                <div class="switch-row" data-switch="showStateBadge">
+                  <span class="text">Zustands-Symbol auf dem Bild<small>läuft, pausiert, Wiederholung, Live</small></span>
+                </div>
+                <div class="switch-row" data-switch="showWhenBrowsing">
+                  <span class="text">Auch anzeigen, wenn nichts läuft<small>nur aus einem sichtbaren Tab</small></span>
+                </div>
+                <div class="switch-row" data-switch="hideWhenPaused"><span class="text">Presence ausblenden, wenn pausiert</span></div>
+                <div class="switch-row" data-switch="privacyMode">
+                  <span class="text">Privat-Modus<small>Titel und Thumbnail verbergen</small></span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Lyrics -->
+            <section class="panel" id="panel-lyr" hidden data-title="Lyrics Songzeile Quelle LRCLIB Untertitel zusammenfassen Feinabstimmung Cache">
+              <h2>Lyrics</h2>
+              <p class="sub">Die Songzeile läuft in der Presence mit.</p>
+
+              <div class="card">
+                <div class="switch-row" data-switch="lyricsEnabled"><span class="text">Lyrics als Status anzeigen</span></div>
+
+                <div class="subblock" data-sub="lyricsEnabled">
+                  <div class="field">
+                    <span class="field-head">
+                      <span class="label">Quelle</span>
+                      <button class="more" type="button" data-more="lyricsSource">Mehr ▾</button>
+                    </span>
+                    <div class="segmented" data-seg="lyricsSource">
+                      <button type="button" data-value="auto">Automatisch</button>
+                      <button type="button" data-value="captions">Nur Untertitel</button>
+                      <button type="button" data-value="lrclib">Nur LRCLIB</button>
+                    </div>
+                    <span class="collapse" data-collapse="lyricsSource">
+                      <span class="hint">
+                        Untertitel greifen auch bei Songs, die keine Datenbank kennt — sie müssen im
+                        YouTube-Player aber eingeschaltet sein. LRCLIB kennt die kommenden Zeilen
+                        und kann Discords Verzögerung deshalb besser ausgleichen.
+                      </span>
+                    </span>
+                  </div>
+
+                  <div class="field">
+                    <span class="field-head"><span class="label">Darstellung</span></span>
+                    <div class="segmented" data-seg="lyricsMode">
+                      <button type="button" data-value="line">Einzelne Zeile</button>
+                      <button type="button" data-value="block">Absatz</button>
+                    </div>
+                    <p class="hint">
+                      Absatz zeigt mehrere Zeilen zugleich und wechselt erst, wenn die letzte davon
+                      durch ist — das braucht deutlich weniger von Discords knappem Update-Budget.
+                    </p>
+                  </div>
+
+                  <div class="field" data-only="line">
+                    <span class="field-head"><span class="label">Kurze Zeilen zusammenfassen</span></span>
+                    <div class="segmented" data-seg="lyricsCombine">
+                      <button type="button" data-value="0">Aus</button>
+                      <button type="button" data-value="1">Standard</button>
+                      <button type="button" data-value="1.5">Mehr</button>
+                      <button type="button" data-value="2">Maximal</button>
+                    </div>
+                  </div>
+
+                  <div class="switch-row" data-switch="lyricsMusicOnly"><span class="text">Nur auf YouTube Music</span></div>
+                  <div class="switch-row" data-switch="lyricsProminent"><span class="text">Songzeile in die erste, fette Zeile</span></div>
+                  <div class="switch-row" data-switch="lyricsSave">
+                    <span class="text">Gefundene Lyrics als Datei speichern<small>nie überschrieben, wenn du sie bearbeitest</small></span>
+                  </div>
+
+                  <label class="field">
+                    <span class="field-head"><span class="label">Feinabstimmung</span></span>
+                    <span class="slider-row">
+                      <input id="lyricsOffset" type="range" min="-5" max="5" step="0.25" />
+                      <span class="value" id="lyricsOffsetOut">+0,0 s</span>
+                    </span>
+                    <span class="hint">Nur nötig, wenn die Zeitmarken einer Datei selbst schief sind.</span>
+                  </label>
+
+                  <div class="row">
+                    <button class="btn" id="btn-clear-cache" type="button">Lyrics-Cache leeren</button>
+                    <button class="btn" id="btn-open-lyrics" type="button">Lyrics-Ordner öffnen</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Transkription -->
+            <section class="panel" id="panel-tr" hidden data-title="Transkription Whisper Sprache Modell Höchstlänge yt-dlp">
+              <h2>Transkription</h2>
+              <p class="sub">
+                Für Songs, die weder eine Datenbank kennt noch Untertitel haben. Hilft erst beim
+                nächsten Hören — fertig wird es nie rechtzeitig für den laufenden Song.
+              </p>
+
+              <div class="job" id="transcribe-job">
+                <div class="spinner" id="transcribe-spinner" hidden></div>
+                <div class="job-text">
+                  <p class="job-line" id="transcribe-phase">Gerade nichts zu tun</p>
+                  <p class="job-detail" id="transcribe-detail"></p>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="switch-row" data-switch="transcribeEnabled">
+                  <span class="text">Fehlende Lyrics lokal erzeugen<small>lastet für einige Minuten alle CPU-Kerne aus</small></span>
+                </div>
+
+                <div class="subblock" data-sub="transcribeEnabled">
+                  <div class="switch-row" data-switch="transcribeEvenWithCaptions">
+                    <span class="text">Auch bei vorhandenen Untertiteln</span>
+                  </div>
+
+                  <label class="field">
+                    <span class="field-head">
+                      <span class="label">Sprache</span>
+                      <span class="label-note">· wichtigster Regler</span>
+                    </span>
+                    <input id="transcribeLanguage" class="narrow" type="text" maxlength="5" placeholder="leer = automatisch" />
+                    <span class="hint">
+                      Gemessen an einem polnischen Track: automatisch erkannt wurde „Russisch“ und
+                      das Ergebnis war unbrauchbar — mit <code>pl</code> festgelegt kam lesbares
+                      Polnisch heraus, und zwar schneller.
+                    </span>
+                  </label>
+
+                  <label class="field">
+                    <span class="field-head"><span class="label">Höchstlänge (Minuten)</span></span>
+                    <input id="transcribeMaxMinutes" class="mid" type="number" min="0" max="180" />
+                    <span class="hint">Längeres wird übersprungen. 0 hebt die Grenze auf.</span>
+                  </label>
+
+                  <div class="field">
+                    <span class="field-head"><span class="label">Modell</span></span>
+                    <div class="segmented" data-seg="transcribeModel">
+                      <button type="button" data-value="tiny">tiny</button>
+                      <button type="button" data-value="base">base</button>
+                      <button type="button" data-value="small">small</button>
+                      <button type="button" data-value="medium" style="flex: 1.4">medium · Standard</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- System -->
+            <section class="panel" id="panel-sys" hidden data-title="System Autostart Erscheinungsbild zurücksetzen">
+              <h2>System</h2>
+              <p class="sub">Verhalten des Programms selbst.</p>
+
+              <div class="card">
+                <div class="switch-row" data-switch="enabled"><span class="text">Rich Presence aktiv</span></div>
+                <div class="switch-row" data-switch="autoStart"><span class="text">Beim Anmelden automatisch starten</span></div>
+                <div class="switch-row" data-switch="watchdogEnabled">
+                  <span class="text">Hängenden YouTube-Tab neu laden<small>nach 12 Sekunden ohne Fortschritt</small></span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="field">
+                  <span class="field-head"><span class="label">Erscheinungsbild</span></span>
+                  <div class="segmented" data-seg="theme" style="max-width: 340px">
+                    <button type="button" data-value="dark">Dunkel</button>
+                    <button type="button" data-value="light">Hell</button>
+                    <button type="button" data-value="sys">System</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card danger-card">
+                <h3>Auf Standard zurücksetzen</h3>
+                <p class="hint" style="margin-top: 0">
+                  Setzt alle Einstellungen zurück. Deine gespeicherten Lyrics bleiben erhalten.
+                </p>
+                <div class="row"><button class="btn danger" id="btn-reset" type="button">Zurücksetzen</button></div>
+              </div>
+            </section>
+
+            <!-- Protokoll -->
+            <section class="panel" id="panel-log" hidden data-title="Protokoll Log Fehler Warnungen">
+              <h2>Protokoll</h2>
+              <p class="sub">Was Overtone zuletzt getan hat.</p>
+
+              <div class="row" style="margin-bottom: 12px">
+                <button class="btn" id="btn-copy-log" type="button">Kopieren</button>
+                <button class="btn" id="btn-open-logs" type="button">Ordner öffnen</button>
+              </div>
+
+              <div class="log-filters" id="log-filters">
+                <button class="pill" data-level="all" aria-selected="true" type="button">Alles</button>
+                <button class="pill" data-level="warn" aria-selected="false" type="button">Warnungen</button>
+                <button class="pill" data-level="error" aria-selected="false" type="button">Fehler</button>
+                <button class="pill" data-level="lyrics" aria-selected="false" type="button">Lyrics</button>
+              </div>
+
+              <div class="log" id="log" data-noscroll></div>
+              <p class="log-foot">Zeitstempel · Stufe · Meldung</p>
+            </section>
+          </div>
+
+          <!-- presence preview ----------------------------------------->
+          <footer class="preview">
+            <img class="cover" id="preview-cover" alt="" />
+            <div class="preview-text">
+              <div class="preview-line">
+                <span class="preview-title" id="preview-title"></span>
+                <span class="ph" id="ph-title" style="width: 190px"></span>
+                <span class="tag" id="tag-title">TITEL</span>
+                <span class="chip good hidden" id="preview-chip"><span class="dot on"></span><span id="preview-chip-text"></span></span>
+              </div>
+              <div class="preview-line second">
+                <span aria-hidden="true">♪</span>
+                <span class="preview-lyric" id="preview-lyric"></span>
+                <span class="ph" id="ph-lyric" style="width: 260px"></span>
+                <span class="tag" id="tag-lyric">SONGZEILE</span>
+              </div>
+              <div class="times">
+                <span id="preview-elapsed">--:--</span>
+                <span class="bar"><i id="preview-fill" style="width: 0%"></i></span>
+                <span id="preview-total">--:--</span>
+              </div>
+            </div>
+            <div class="preview-note">VORSCHAU<br />wie in Discord</div>
+          </footer>
         </div>
-        <p class="lyric-status" id="lyric-status"></p>
-        <p class="warning hidden" id="extension-warning"></p>
-      </section>
-
-      <!-- Connection ---------------------------------------------------------->
-      <section class="card">
-        <h2>Verbindung</h2>
-
-        <label class="field">
-          <span class="label">Discord Client-ID</span>
-          <input id="clientId" type="text" inputmode="numeric" placeholder="z. B. 1234567890123456789" />
-          <span class="hint">
-            Aus dem
-            <a href="#" data-external="https://discord.com/developers/applications">Discord Developer Portal</a>.
-            Der <em>Name</em> der Application ist die Überschrift der Aktivität — nenne sie „YouTube“,
-            wenn dort „Schaut YouTube“ stehen soll.
-          </span>
-        </label>
-
-        <label class="field">
-          <span class="label">Bridge-Port</span>
-          <input id="port" type="number" min="1024" max="65535" />
-          <span class="hint">Muss mit dem Port in den Extension-Optionen übereinstimmen.</span>
-        </label>
-
-        <div class="row">
-          <button class="btn" id="btn-reconnect">Discord neu verbinden</button>
-          <span class="error" id="last-error"></span>
-        </div>
-      </section>
-
-      <!-- Presentation -------------------------------------------------------->
-      <section class="card">
-        <h2>Darstellung</h2>
-
-        <label class="field">
-          <span class="label">Aktivitätstyp</span>
-          <select id="activityType">
-            <option value="auto">Automatisch — Video „Schaut“, Musik „Hört“</option>
-            <option value="listening">Immer „Hört …“ (Listening to)</option>
-            <option value="watching">Immer „Schaut …“ (Watching)</option>
-            <option value="playing">Immer „Spielt …“ (Playing)</option>
-          </select>
-          <span class="hint">
-            Bestimmt nur das Präfix — „Hört“, „Schaut“, „Spielt“. Was dahinter steht, legt das
-            Feld darunter fest.
-          </span>
-        </label>
-
-        <label class="field">
-          <span class="label">Überschrift der Aktivität</span>
-          <input type="text" id="activityName" placeholder="{artist} - {title}" />
-          <span class="hint">
-            Was in der Kopfzeile hinter „Hört … zu" steht. Leer lassen für den Namen deiner
-            Discord-Application (also z. B. immer „YouTube"). Platzhalter:
-            <code>{artist}</code>, <code>{title}</code>, <code>{channel}</code>.
-            Mehrere Künstler werden zur Komma-Form normalisiert —
-            <code>doli x szevczor</code> wird zu <code>doli, szevczor</code>.
-            Im Privat-Modus wird die Überschrift nicht ersetzt.
-          </span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="showTimestamps" />
-          <span>Fortschrittsbalken / Restzeit anzeigen</span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="highResArtwork" />
-          <span>Hochauflösendes Thumbnail verwenden</span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="showButton" />
-          <span>Button zum Video anzeigen</span>
-        </label>
-
-        <label class="field indent">
-          <span class="label">Button-Beschriftung</span>
-          <input id="buttonLabel" type="text" maxlength="32" placeholder="Auf YouTube ansehen" />
-          <span class="hint">Leer lassen für den automatischen Text.</span>
-        </label>
-
-        <label class="toggle indent">
-          <input type="checkbox" id="showChannelButton" />
-          <span>Zweiten Button zum Kanal anzeigen</span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="showStateBadge" />
-          <span>Zustands-Symbol auf dem Bild (läuft, pausiert, Wiederholung, Live)</span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="showWhenBrowsing" />
-          <span>Auch anzeigen, wenn YouTube offen ist, aber nichts läuft</span>
-        </label>
-
-        <p class="hint indent" style="margin-top: 0">
-          Zeigt dann „Auf YouTube unterwegs" samt Seitenart — Startseite, Suche, Kanal.
-          Nur aus einem sichtbaren Tab, damit ein vergessener Hintergrund-Tab nicht dauerhaft
-          dein Profil belegt.
-        </p>
-
-        <label class="toggle">
-          <input type="checkbox" id="hideWhenPaused" />
-          <span>Presence ausblenden, wenn pausiert</span>
-        </label>
-
-        <label class="toggle">
-          <input type="checkbox" id="privacyMode" />
-          <span>Privat-Modus — Titel und Thumbnail verbergen</span>
-        </label>
-      </section>
-
-      <!-- Local transcription -------------------------------------------------->
-      <section class="card">
-        <h2>Lokal transkribieren</h2>
-        <p class="muted small">
-          Für Songs, die weder LRCLIB kennt noch Untertitel haben: Overtone lädt das Audio,
-          lässt Whisper darüber laufen, legt eine <code>.lrc</code> in der Bibliothek ab und
-          <strong>löscht das Audio wieder</strong>. Das hilft erst beim <em>nächsten</em> Hören —
-          fertig wird es nie rechtzeitig für den laufenden Song.
-        </p>
-
-        <div class="job" id="transcribe-job">
-          <p class="job-line" id="transcribe-phase">Gerade nichts zu tun</p>
-          <p class="job-detail" id="transcribe-detail"></p>
-        </div>
-
-        <label class="toggle">
-          <input type="checkbox" id="transcribeEnabled" />
-          <span>Fehlende Lyrics lokal erzeugen</span>
-        </label>
-
-        <label class="toggle indent">
-          <input type="checkbox" id="transcribeEvenWithCaptions" />
-          <span>Auch dann, wenn YouTube-Untertitel vorhanden sind</span>
-        </label>
-
-        <p class="hint indent" style="margin-top: 0">
-          Normalerweise übernehmen vorhandene Untertitel — sie kosten nichts und sind sofort da.
-          Sinnvoll einzuschalten, wenn die verfügbare Spur automatisch erzeugt ist und die Wörter
-          verstümmelt, oder eine Übersetzung statt des gesungenen Textes zeigt.
-        </p>
-
-        <p class="hint indent" style="margin-top: 0">
-          Braucht <code>yt-dlp</code>, <code>ffmpeg</code> und Python mit
-          <code>stable-ts</code>. Lastet für etwa ein Drittel bis eine Songlänge alle CPU-Kerne
-          aus — beim Spielen spürbar. Startet erst, wenn ein Titel wirklich gehört statt
-          übersprungen wurde, und immer nur einer gleichzeitig.
-        </p>
-
-        <label class="field indent">
-          <span class="label">Sprache</span>
-          <input type="text" id="transcribeLanguage" maxlength="5" placeholder="leer = automatisch, z. B. pl" />
-          <span class="hint">
-            <strong>Der wichtigste Regler hier.</strong> Gemessen an einem polnischen Track:
-            automatisch erkannt wurde „Russisch", das Ergebnis war kyrillischer Unsinn — mit
-            <code>pl</code> festgelegt kam lesbares Polnisch heraus, und zwar schneller.
-            Offensichtlich unbrauchbare Ergebnisse werden ohnehin verworfen statt gespeichert.
-          </span>
-        </label>
-
-        <label class="field indent">
-          <span class="label">Höchstlänge in Minuten</span>
-          <input type="number" id="transcribeMaxMinutes" min="0" max="180" />
-          <span class="hint">
-            Längeres wird übersprungen. Der Aufwand wächst mit der Länge, ein Zwei-Stunden-Mix
-            würde die Warteschlange eine Stunde blockieren — und ergäbe nichts, was man als
-            Songzeile sehen will. 0 hebt die Grenze auf.
-          </span>
-        </label>
-
-        <label class="field indent">
-          <span class="label">Modell</span>
-          <select id="transcribeModel">
-            <option value="tiny">tiny — am schnellsten, am ungenauesten</option>
-            <option value="base">base</option>
-            <option value="small">small</option>
-            <option value="medium">medium — Standard, beste Spracherkennung</option>
-          </select>
-          <span class="hint">
-            Größere Modelle erkennen die Sprache zuverlässiger, brauchen aber länger.
-          </span>
-        </label>
-      </section>
-
-      <!-- Lyrics -------------------------------------------------------------->
-      <section class="card">
-        <h2>Lyrics</h2>
-        <p class="muted small">
-          Die aktuelle Songzeile erscheint in der Rich Presence — wahlweise aus der
-          Lyrics-Datenbank <a href="#" data-external="https://lrclib.net">LRCLIB</a>
-          oder direkt aus den YouTube-Untertiteln.
-        </p>
-
-        <label class="toggle">
-          <input type="checkbox" id="lyricsEnabled" />
-          <span>Lyrics als Status anzeigen</span>
-        </label>
-
-        <label class="field indent">
-          <span class="label">Quelle</span>
-          <select id="lyricsSource">
-            <option value="auto">Automatisch — LRCLIB, sonst YouTube-Untertitel</option>
-            <option value="captions">Nur YouTube-Untertitel</option>
-            <option value="lrclib">Nur LRCLIB-Datenbank</option>
-          </select>
-          <span class="hint">
-            Untertitel greifen auch bei Songs, die keine Datenbank kennt, und funktionieren mit
-            automatisch erzeugten wie übersetzten Spuren — <strong>sie müssen im YouTube-Player
-            aber eingeschaltet sein</strong>, sonst gibt es nichts zu lesen. LRCLIB hat dafür einen
-            Vorlauf und gleicht Discords Verzögerung besser aus.
-          </span>
-        </label>
-
-        <label class="toggle indent">
-          <input type="checkbox" id="lyricsMusicOnly" />
-          <span>Nur auf YouTube Music (nicht bei normalen Videos)</span>
-        </label>
-
-        <label class="toggle indent">
-          <input type="checkbox" id="lyricsProminent" />
-          <span>Songzeile in die erste, fette Zeile — Titel rutscht nach unten</span>
-        </label>
-
-        <label class="toggle indent">
-          <input type="checkbox" id="lyricsSave" />
-          <span>Gefundene Lyrics als Datei speichern</span>
-        </label>
-
-        <p class="hint indent" style="margin-top: 0">
-          Legt jede gefundene Songzeile als <code>.lrc</code> unter
-          <code>%APPDATA%\Overtone\lyrics</code> ab. Beim nächsten Hören ist sie sofort da, ohne
-          Netz — und du hast eine Datei, die du korrigieren kannst, wenn das Timing nicht passt.
-          <strong>Selbst bearbeitete Dateien werden nie überschrieben</strong> und haben Vorrang
-          vor allem anderen. Für Songs, die keine Datenbank kennt, erzeugt
-          <code>tools/transcribe-to-lrc.py</code> aus einer Audiodatei eine passende <code>.lrc</code>.
-        </p>
-
-        <label class="field indent">
-          <span class="label">Kurze Zeilen zusammenfassen</span>
-          <select id="lyricsCombine">
-            <option value="0">Aus — immer nur eine Zeile</option>
-            <option value="1">Standard — nur was sonst verloren ginge</option>
-            <option value="1.5">Mehr — weniger Auslassungen</option>
-            <option value="2">Maximal — kaum Auslassungen, dafür früher</option>
-          </select>
-          <span class="hint">
-            Discord erlaubt etwa ein Update alle 4 Sekunden; bei schnellen Songs wechselt die Zeile
-            alle 2 — ohne Zusammenfassen fällt jede zweite aus. <strong>Gekürzt wird nie</strong>:
-            eine Zeile passt ganz oder wartet aufs nächste Update. Je höher die Stufe, desto
-            vollständiger die Lyrics, aber desto früher stehen spätere Zeilen schon da.
-            Nur mit LRCLIB möglich — bei Untertiteln ist die nächste Zeile unbekannt.
-          </span>
-        </label>
-
-        <label class="field indent">
-          <span class="label">Feinabstimmung <output id="lyricsOffsetOut">0,0</output> s</span>
-          <input id="lyricsOffset" type="range" min="-5" max="5" step="0.25" />
-          <span class="hint">
-            Normalerweise auf <strong>0</strong> lassen. Overtone legt die Updates von sich aus
-            auf die Zeilenwechsel, statt sie mit einem festen Vorlauf zu verschieben — der könnte
-            immer nur an einer Stelle im Zeitfenster passen und wäre sonst zu früh oder zu spät.
-            Nur nachjustieren, wenn eine bestimmte LRC-Datei selbst verschoben ist.
-          </span>
-        </label>
-
-        <div class="row">
-          <button class="btn" id="btn-clear-cache">Lyrics-Cache leeren</button>
-        </div>
-      </section>
-
-      <!-- System -------------------------------------------------------------->
-      <section class="card">
-        <h2>System</h2>
-        <label class="toggle">
-          <input type="checkbox" id="enabled" />
-          <span>Rich Presence aktiv</span>
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="autoStart" />
-          <span>Beim Anmelden automatisch starten</span>
-        </label>
-        <div class="row">
-          <button class="btn danger" id="btn-reset">Auf Standard zurücksetzen</button>
-        </div>
-      </section>
-
-      <!-- Log ----------------------------------------------------------------->
-      <section class="card">
-        <h2>Protokoll</h2>
-        <pre class="log" id="log"></pre>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <script src="settings.js"></script>
   </body>

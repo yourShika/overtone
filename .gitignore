@@ -11,3 +11,6 @@ agent/assets/*.png
 # Python bytecode from tools/
 __pycache__/
 *.pyc
+
+# Design handoff: a prototype, not production code.
+Overtone UI Redesign/

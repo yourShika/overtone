@@ -96,6 +96,10 @@ function stateBadge(state, config) {
     text = state.source === 'ytmusic' ? 'YouTube Music' : 'YouTube';
   }
 
+  // Name the app in the tooltip. The badge is the only place someone hovering
+  // an unfamiliar presence can learn what is producing it.
+  text = `${text} · Overtone`;
+
   const custom = state.paused ? config.pausedAssetKey : config.sourceAssetKey;
   const base = String(config.stateIconBase || '').replace(/\/+$/, '');
   const image = custom || (base ? base + '/' + name + '.png' : undefined);

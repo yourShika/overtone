@@ -38,5 +38,13 @@ contextBridge.exposeInMainWorld('overtone', {
     clearLyricsCache: () => ipcRenderer.invoke('lyrics:clearCache'),
     reconnectDiscord: () => ipcRenderer.invoke('discord:reconnect'),
     openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
+    openLyricsFolder: () => ipcRenderer.invoke('app:openLyricsFolder'),
+    openLogFolder: () => ipcRenderer.invoke('app:openLogFolder'),
+  },
+  // The window is frameless, so its buttons are ours to implement.
+  window: {
+    minimise: () => ipcRenderer.invoke('window:minimise'),
+    toggleMaximise: () => ipcRenderer.invoke('window:toggleMaximise'),
+    close: () => ipcRenderer.invoke('window:close'),
   },
 });

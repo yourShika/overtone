@@ -31,7 +31,7 @@ const { buildActivity } = require('./discord/activity');
 const { LyricsProvider } = require('./lyrics/lrclib');
 const { LyricsLibrary } = require('./lyrics/library');
 const { Transcriber } = require('./lyrics/transcriber');
-const { lyricWindow } = require('./lyrics/lrc');
+const { lyricWindow, buildBlocks, blockAt } = require('./lyrics/lrc');
 const { parseTrack } = require('./lyrics/trackparse');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
 
@@ -79,6 +79,7 @@ const lyricState = {
   origin: null, // 'lrclib' | 'captions' — where the shown line came from
   nextTime: null, // track seconds; cue of the first line not yet shown
   merged: 1, // how many lyric lines the current text carries
+  blocks: null, // packed paragraphs, built lazily in block mode
 };
 
 let lastError = null;
@@ -462,6 +463,21 @@ function resolveLyric(state, cfg) {
     // One update must carry everything until the next slot, so that is exactly
     // how far ahead lines may be merged — expressed in track seconds, hence the
     // playback-rate factor.
+    if (cfg.lyricsMode === 'block') {
+      // Packed once per track: the breaks depend only on the timings, so
+      // recomputing them every tick would burn work to reach the same answer.
+      if (!lyricState.blocks) {
+        lyricState.blocks = buildBlocks(lyricState.lines, { maxChars: cfg.lyricsMaxChars });
+      }
+      const block = blockAt(lyricState.blocks, state.position, { offset: cfg.lyricsOffset });
+      return {
+        text: block ? block.text : null,
+        origin: lyricState.fromLibrary ? 'library' : 'lrclib',
+        nextTime: block && Number.isFinite(block.end) ? block.end : null,
+        merged: block ? block.lines : 1,
+      };
+    }
+
     const reach = (presence.step / 1000) * (state.playbackRate || 1) * cfg.lyricsCombine;
 
     const view = lyricWindow(lyricState.lines, state.position, {
@@ -719,6 +735,7 @@ function resetLyrics() {
   lyricState.origin = null;
   lyricState.nextTime = null;
   lyricState.merged = 1;
+  lyricState.blocks = null;
   lyricState.fromLibrary = false;
 }
 
@@ -823,8 +840,8 @@ function openSettings() {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 720,
-    height: 780,
+    width: 1080,
+    height: 700,
     minWidth: 560,
     minHeight: 560,
     title: 'Overtone — Einstellungen',
@@ -838,6 +855,11 @@ function openSettings() {
       nodeIntegration: false,
       sandbox: true,
     },
+    // Frameless: the design draws its own title bar, so the buttons in it are
+    // wired through IPC rather than handled by the OS.
+    frame: false,
+    minWidth: 900,
+    minHeight: 560,
   });
 
   settingsWindow.loadFile(path.join(__dirname, '..', 'ui', 'settings.html'));
@@ -881,6 +903,23 @@ function registerIpc() {
     tick();
     return true;
   });
+  ipcMain.handle('app:openLyricsFolder', () =>
+    shell.openPath(path.join(app.getPath('userData'), 'lyrics')),
+  );
+  ipcMain.handle('app:openLogFolder', () =>
+    shell.openPath(path.join(app.getPath('userData'), 'logs')),
+  );
+
+  ipcMain.handle('window:minimise', () => settingsWindow?.minimize());
+  ipcMain.handle('window:toggleMaximise', () => {
+    if (!settingsWindow) return;
+    if (settingsWindow.isMaximized()) settingsWindow.unmaximize();
+    else settingsWindow.maximize();
+  });
+  // Hidden rather than destroyed: reopening from the tray should be instant,
+  // and the agent goes on working with no window at all.
+  ipcMain.handle('window:close', () => settingsWindow?.hide());
+
   ipcMain.handle('app:openExternal', (_event, url) => {
     if (/^https?:\/\//.test(String(url))) shell.openExternal(String(url));
   });

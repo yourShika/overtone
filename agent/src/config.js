@@ -114,8 +114,20 @@ const DEFAULTS = {
    */
   lyricsProminent: false,
   /**
-   * How far ahead one update may gather lines, as a multiple of the interval
-   * between updates. 0 disables merging entirely.
+   * How the lyric is presented.
+   *   'line'  — the current line, merging neighbours per `lyricsCombine`
+   *   'block' — a paragraph that stands until its last line has been sung
+   *
+   * Block mode exists to spend far less of Discord's update budget: one update
+   * per paragraph instead of one per line. It reads less like karaoke and more
+   * like a lyric sheet, which is a matter of taste, hence the choice.
+   */
+  lyricsMode: 'line',
+  /** Character budget for one block; Discord's own field limit is 128. */
+  lyricsMaxChars: 120,
+  /**
+   * Line mode only: how far ahead one update may gather lines, as a multiple of
+   * the interval between updates. 0 disables merging entirely.
    *
    * Discord allows an update roughly every four seconds; a fast track changes
    * lines every two, so without merging half the lyrics never show at all.
@@ -192,6 +204,8 @@ const DEFAULTS = {
   ytdlpJsRuntime: 'node',
 
   // --- system ---------------------------------------------------------------
+  /** 'dark' | 'light' | 'sys' — 'sys' follows the operating system. */
+  theme: 'dark',
   autoStart: false,
   startMinimised: true,
 };

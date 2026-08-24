@@ -13,7 +13,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 
-const { parseLrc, lineAt, nextLineTime, lyricWindow } = require('../src/lyrics/lrc');
+const { parseLrc, lineAt, nextLineTime, lyricWindow, buildBlocks, blockAt } = require('../src/lyrics/lrc');
 const { parseTrack, stripNoise, cleanArtist, formatArtists } = require('../src/lyrics/trackparse');
 const { buildActivity } = require('../src/discord/activity');
 const { PresenceController } = require('../src/discord/presence');
@@ -281,11 +281,13 @@ test('buildActivity clamps an over-long header', () => {
 const ICONS = DEFAULTS.stateIconBase;
 
 test('the badge names the playback state', () => {
+  // Every tooltip names the app: hovering the badge is the only way someone
+  // looking at an unfamiliar presence can find out what produced it.
   const cases = [
-    [{}, 'playing.png', 'YouTube'],
-    [{ paused: true }, 'paused.png', 'Pausiert'],
-    [{ live: true, duration: 0 }, 'live.png', 'Live'],
-    [{ loop: true }, 'loop.png', 'Wiederholung'],
+    [{}, 'playing.png', 'YouTube · Overtone'],
+    [{ paused: true }, 'paused.png', 'Pausiert · Overtone'],
+    [{ live: true, duration: 0 }, 'live.png', 'Live · Overtone'],
+    [{ loop: true }, 'loop.png', 'Wiederholung · Overtone'],
   ];
 
   for (const [patch, file, text] of cases) {
@@ -365,6 +367,99 @@ test('a browsing state never carries a title through', () => {
   });
   assert.equal(activity.details, 'Auf YouTube unterwegs');
   assert.notEqual(activity.details, BASE_STATE.title);
+});
+
+// ------------------------------------------------------------- block mode
+
+test('buildBlocks packs whole lines up to the budget', () => {
+  const blocks = buildBlocks(FAST, { maxChars: 12 });
+
+  // "Eins · Zwei" is 11 characters; adding "Drei" would exceed twelve.
+  assert.equal(blocks[0].text, 'Eins · Zwei');
+  assert.equal(blocks[0].start, 0);
+  assert.equal(blocks[0].end, 4, 'ein Block endet, wo der nächste beginnt');
+
+  // A block may exceed the budget only when it holds a single line that is
+  // itself too long — lines are never cut, exactly as in line mode.
+  for (const block of blocks) {
+    if (block.text.length > 12) {
+      assert.equal(block.lines, 1, `zu lang, aber ${block.lines} Zeilen: ${block.text}`);
+    }
+  }
+});
+
+test('a block stands until its last line has been sung', () => {
+  const blocks = buildBlocks(FAST, { maxChars: 12 });
+
+  // Everything from 0 s up to the next block shows the same text — that is the
+  // whole point: one update per paragraph instead of one per line.
+  for (const position of [0, 1, 2, 3, 3.9]) {
+    assert.equal(blockAt(blocks, position).text, 'Eins · Zwei', `bei ${position}s`);
+  }
+  assert.notEqual(blockAt(blocks, 4).text, 'Eins · Zwei');
+});
+
+test('blocks end at an instrumental marker', () => {
+  const withGap = parseLrc(
+    ['[00:00.00]Eins', '[00:01.00]', '[00:02.00]Danach', '[00:03.00]Noch was'].join('\n'),
+  );
+  const blocks = buildBlocks(withGap, { maxChars: 200 });
+
+  assert.equal(blocks.length, 2, 'über eine bewusste Pause wird nicht gepackt');
+  assert.equal(blocks[0].text, 'Eins');
+  assert.equal(blocks[1].text, 'Danach · Noch was');
+});
+
+test('the last block runs to the end of the song', () => {
+  const blocks = buildBlocks(FAST, { maxChars: 200 });
+  assert.equal(blocks[blocks.length - 1].end, Infinity);
+});
+
+test('blockAt returns nothing before the first block', () => {
+  const late = parseLrc('[00:30.00]Spät');
+  assert.equal(blockAt(buildBlocks(late, { maxChars: 60 }), 5), null);
+});
+
+test('buildBlocks copes with empty input', () => {
+  assert.deepEqual(buildBlocks([], { maxChars: 60 }), []);
+  assert.deepEqual(buildBlocks(null, { maxChars: 60 }), []);
+});
+
+test('block mode spends far fewer updates than line mode', () => {
+  // The reason block mode exists, stated as a number.
+  const blocks = buildBlocks(FAST, { maxChars: 120 });
+  assert.ok(
+    blocks.length < FAST.length,
+    `${blocks.length} Blöcke gegen ${FAST.length} Zeilen`,
+  );
+});
+
+// ------------------------------------------------------- buffering freezes
+
+test('a buffering video does not advance the position', () => {
+  const session = new Session();
+  const base = {
+    source: 'youtube',
+    videoId: 'x',
+    title: 'T',
+    url: 'u',
+    duration: 200,
+    playbackRate: 1,
+    paused: false,
+    live: false,
+  };
+
+  session.update({ ...base, buffering: true, position: 30 });
+  const frozen = session.state.position;
+
+  // Time passes; a stalled video is exactly where it was.
+  session.receivedAt -= 5000;
+  assert.equal(session.state.position, frozen, 'während des Puffern steht die Zeit');
+
+  // Once data arrives it advances again.
+  session.update({ ...base, buffering: false, position: 30 });
+  session.receivedAt -= 5000;
+  assert.ok(session.state.position > frozen, 'danach läuft sie weiter');
 });
 
 // ---------------------------------------------------------------- trackparse
@@ -561,7 +656,7 @@ test('buildActivity drops timestamps while paused', () => {
   const activity = buildActivity({ state: { ...BASE_STATE, paused: true }, config: DEFAULTS });
 
   assert.equal(activity.timestamps, undefined);
-  assert.equal(activity.assets.small_text, 'Pausiert');
+  assert.equal(activity.assets.small_text, 'Pausiert · Overtone');
 });
 
 test('buildActivity hides everything identifying in privacy mode', () => {

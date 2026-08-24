@@ -22,7 +22,7 @@ Deine Freunde sehen den Song — nicht bloß „schaut YouTube".
 - 🎵 **Der Song in der Überschrift** — `Hört doli, szevczor - 162020 zu`, statt immer nur „YouTube"
 - 🖼️ **Das Cover** — das Video-Vorschaubild, bei YouTube Music das Albumcover
 - ⏱️ **Ein echter Fortschrittsbalken** — mit Restzeit, folgt Pausen und Sprüngen
-- 🎤 **Die Lyrics, Zeile für Zeile** — laufen mit dem Song mit
+- 🎤 **Die Lyrics, Zeile für Zeile** — laufen mit dem Song mit, wahlweise als Absatz
 - ▶️ **Ein kleines Symbol** — läuft, pausiert, Wiederholung oder Live
 - 🔗 **Ein Knopf zum Video** — ein Klick, und sie hören mit
 - 🔒 **Diskret-Modus** — zeigt, dass du etwas schaust, ohne zu verraten was
@@ -132,5 +132,14 @@ hast und was stattdessen passiert ist.
 
 ---
 
-<sub>Kostenlos und quelloffen ([MIT](LICENSE)). Weder mit Discord noch mit YouTube oder Google verbunden.<br>
+## Lizenz
+
+**Nutzung kostenlos, Verkauf und Weiterverbreitung nicht.** Privat wie beruflich, auf so vielen
+eigenen Geräten wie du magst, und für dich selbst auch änderbar. Nicht verkaufen, und nicht
+anderswo hochladen als in dieses Repository — verlinke stattdessen hierher.
+
+Der volle Text steht in [`LICENSE`](LICENSE); die Bausteine, auf denen Overtone aufsetzt, behalten
+ihre eigenen Lizenzen, aufgelistet in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+
+<sub>Weder mit Discord noch mit YouTube oder Google verbunden.<br>
 Selber bauen oder schrauben? In [`docs/`](docs/) stehen alle Einstellungen und wie es innen funktioniert.</sub>

@@ -565,12 +565,21 @@ input[type="range"]::-webkit-slider-thumb {
   height: 4px;
 }
 
-.preview-note {
+/* Where the lyric on the left actually came from — the slot the "PREVIEW"
+   caption used to hold, at the right end of the footer. */
+.preview-src {
   flex: none;
-  /* The string carries its own line break, so it stays one dictionary entry. */
-  white-space: pre-line;
-  text-align: right;
-  font: 400 10px var(--mono);
-  color: var(--dim2);
-  line-height: 1.5;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.preview-src .chip {
+  max-width: 210px;
+}
+
+/* A long source name must ellipsis rather than push the progress bar around. */
+.preview-src-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -36,6 +36,17 @@ let logEntries = [];
 let logFilter = 'all';
 let suppress = false;
 
+/**
+ * The track a subtitle was last seen on, by url.
+ *
+ * YouTube empties its caption element between two cues, so the snapshot's
+ * `captionsAvailable` is false for the seconds in between. Reading it directly
+ * made the source chip blink between "YouTube subtitles" and "No lyrics" every
+ * couple of seconds; remembering that this track has subtitles at all is
+ * steadier and still true.
+ */
+let captionsSeenOn = null;
+
 init().catch((err) => console.error(err));
 
 async function init() {
@@ -470,6 +481,63 @@ function renderPreview(next) {
   $('preview-elapsed').textContent = duration ? clock(position) : '--:--';
   $('preview-total').textContent = duration ? clock(duration) : '--:--';
   $('preview-fill').style.width = duration ? `${Math.min(100, (position / duration) * 100)}%` : '0%';
+
+  renderLyricSource(next);
+}
+
+/** Paint the source chip from whatever the snapshot honestly supports. */
+function renderLyricSource(next) {
+  const lyrics = next?.lyrics || {};
+  const state = lyricSource(lyrics, next?.now);
+
+  $('lyr-src').className = `chip ${state.tone}`.trim();
+  $('lyr-src-dot').className = state.tone === 'good' ? 'dot on' : 'dot';
+  $('lyr-src-text').textContent = T.t(state.key, { count: lyrics.lineCount ?? 0 });
+}
+
+/**
+ * Which of the nine things is true right now.
+ *
+ * The order mirrors resolveLyric() in the agent, because the chip has to name
+ * the source the presence is actually using, not the best one available: a
+ * database hit beats a running transcription, and that transcription's
+ * placeholder beats a subtitle.
+ *
+ * Keyed off `status` rather than `origin` for the two database cases. `origin`
+ * is what is on screen this instant, so it goes null on pause, and a chip that
+ * flipped to "No lyrics" every time someone hit space would be worse than none.
+ */
+function lyricSource(lyrics, now) {
+  if (!config.lyricsEnabled) return { key: 'preview.srcOff', tone: '' };
+  if (!now) return { key: 'preview.srcIdle', tone: '' };
+
+  // ensureLyricsLoaded() returns before it claims the track in this case, so
+  // status and lineCount can still describe the song before this one.
+  if (config.lyricsMusicOnly && now.source !== 'ytmusic') {
+    return { key: 'preview.srcMusicOnly', tone: '' };
+  }
+
+  const track = now.url || now.title || null;
+  const mayUseCaptions = config.lyricsSource !== 'lrclib';
+  if (mayUseCaptions && track && (lyrics.captionsAvailable || lyrics.origin === 'captions')) {
+    captionsSeenOn = track;
+  }
+
+  if (lyrics.status === 'found' && lyrics.lineCount > 0) {
+    return {
+      key: lyrics.fromLibrary ? 'preview.srcLibrary' : 'preview.srcLrclib',
+      tone: 'good',
+    };
+  }
+
+  if (lyrics.transcribing) return { key: 'preview.srcTranscribing', tone: 'warn' };
+
+  if (lyrics.status === 'captions' || (mayUseCaptions && track && captionsSeenOn === track)) {
+    return { key: 'preview.srcCaptions', tone: 'good' };
+  }
+
+  if (lyrics.status === 'loading') return { key: 'preview.srcLoading', tone: '' };
+  return { key: 'preview.srcNone', tone: '' };
 }
 
 function show(textId, placeholderId, tagId, value) {

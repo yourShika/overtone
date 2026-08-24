@@ -178,10 +178,19 @@ module.exports = {
   // --- presence preview -----------------------------------------------------
   'preview.titleTag': 'TITLE',
   'preview.lyricTag': 'LYRIC',
-  'preview.note': 'PREVIEW\nas seen in Discord',
   'preview.playing': 'playing',
   'preview.paused': 'paused',
   'preview.loading': 'loading',
+  'preview.srcTitle': 'Where the lyric line currently comes from',
+  'preview.srcOff': 'Lyrics off',
+  'preview.srcIdle': 'Nothing playing',
+  'preview.srcMusicOnly': 'Not YouTube Music',
+  'preview.srcLoading': 'Looking …',
+  'preview.srcLibrary': 'Your file · {count} lines',
+  'preview.srcLrclib': 'LRCLIB · {count} lines',
+  'preview.srcCaptions': 'YouTube subtitles',
+  'preview.srcTranscribing': 'Being transcribed',
+  'preview.srcNone': 'No lyrics',
 
   // --- wizard ---------------------------------------------------------------
   'wiz.windowTitle': 'Set up Overtone',

@@ -81,7 +81,12 @@ const lyricState = {
   lines: null,
   status: 'idle', // idle | loading | found | none | captions | disabled
   current: null,
-  origin: null, // 'lrclib' | 'captions' — where the shown line came from
+  // Where the line ON SCREEN came from. Null whenever nothing is shown —
+  // paused, lyrics off, music-only mismatch — even though lines may be loaded.
+  origin: null, // 'library' | 'lrclib' | 'captions' | 'transcribing'
+  // Which of the two database sources filled `lines`. Only meaningful while
+  // status is 'found'; the two are always written together.
+  fromLibrary: false,
   nextTime: null, // track seconds; cue of the first line not yet shown
   merged: 1, // how many lyric lines the current text carries
   blocks: null, // packed paragraphs, built lazily in block mode
@@ -1318,6 +1323,10 @@ function statusSnapshot() {
       line: lyricState.current,
       lineCount: lyricState.lines?.length ?? 0,
       origin: lyricState.origin,
+      // `origin` says what is on screen this instant, so it goes null the
+      // moment playback pauses and cannot name the source of loaded lines.
+      // This can, and is guarded so a stale flag never leaks out.
+      fromLibrary: lyricState.status === 'found' && lyricState.fromLibrary,
       merged: lyricState.merged,
       transcribing: transcriber?.busyWith === session.state?.videoId,
       captionsAvailable: Boolean(state?.caption),

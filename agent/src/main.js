@@ -22,7 +22,7 @@ const path = require('node:path');
 const { app, Tray, Menu, BrowserWindow, ipcMain, shell, nativeImage, dialog } = require('electron');
 
 const { Config } = require('./config');
-const { t, setLocale, detect, dictionary, LANGUAGES } = require('./i18n');
+const { t, setLocale, getLocale, detect, dictionary, LANGUAGES } = require('./i18n');
 const { Logger } = require('./log');
 const { Bridge } = require('./bridge');
 const { Session } = require('./session');
@@ -120,7 +120,7 @@ app.whenReady().then(async () => {
   });
 
   logger.info(t('msg.starting', { version: app.getVersion() }));
-  for (const note of config.migrations) logger.info(t('msg.settingAdjusted', { note }));
+  for (const note of config.migrations) logger.info(t('msg.settingAdjusted', { note: t(note) }));
 
   thumbnails = new ThumbnailResolver({ logger });
   library = new LyricsLibrary({
@@ -253,9 +253,12 @@ async function setupBridge() {
   bridge.on('watchdog', (type, payload) => {
     if (type === 'watchdog:reloading') {
       logger.warn(
-        `YouTube hing fest bei "${payload.title || payload.videoId}" ` +
-          `(readyState=${payload.readyState}, networkState=${payload.networkState}) — ` +
-          `Seite wird neu geladen (Versuch ${payload.attempt}).`,
+        t('msg.watchdogReloading', {
+          title: payload.title || payload.videoId,
+          readyState: payload.readyState,
+          networkState: payload.networkState,
+          attempt: payload.attempt,
+        }),
       );
     } else {
       logger.warn(t('msg.watchdogGaveUp', { attempts: payload.attempts }));
@@ -501,7 +504,7 @@ function resolveLyric(state, cfg) {
     // Name the phase. "Being made" for minutes on end looks indistinguishable
     // from stuck, and downloading versus transcribing is the useful difference.
     const label =
-      transcriber.phase === 'download' ? 'Lyrics: Audio wird geladen …' : 'Lyrics werden erstellt …';
+      transcriber.phase === 'download' ? t('presence.loadingAudio') : t('presence.makingLyrics');
     return { text: label, origin: 'transcribing', nextTime: null, merged: 1 };
   }
 
@@ -552,7 +555,10 @@ function ensureLyricsLoaded(state, cfg) {
       lyricState.status = 'found';
       lyricState.fromLibrary = true;
       logger.info(
-        `Lyrics aus der Bibliothek (${hit.lines.length} Zeilen, ${hit.managed ? 'gespeichert' : 'selbst angelegt'})`,
+        t('msg.lyricsFromLibrary', {
+          count: hit.lines.length,
+          origin: t(hit.managed ? 'msg.libraryStored' : 'msg.librarySelfMade'),
+        }),
       );
       refreshUi();
       return true;
@@ -715,11 +721,15 @@ function reportFault(payload) {
   const say = serious ? logger.warn.bind(logger) : logger.debug.bind(logger);
 
   say(
-    `Der YouTube-Player kommt nicht in Gang: readyState=${fault.readyState} ` +
-      `networkState=${fault.networkState} buffered=${fault.buffered} ` +
-      `error=${fault.errorCode ?? 'keiner'}${fault.errorMessage ? ` (${fault.errorMessage})` : ''}. ` +
-      'Ohne Fehlercode und ohne gepufferte Daten liegt es daran, dass YouTube dem ' +
-      'Player keine Segmente liefert — nicht am Dekodieren.',
+    t('msg.playerStuck', {
+      readyState: fault.readyState,
+      networkState: fault.networkState,
+      buffered: fault.buffered,
+      error:
+        fault.errorCode == null
+          ? t('msg.noErrorCode')
+          : `${fault.errorCode}${fault.errorMessage ? ` (${fault.errorMessage})` : ''}`,
+    }),
   );
 }
 
@@ -813,40 +823,46 @@ function buildTrayMenu() {
     ? `${state.paused ? '⏸ ' : '▶ '}${truncate(state.title, 48)}`
     : t('tray.nothingPlaying');
 
+  const link = (up) => t(up ? 'tray.connected' : 'tray.disconnected');
+
   return Menu.buildFromTemplate([
     { label: `Overtone ${app.getVersion()}`, enabled: false },
     { type: 'separator' },
     { label: nowPlaying, enabled: false },
     {
-      label: `Discord: ${discord?.connected ? 'verbunden' : 'getrennt'}`,
+      label: t('tray.discord', { state: link(discord?.connected) }),
       enabled: false,
     },
     {
-      label: `Browser: ${bridge?.clientCount ? `${bridge.clientCount} verbunden` : 'getrennt'}`,
+      label: t('tray.browser', {
+        state: bridge?.clientCount
+          ? t('tray.clientsConnected', { count: bridge.clientCount })
+          : link(false),
+      }),
       enabled: false,
     },
-    { label: `Lyrics: ${lyricsStatusLabel()}`, enabled: false },
+    { label: t('tray.lyricsLine', { state: lyricsStatusLabel() }), enabled: false },
     { type: 'separator' },
     {
-      label: 'Presence aktiv',
+      label: t('tray.menu.presence'),
       type: 'checkbox',
       checked: cfg.enabled,
       click: (item) => setEnabled(item.checked),
     },
     {
-      label: 'Lyrics als Status',
+      label: t('tray.menu.lyrics'),
       type: 'checkbox',
       checked: cfg.lyricsEnabled,
       click: (item) => config.set({ lyricsEnabled: item.checked }),
     },
     {
-      label: 'Privat-Modus (Titel verbergen)',
+      label: t('tray.menu.privacy'),
       type: 'checkbox',
       checked: cfg.privacyMode,
       click: (item) => config.set({ privacyMode: item.checked }),
     },
     { type: 'separator' },
-    { label: 'Einstellungen …', click: () => openSettings() },
+    { label: t('tray.menu.settings'), click: () => openSettings() },
     {
       label: t('tray.openLyrics'),
       click: () => shell.openPath(path.join(app.getPath('userData'), 'lyrics')),
@@ -856,28 +872,28 @@ function buildTrayMenu() {
       click: () => shell.openPath(path.join(app.getPath('userData'), 'logs')),
     },
     {
-      label: 'Beim Anmelden starten',
+      label: t('tray.menu.autoStart'),
       type: 'checkbox',
       checked: cfg.autoStart,
       click: (item) => config.set({ autoStart: item.checked }),
     },
     { type: 'separator' },
-    { label: 'Beenden', click: () => app.quit() },
+    { label: t('tray.menu.quit'), click: () => app.quit() },
   ]);
 }
 
 function lyricsStatusLabel() {
   if (lyricState.current) {
-    const badge = lyricState.origin === 'captions' ? ' (Untertitel)' : '';
+    const badge = lyricState.origin === 'captions' ? ` (${t('tray.lyr.captionBadge')})` : '';
     return `${truncate(lyricState.current, 36)}${badge}`;
   }
   return {
     idle: '–',
-    loading: 'wird gesucht …',
-    found: 'synchronisiert',
-    captions: 'aus Untertiteln',
-    none: 'nicht gefunden',
-    disabled: 'aus',
+    loading: t('tray.lyr.searching'),
+    found: t('tray.lyr.synced'),
+    captions: t('tray.lyr.captions'),
+    none: t('tray.lyr.none'),
+    disabled: t('tray.lyr.off'),
   }[lyricState.status];
 }
 
@@ -919,7 +935,7 @@ function openSettings() {
     height: 700,
     minWidth: 560,
     minHeight: 560,
-    title: 'Overtone — Einstellungen',
+    title: t('win.settings'),
     icon: path.join(ASSETS, 'icon-256.png'),
     backgroundColor: '#12121a',
     autoHideMenuBar: true,
@@ -979,7 +995,9 @@ function registerIpc() {
     return true;
   });
   ipcMain.handle('i18n:get', () => ({
-    locale: config.get('language'),
+    // The resolved language, not the setting: 'sys' is a choice, not a locale,
+    // and the windows format numbers and dates with what they get here.
+    locale: getLocale(),
     languages: LANGUAGES,
     dictionary: dictionary(),
   }));
@@ -1159,9 +1177,9 @@ function setEnabled(enabled) {
   config.set({ enabled });
   if (!enabled) {
     presence.clear();
-    logger.info('Presence deaktiviert');
+    logger.info(t('msg.presenceOff'));
   } else {
-    logger.info('Presence aktiviert');
+    logger.info(t('msg.presenceOn'));
     tick();
   }
 }
@@ -1184,7 +1202,7 @@ function onConfigChanged(changed) {
     // Open windows hold their own copy of the dictionary, so hand them the new
     // one rather than making them ask for it.
     for (const win of [settingsWindow, wizardWindow, trayWindow]) {
-      if (win && !win.isDestroyed()) win.webContents.send('i18n:changed', dictionary());
+      if (win && !win.isDestroyed()) win.webContents.send('i18n:changed', { dictionary: dictionary(), locale: getLocale() });
     }
     refreshUi();
   }
@@ -1193,7 +1211,7 @@ function onConfigChanged(changed) {
   if (changed.includes('clientId')) discord.setClientId(config.get('clientId'));
   if (changed.includes('port')) {
     bridge.setPort(config.get('port')).catch((err) => {
-      logger.error(`Portwechsel fehlgeschlagen: ${err.message}`);
+      logger.error(t('msg.portChangeFailed', { error: err.message }));
     });
   }
   if (changed.includes('autoStart')) applyAutoStart();

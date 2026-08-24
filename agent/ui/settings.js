@@ -105,10 +105,17 @@ function render() {
     }
   }
 
+  // The decimal mark belongs to the language, not to the code — a German
+  // comma in an English window looked like a typo.
   const offset = Number(config.lyricsOffset || 0);
-  $('lyricsOffsetOut').textContent = `${offset >= 0 ? '+' : '−'}${Math.abs(offset)
-    .toFixed(1)
-    .replace('.', ',')} s`;
+  $('lyricsOffsetOut').textContent = `${new Intl.NumberFormat(T.locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    signDisplay: 'always',
+  })
+    .format(offset)
+    // Intl yields a hyphen; the design uses the typographic minus.
+    .replace('-', '−')} s`;
 
   // Dependent blocks follow their switch; merge strength only applies to line mode.
   openSub('showButton', config.showButton);
@@ -251,7 +258,9 @@ function bindSearch() {
 
     for (const item of all('#nav .nav-item')) {
       const panel = $(`panel-${item.dataset.panel}`);
-      const haystack = `${item.textContent} ${panel?.dataset.title || ''}`.toLowerCase();
+      // data-title holds a dictionary key, so the keywords follow the language.
+      const keywords = panel?.dataset.title ? T.t(panel.dataset.title) : '';
+      const haystack = `${item.textContent} ${keywords}`.toLowerCase();
       const hit = !needle || haystack.includes(needle);
       item.classList.toggle('hidden', !hit);
       if (hit && !firstMatch) firstMatch = item.dataset.panel;

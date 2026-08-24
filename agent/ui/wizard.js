@@ -25,9 +25,11 @@ init().catch((err) => console.error(err));
 async function init() {
   config = await api.config.get();
   await T.init(() => {
+    document.title = T.t('win.wizard');
     show(step);
     applyStatus(status);
   });
+  document.title = T.t('win.wizard');
   document.documentElement.setAttribute('data-theme', resolveTheme(config.theme));
 
   $('ext-path').textContent = await api.actions.extensionPath();

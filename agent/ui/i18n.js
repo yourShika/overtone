@@ -43,6 +43,11 @@ window.T = (() => {
     for (const el of root.querySelectorAll('[data-i18n-title]')) {
       el.setAttribute('title', t(el.dataset.i18nTitle));
     }
+    // Window buttons carry an icon and nothing else, so the accessible name is
+    // the only name they have — it must not stay in one fixed language.
+    for (const el of root.querySelectorAll('[data-i18n-label]')) {
+      el.setAttribute('aria-label', t(el.dataset.i18nLabel));
+    }
   }
 
   /**
@@ -57,7 +62,11 @@ window.T = (() => {
     apply();
 
     window.overtone.i18n.onChange((next) => {
-      dictionary = next || {};
+      // The locale travels with the dictionary: a window that only swapped its
+      // strings kept formatting numbers by the language it started in, so a
+      // German comma turned up in the English window.
+      dictionary = next?.dictionary || {};
+      locale = next?.locale || locale;
       apply();
       if (onChange) onChange(dictionary);
     });

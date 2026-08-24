@@ -23,9 +23,9 @@
             <span id="theme-icon" aria-hidden="true">☾</span>
             <span id="theme-label" data-i18n="app.dark"></span>
           </button>
-          <button class="winbtn" id="win-min" type="button" aria-label="Minimieren">—</button>
-          <button class="winbtn" id="win-max" type="button" aria-label="Maximieren">▢</button>
-          <button class="winbtn close" id="win-close" type="button" aria-label="Schließen">✕</button>
+          <button class="winbtn" id="win-min" type="button" data-i18n-label="app.minimise">—</button>
+          <button class="winbtn" id="win-max" type="button" data-i18n-label="app.maximise">▢</button>
+          <button class="winbtn close" id="win-close" type="button" data-i18n-label="app.close">✕</button>
         </div>
       </header>
 
@@ -38,14 +38,14 @@
           </label>
 
           <div class="nav" id="nav" role="tablist">
-            <button class="nav-item" role="tab" data-panel="conn" aria-selected="true" type="button"><span data-i18n="conn.title"></span><span class="nav-tail"><span class="dot" id="nav-dot-conn"></span></span>
+            <button class="nav-item" role="tab" data-panel="conn" aria-selected="true" type="button"><span data-i18n="nav.conn"></span><span class="nav-tail"><span class="dot" id="nav-dot-conn"></span></span>
             </button>
-            <button class="nav-item" role="tab" data-panel="look" aria-selected="false" type="button" data-i18n="lyr.mode"></button>
-            <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button" data-i18n="log.lyrics"></button>
-            <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button"><span data-i18n="tr.title"></span><span class="nav-tail"><span class="chip" id="nav-badge-tr" data-i18n="app.off"></span></span>
+            <button class="nav-item" role="tab" data-panel="look" aria-selected="false" type="button" data-i18n="nav.look"></button>
+            <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button" data-i18n="nav.lyr"></button>
+            <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button"><span data-i18n="nav.tr"></span><span class="nav-tail"><span class="chip" id="nav-badge-tr" data-i18n="app.off"></span></span>
             </button>
-            <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button" data-i18n="sys.title"></button>
-            <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button" data-i18n="log.title"></button>
+            <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button" data-i18n="nav.sys"></button>
+            <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button" data-i18n="nav.log"></button>
           </div>
 
           <div class="side-foot">
@@ -59,7 +59,7 @@
         <div class="content">
           <div class="scroll" id="scroll">
             <!-- Verbindung -->
-            <section class="panel" id="panel-conn" data-title="Verbindung Discord Client-ID Bridge-Port">
+            <section class="panel" id="panel-conn" data-title="search.conn">
               <h2 data-i18n="conn.title"></h2>
               <p class="sub" data-i18n="conn.sub"></p>
 
@@ -73,7 +73,7 @@
                 <label class="field">
                   <span class="field-head">
                     <span class="label" data-i18n="conn.clientId"></span>
-                    <button class="more" type="button" data-more="clientId">Mehr ▾</button>
+                    <button class="more" type="button" data-more="clientId" data-i18n="app.more"></button>
                   </span>
                   <input id="clientId" type="text" inputmode="numeric" data-i18n-placeholder="conn.clientIdPlaceholder" placeholder="" />
                   <span class="collapse" data-collapse="clientId"><span class="hint" data-i18n="conn.clientIdHelp"></span></span>
@@ -90,7 +90,7 @@
                   <span class="field-head">
                     <span class="label" data-i18n="popup.bridgePort"></span>
                     <span class="chip" id="port-chip"></span>
-                    <button class="more" type="button" data-more="port">Mehr ▾</button>
+                    <button class="more" type="button" data-more="port" data-i18n="app.more"></button>
                   </span>
                   <input id="port" class="narrow" type="number" min="1024" max="65535" placeholder="8787" />
                   <span class="collapse" data-collapse="port">
@@ -101,15 +101,15 @@
             </section>
 
             <!-- Darstellung -->
-            <section class="panel" id="panel-look" hidden data-title="Darstellung Aktivitätstyp Überschrift Fortschritt Thumbnail Button Zustand Privat">
-              <h2 data-i18n="lyr.mode"></h2>
+            <section class="panel" id="panel-look" hidden data-title="search.look">
+              <h2 data-i18n="look.title"></h2>
               <p class="sub" data-i18n="look.sub"></p>
 
               <div class="card">
                 <div class="field">
                   <span class="field-head"><span class="label" data-i18n="look.activityType"></span></span>
                   <div class="segmented" data-seg="activityType">
-                    <button type="button" data-value="auto" data-i18n="lyr.sourceAuto"></button>
+                    <button type="button" data-value="auto" data-i18n="look.typeAuto"></button>
                     <button type="button" data-value="listening" data-i18n="look.typeListening"></button>
                     <button type="button" data-value="watching" data-i18n="look.typeWatching"></button>
                     <button type="button" data-value="playing" data-i18n="look.typePlaying"></button>
@@ -120,7 +120,7 @@
                 <label class="field">
                   <span class="field-head">
                     <span class="label" data-i18n="look.activityName"></span>
-                    <button class="more" type="button" data-more="activityName">Mehr ▾</button>
+                    <button class="more" type="button" data-more="activityName" data-i18n="app.more"></button>
                   </span>
                   <input id="activityName" type="text" placeholder="{artist} - {title}" />
                   <span class="row" style="margin-top: 8px">
@@ -159,8 +159,8 @@
             </section>
 
             <!-- Lyrics -->
-            <section class="panel" id="panel-lyr" hidden data-title="Lyrics Songzeile Quelle LRCLIB Untertitel zusammenfassen Feinabstimmung Cache">
-              <h2 data-i18n="log.lyrics"></h2>
+            <section class="panel" id="panel-lyr" hidden data-title="search.lyr">
+              <h2 data-i18n="lyr.title"></h2>
               <p class="sub" data-i18n="lyr.sub"></p>
 
               <div class="card">
@@ -170,7 +170,7 @@
                   <div class="field">
                     <span class="field-head">
                       <span class="label" data-i18n="lyr.source"></span>
-                      <button class="more" type="button" data-more="lyricsSource">Mehr ▾</button>
+                      <button class="more" type="button" data-more="lyricsSource" data-i18n="app.more"></button>
                     </span>
                     <div class="segmented" data-seg="lyricsSource">
                       <button type="button" data-value="auto" data-i18n="lyr.sourceAuto"></button>
@@ -188,10 +188,7 @@
                       <button type="button" data-value="line" data-i18n="lyr.modeLine"></button>
                       <button type="button" data-value="block" data-i18n="lyr.modeBlock"></button>
                     </div>
-                    <p class="hint">
-                      Absatz zeigt mehrere Zeilen zugleich und wechselt erst, wenn die letzte davon
-                      durch ist — das braucht deutlich weniger von Discords knappem Update-Budget.
-                    </p>
+                    <p class="hint" data-i18n="lyr.modeHelp"></p>
                   </div>
 
                   <div class="field" data-only="line">
@@ -214,21 +211,21 @@
                     <span class="field-head"><span class="label" data-i18n="lyr.offset"></span></span>
                     <span class="slider-row">
                       <input id="lyricsOffset" type="range" min="-5" max="5" step="0.25" />
-                      <span class="value" id="lyricsOffsetOut">+0,0 s</span>
+                      <span class="value" id="lyricsOffsetOut"></span>
                     </span>
                     <span class="hint" data-i18n="lyr.offsetHelp"></span>
                   </label>
 
                   <div class="row">
                     <button class="btn" id="btn-clear-cache" type="button" data-i18n="lyr.clearCache"></button>
-                    <button class="btn" id="btn-open-lyrics" type="button" data-i18n="tray.openLyrics"></button>
+                    <button class="btn" id="btn-open-lyrics" type="button" data-i18n="lyr.openFolder"></button>
                   </div>
                 </div>
               </div>
             </section>
 
             <!-- Transkription -->
-            <section class="panel" id="panel-tr" hidden data-title="Transkription Whisper Sprache Modell Höchstlänge yt-dlp">
+            <section class="panel" id="panel-tr" hidden data-title="search.tr">
               <h2 data-i18n="tr.title"></h2>
               <p class="sub" data-i18n="tr.sub"></p>
 
@@ -256,11 +253,7 @@
                       <span class="label-note" data-i18n="tr.languageNote"></span>
                     </span>
                     <input id="transcribeLanguage" class="narrow" type="text" maxlength="5" data-i18n-placeholder="tr.languagePlaceholder" placeholder="" />
-                    <span class="hint">
-                      Gemessen an einem polnischen Track: automatisch erkannt wurde „Russisch“ und
-                      das Ergebnis war unbrauchbar — mit <code>pl</code> festgelegt kam lesbares
-                      Polnisch heraus, und zwar schneller.
-                    </span>
+                    <span class="hint" data-i18n="tr.languageHelp"></span>
                   </label>
 
                   <label class="field">
@@ -283,13 +276,13 @@
             </section>
 
             <!-- System -->
-            <section class="panel" id="panel-sys" hidden data-title="System Autostart Erscheinungsbild zurücksetzen">
+            <section class="panel" id="panel-sys" hidden data-title="search.sys">
               <h2 data-i18n="sys.title"></h2>
               <p class="sub" data-i18n="sys.sub"></p>
 
               <div class="card">
                 <div class="switch-row" data-switch="enabled"><span class="text" data-i18n="sys.enabled"></span></div>
-                <div class="switch-row" data-switch="autoStart"><span class="text" data-i18n="wiz.s1.autostart"></span></div>
+                <div class="switch-row" data-switch="autoStart"><span class="text" data-i18n="sys.autoStart"></span></div>
                 <div class="switch-row" data-switch="watchdogEnabled">
                   <span class="text"><span data-i18n="sys.watchdog"></span><small data-i18n="sys.watchdogSub"></small></span>
                 </div>
@@ -319,7 +312,7 @@
             </section>
 
             <!-- Protokoll -->
-            <section class="panel" id="panel-log" hidden data-title="Protokoll Log Fehler Warnungen">
+            <section class="panel" id="panel-log" hidden data-title="search.log">
               <h2 data-i18n="log.title"></h2>
               <p class="sub" data-i18n="log.sub"></p>
 
@@ -362,7 +355,7 @@
                 <span id="preview-total">--:--</span>
               </div>
             </div>
-            <div class="preview-note">VORSCHAU<br />wie in Discord</div>
+            <div class="preview-note" data-i18n="preview.note"></div>
           </footer>
         </div>
       </div>

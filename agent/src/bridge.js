@@ -61,7 +61,7 @@ class Bridge extends EventEmitter {
             return;
           }
 
-          this.logger.warn?.(`[bridge] Verbindung von fremdem Origin abgelehnt: ${origin}`);
+          this.logger.warn?.(t('msg.bridgeRejected', { origin }));
           done(false, 403, 'Forbidden origin');
         },
       });
@@ -153,7 +153,7 @@ class Bridge extends EventEmitter {
     });
 
     socket.on('error', (err) => {
-      this.logger.debug?.(`[bridge] Socket-Fehler: ${err.message}`);
+      this.logger.debug?.(t('msg.bridgeError', { error: err.message }));
     });
   }
 

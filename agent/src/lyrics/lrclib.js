@@ -11,6 +11,7 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { t } = require('../i18n');
 
 const { parseLrc } = require('./lrc');
 
@@ -174,7 +175,7 @@ class LyricsProvider {
       await fs.mkdir(this.cacheDir, { recursive: true });
       await fs.writeFile(this._diskPath(key), JSON.stringify(entry), 'utf8');
     } catch (err) {
-      this.logger.warn?.(`[lyrics] Cache konnte nicht geschrieben werden: ${err.message}`);
+      this.logger.warn?.(t('msg.cacheWriteFailed', { error: err.message }));
     }
   }
 

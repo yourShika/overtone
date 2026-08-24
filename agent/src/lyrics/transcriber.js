@@ -257,7 +257,7 @@ class Transcriber extends EventEmitter {
 
     const files = await fs.readdir(this.workDir);
     const match = files.find((name) => name.startsWith(`${videoId}.`));
-    if (!match) throw new Error('yt-dlp lieferte keine Datei');
+    if (!match) throw new Error(t('msg.trNoFile'));
     return path.join(this.workDir, match);
   }
 

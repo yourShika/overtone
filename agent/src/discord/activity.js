@@ -171,7 +171,7 @@ function buildActivity({ state, config, lyric = null, image = null }) {
   // underneath. Without lyrics the second line carries the channel/artist.
   if (config.privacyMode) {
     activity.details = clamp(t('presence.privateTitle'));
-    activity.state = clamp('Titel ausgeblendet');
+    activity.state = clamp(t('presence.privateState'));
   } else if (lyric && config.lyricsProminent) {
     // Lyric first, title demoted — the closest legitimate stand-in for putting
     // the line in the custom status field.
@@ -182,7 +182,7 @@ function buildActivity({ state, config, lyric = null, image = null }) {
     if (lyric) {
       activity.state = clamp(`♪ ${lyric}`);
     } else if (byline) {
-      activity.state = clamp(isMusic ? byline : `von ${byline}`);
+      activity.state = clamp(isMusic ? byline : t('presence.by', { artist: byline }));
     }
   }
 

@@ -618,7 +618,7 @@ test('buildActivity produces title, channel, progress and a button', () => {
 
   assert.equal(activity.type, 3); // watching
   assert.equal(activity.details, 'Never Gonna Give You Up');
-  assert.equal(activity.state, 'von Rick Astley');
+  assert.equal(activity.state, 'by Rick Astley');
   assert.ok(activity.timestamps.start <= Date.now());
   assert.ok(activity.timestamps.end > Date.now());
   assert.equal(activity.assets.large_image, BASE_STATE.thumbnail);
@@ -666,7 +666,7 @@ test('buildActivity keeps the normal layout when there is no lyric', () => {
   });
 
   assert.equal(activity.details, 'Never Gonna Give You Up');
-  assert.equal(activity.state, 'von Rick Astley');
+  assert.equal(activity.state, 'by Rick Astley');
 });
 
 test('buildActivity honours privacy mode over lyric prominence', () => {

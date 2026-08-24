@@ -329,7 +329,9 @@ function migrate(values, from) {
     // deliberately alone, which we approximate by touching only the old default.
     if (values.lyricsOffset === 1.5) {
       values.lyricsOffset = 0;
-      notes.push('Lyrics-Vorlauf von 1,5 s auf 0 gesetzt (Zeilen werden jetzt exakt getaktet)');
+      // A key rather than a sentence: migration runs while the config is still
+      // being loaded, which is before the chosen language is in effect.
+      notes.push('msg.migrateLyricsOffset');
     }
   }
 

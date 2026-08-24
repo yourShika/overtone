@@ -567,6 +567,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 .preview-note {
   flex: none;
+  /* The string carries its own line break, so it stays one dictionary entry. */
+  white-space: pre-line;
   text-align: right;
   font: 400 10px var(--mono);
   color: var(--dim2);

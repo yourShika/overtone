@@ -17,6 +17,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { EventEmitter } = require('node:events');
 const { randomUUID } = require('node:crypto');
+const { t } = require('../i18n');
 
 const OP = {
   HANDSHAKE: 0,
@@ -232,7 +233,7 @@ class DiscordIPC extends EventEmitter {
         return;
 
       case OP.CLOSE:
-        this.emit('error', new Error(payload?.message || 'Discord hat die Verbindung geschlossen.'));
+        this.emit('error', new Error(payload?.message || t('msg.discordClosed')));
         this._onClose('remote-close');
         return;
 
@@ -248,7 +249,7 @@ class DiscordIPC extends EventEmitter {
         if (payload?.evt === 'ERROR') {
           this.emit(
             'error',
-            new Error(payload?.data?.message || 'Discord hat den Befehl abgelehnt.'),
+            new Error(payload?.data?.message || t('msg.discordRefused')),
           );
         }
         this.emit('frame', payload);

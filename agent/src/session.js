@@ -15,11 +15,32 @@ const { stripNoise } = require('./lyrics/trackparse');
 
 const STALE_AFTER_MS = 20000;
 
+/**
+ * How long a cleared track stays claimable by the next report.
+ *
+ * A clear does not always mean the song ended. The extension's MV3 worker is
+ * evicted after ~30 s idle and revived by a one-minute alarm, the watchdog
+ * reloads a wedged tab, a snapshot simply arrives late — each of those drops the
+ * session and the very same track then comes back. Ninety seconds covers the
+ * longest gap the plumbing itself produces (the keepalive alarm) with room to
+ * spare, while putting the song on again an hour later is still news.
+ */
+const RESUME_WITHIN_MS = 90000;
+
 class Session {
   constructor() {
     /** @type {object|null} */
     this.raw = null;
     this.receivedAt = 0;
+    /**
+     * Identity of the last track, kept deliberately across clear().
+     *
+     * `raw` going null must retract the presence without also erasing what was
+     * playing; conflating the two is what made every reconnect read as a new
+     * song.
+     */
+    this.lastId = null;
+    this.clearedAt = 0;
   }
 
   /**
@@ -33,8 +54,14 @@ class Session {
     this.raw = normalise(snapshot);
     this.receivedAt = Date.now();
 
+    // With a live snapshot, compare against it. Without one we were cleared, so
+    // fall back to what we remember: a returning track is a resumption.
+    const known = previous ? previous.id : this.resumableId();
+
     return {
-      trackChanged: previous?.id !== this.raw.id,
+      trackChanged: known !== this.raw.id,
+      /** The same track came back after a clear: a reconnect, not a new song. */
+      resumed: !previous && known !== null && known === this.raw.id,
       pausedChanged: previous?.paused !== this.raw.paused,
       seeked:
         previous?.id === this.raw.id &&
@@ -44,8 +71,21 @@ class Session {
   }
 
   clear() {
+    if (this.raw) {
+      this.lastId = this.raw.id;
+      this.clearedAt = Date.now();
+    }
     this.raw = null;
     this.receivedAt = 0;
+  }
+
+  /**
+   * The track a returning report may claim without counting as new, or null
+   * once too much time has passed for that to be believable.
+   */
+  resumableId() {
+    if (!this.lastId) return null;
+    return Date.now() - this.clearedAt <= RESUME_WITHIN_MS ? this.lastId : null;
   }
 
   get active() {
@@ -154,4 +194,4 @@ function num(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-module.exports = { Session, STALE_AFTER_MS };
+module.exports = { Session, STALE_AFTER_MS, RESUME_WITHIN_MS };

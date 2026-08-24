@@ -273,7 +273,10 @@ async function setupBridge() {
     reportFault(payload);
 
     if (change.trackChanged) {
-      logger.info(t('msg.nowPlaying', { title: payload.title || '—' }));
+      // Ask the session, not the wire: payload.title is YouTube's raw string, so
+      // the log announced "… (Official Video)" while the presence, the tray and
+      // the settings preview all showed the cleaned title.
+      logger.info(t('msg.nowPlaying', { title: trackLabel() }));
       resetLyrics();
 
       // Warn once per track rather than once per report, so the log stays
@@ -281,6 +284,10 @@ async function setupBridge() {
       if (!session.raw.captionCapable && config.get('lyricsSource') !== 'lrclib') {
         logger.warn(t('msg.extensionOutdated'));
       }
+    } else if (change.resumed) {
+      // Invisible at the default level, but with --verbose it turns "why is this
+      // song announced four times" into one line that says what happened.
+      logger.debug(t('msg.trackResumed', { title: trackLabel() }));
     }
     // These must not sit behind a lyric-boundary deferral: showing the previous
     // song for a few extra seconds is far worse than a slightly early lyric.
@@ -744,6 +751,17 @@ function reportFault(payload) {
           : `${fault.errorCode}${fault.errorMessage ? ` (${fault.errorMessage})` : ''}`,
     }),
   );
+}
+
+/**
+ * What is playing, spelled the way every other surface spells it.
+ *
+ * The log used to print the wire payload, which still carries "(Official
+ * Video)" and friends. session.displayTitle() is the same cleaning the presence
+ * and the settings preview apply, and it honours the cleanTitles setting.
+ */
+function trackLabel() {
+  return session.displayTitle(config.get('cleanTitles') !== false) || '—';
 }
 
 function resetLyrics() {

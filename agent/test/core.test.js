@@ -17,7 +17,7 @@ const { parseLrc, lineAt, nextLineTime, lyricWindow, buildBlocks, blockAt } = re
 const { parseTrack, stripNoise, cleanArtist, formatArtists } = require('../src/lyrics/trackparse');
 const { buildActivity } = require('../src/discord/activity');
 const { PresenceController } = require('../src/discord/presence');
-const { Session } = require('../src/session');
+const { Session, RESUME_WITHIN_MS } = require('../src/session');
 const { upscaleGoogleArt } = require('../src/thumbnails');
 const { DEFAULTS, CONFIG_VERSION, migrate } = require('../src/config');
 
@@ -1086,6 +1086,45 @@ test('Session flags track changes, pauses and seeks', () => {
   assert.equal(session.update({ ...BASE_STATE, position: 31, paused: true }).pausedChanged, true);
   assert.equal(session.update({ ...BASE_STATE, position: 120 }).seeked, true);
   assert.equal(session.update({ ...BASE_STATE, videoId: 'other' }).trackChanged, true);
+});
+
+test('Session does not greet the same track again after a clear', () => {
+  const session = new Session();
+  assert.equal(session.update({ ...BASE_STATE }).trackChanged, true);
+
+  // A dropped socket, a watchdog reload, a snapshot that arrived late — the
+  // session is cleared, but the song on screen never changed.
+  session.clear();
+  const back = session.update({ ...BASE_STATE, position: 44 });
+
+  assert.equal(back.trackChanged, false, 'ein Reconnect ist kein neuer Song');
+  assert.equal(back.resumed, true);
+
+  // A different song after a clear is still news.
+  session.clear();
+  assert.equal(session.update({ ...BASE_STATE, videoId: 'other' }).trackChanged, true);
+});
+
+test('Session announces the same track again once the resume window passed', () => {
+  const session = new Session();
+  session.update({ ...BASE_STATE });
+  session.clear();
+  session.clearedAt -= RESUME_WITHIN_MS + 1000;
+
+  const later = session.update({ ...BASE_STATE });
+  assert.equal(later.trackChanged, true);
+  assert.equal(later.resumed, false);
+});
+
+test('displayTitle drops the decoration the log used to print', () => {
+  const session = new Session();
+  session.update({ ...BASE_STATE, title: 'DJ SKIBA & WAVYZIEN - KRĘCISZ MNIE (Official Video)' });
+
+  assert.equal(session.displayTitle(), 'DJ SKIBA & WAVYZIEN - KRĘCISZ MNIE');
+  assert.equal(
+    session.displayTitle(false),
+    'DJ SKIBA & WAVYZIEN - KRĘCISZ MNIE (Official Video)',
+  );
 });
 
 test('Session distinguishes "cannot do captions" from "captions are off"', () => {

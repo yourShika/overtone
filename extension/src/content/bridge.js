@@ -21,6 +21,14 @@
   const HEARTBEAT_MS = 5000;
   /** Position drift beyond this means the user seeked. */
   const SEEK_TOLERANCE_S = 2;
+  /**
+   * How long a title-less frame must persist before the presence is retracted.
+   *
+   * Has to be a timer rather than a count of bad frames: probe.js skips payloads
+   * identical to the previous one, so a run of nulls arrives here as exactly one
+   * message and a counter would never advance past 1.
+   */
+  const CLEAR_GRACE_MS = 3000;
 
   // Decision rules live in watchdog.js so they can be tested; this file only
   // carries them out. See that file for why each guard exists.
@@ -30,6 +38,8 @@
   let last = null;
   let lastSentAt = 0;
   let lastSentPosition = 0;
+  /** Pending retraction, armed by a title-less frame and disarmed by a good one. */
+  let clearTimer = null;
 
   /** When the current uninterrupted stretch of trouble began. */
   let troubleSince = null;
@@ -62,6 +72,7 @@
     // A browsing snapshot has no title by design; it says "a YouTube tab is
     // open and in front" and nothing more.
     if (snapshot && snapshot.idle) {
+      cancelClear();
       if (!last || !last.idle || last.page !== snapshot.page || overdue()) {
         last = snapshot;
         lastSentAt = Date.now();
@@ -71,13 +82,17 @@
       return;
     }
 
+    // One bad frame is not the end of playback. getVideoData() comes back empty
+    // and the player reports UNSTARTED or CUED for a tick or two every time
+    // YouTube swaps the media element — an ad break, a quality change, an SPA
+    // navigation — and yt-player-updated schedules an extra probe 250 ms into
+    // exactly that window. Retracting on the first one made the agent forget the
+    // track and then greet the very same song as new a second later.
     if (!snapshot || !snapshot.title) {
-      if (last) {
-        last = null;
-        send({ type: 'clear', payload: { reason: 'no-media' } });
-      }
+      scheduleClear('no-media');
       return;
     }
+    cancelClear();
 
     if (shouldSend(snapshot)) {
       last = snapshot;
@@ -176,6 +191,23 @@
     }
   }
 
+  /** Arm the retraction; a usable snapshot arriving first calls it off. */
+  function scheduleClear(reason) {
+    if (clearTimer || !last) return;
+    clearTimer = setTimeout(() => {
+      clearTimer = null;
+      if (!last) return;
+      last = null;
+      send({ type: 'clear', payload: { reason } });
+    }, CLEAR_GRACE_MS);
+  }
+
+  function cancelClear() {
+    if (!clearTimer) return;
+    clearTimeout(clearTimer);
+    clearTimer = null;
+  }
+
   function overdue() {
     return Date.now() - lastSentAt >= HEARTBEAT_MS;
   }
@@ -214,6 +246,8 @@
 
   // Closing the tab or navigating away must retract the presence.
   window.addEventListener('pagehide', () => {
+    // The page really is going; no grace period applies.
+    cancelClear();
     if (last) send({ type: 'clear', payload: { reason: 'pagehide' } });
   });
 })();

@@ -292,6 +292,7 @@ module.exports = {
   'msg.presenceSent': '→ Discord: {details}',
   'msg.discordError': 'Discord: {error}',
   'msg.playbackEnded': 'Reproducción terminada ({reason})',
+  'msg.trackResumed': 'Se reanuda la misma pista: {title}',
   'msg.bridgeFailed': 'El puente no ha podido arrancar: {error}',
   'msg.lyricsError': 'Error de letra: {error}',
   'msg.cacheCleared': 'Caché de letras vaciada',

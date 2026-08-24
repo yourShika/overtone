@@ -315,6 +315,7 @@ module.exports = {
   'msg.presenceSent': '→ Discord: {details}',
   'msg.discordError': 'Discord: {error}',
   'msg.playbackEnded': 'Playback ended ({reason})',
+  'msg.trackResumed': 'Resumed the same track: {title}',
   'msg.bridgeFailed': 'The bridge could not start: {error}',
   'msg.lyricsError': 'Lyrics error: {error}',
   'msg.cacheCleared': 'Lyrics cache cleared',

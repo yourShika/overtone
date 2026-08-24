@@ -96,6 +96,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       connected: socket?.readyState === WebSocket.OPEN,
       port: currentPort,
       agent: agentStatus,
+      // The agent owns the translations; the popup only renders what it sends.
+      i18n: agentStatus?.i18n || {},
       now: activeSnapshot(),
     });
     return true;

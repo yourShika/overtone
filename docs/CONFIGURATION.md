@@ -51,6 +51,7 @@ away what the rest of the presence is hiding.
 | Setting | Default | Meaning |
 |---|---|---|
 | `activityType` | `auto` | Header prefix |
+| `cleanTitles` | `true` | Strip "(Official Music Video)" and the like |
 | `activityName` | `{artist} - {title}` | Header name; empty = application name |
 | `showTimestamps` | `true` | Progress bar |
 | `showButton` | `true` | Button to the video |
@@ -82,7 +83,9 @@ ships, and render without a trip through Discord's image proxy.
 | `lyricsSource` | `auto` | `auto`, `lrclib`, `captions` |
 | `lyricsMusicOnly` | `false` | Only on YouTube Music |
 | `lyricsProminent` | `false` | Lyric on the first, bold line |
-| `lyricsCombine` | `1` | Merge strength: `0` off, `1`, `1.5`, `2` |
+| `lyricsMode` | `line` | `line` or `block` (a paragraph at a time) |
+| `lyricsMaxChars` | `120` | Character budget for one paragraph |
+| `lyricsCombine` | `1` | Line mode only. Merge strength: `0` off, `1`, `1.5`, `2` |
 | `lyricsSave` | `true` | Save found lyrics as `.lrc` files |
 | `lyricsOffset` | `0` | Manual trim in seconds, for skewed files |
 
@@ -128,6 +131,8 @@ is not confident about — while leaving genuine choruses alone.
 | Setting | Default | Meaning |
 |---|---|---|
 | `enabled` | `true` | Master switch; off clears the presence entirely |
+| `language` | `en` | `en`, `de`, `pl`, `ru`, `es`, or `sys` to follow the OS |
+| `theme` | `dark` | `dark`, `light`, or `sys` |
 | `watchdogEnabled` | `true` | Reload a wedged YouTube tab |
 | `autoStart` | `false` | Start with Windows |
 | `startMinimised` | `true` | Start without the settings window |
@@ -151,3 +156,21 @@ The build config lives in `agent/electron-builder.config.js` rather than in
 
 How the pieces fit together: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 The extension-to-agent protocol: [`PROTOCOL.md`](PROTOCOL.md).
+
+---
+
+## Adding a language
+
+Overtone ships English, German, Polish, Russian and Spanish. Everything the
+program shows goes through the dictionary, including the log and the text on
+your Discord profile.
+
+To add one:
+
+1. Copy `agent/src/locales/en.js` to `agent/src/locales/<code>.js` and translate
+   the values. Leave `{placeholders}` exactly as they are.
+2. Add the code and its native name to `LANGUAGES` in `agent/src/i18n.js`.
+
+`npm test` then checks the new file against English: every key present, none
+extra, and every placeholder intact. A missing key is otherwise invisible until
+someone meets a raw identifier on screen.

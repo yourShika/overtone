@@ -17,6 +17,7 @@ init().catch((err) => console.error(err));
 
 async function init() {
   config = await api.config.get();
+  await T.init(() => renderConfig());
   document.documentElement.setAttribute('data-theme', resolveTheme(config.theme));
 
   const privacy = document.createElement('button');
@@ -76,7 +77,7 @@ function resolveTheme(choice) {
 }
 
 function renderConfig() {
-  $('pop-pause-label').textContent = config.enabled ? 'Presence pausieren' : 'Presence fortsetzen';
+  $('pop-pause-label').textContent = T.t(config.enabled ? 'tray.pause' : 'tray.resume');
   $('pop-privacy')
     .querySelector('.switch')
     .setAttribute('aria-checked', config.privacyMode ? 'true' : 'false');
@@ -84,7 +85,7 @@ function renderConfig() {
   const chip = $('pop-state');
   chip.className = config.enabled ? 'chip good' : 'chip';
   chip.querySelector('.dot').className = config.enabled ? 'dot on' : 'dot';
-  $('pop-state-text').textContent = config.enabled ? 'aktiv' : 'pausiert';
+  $('pop-state-text').textContent = T.t(config.enabled ? 'tray.active' : 'tray.paused');
 }
 
 function applyStatus(next) {

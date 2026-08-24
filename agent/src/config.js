@@ -47,11 +47,21 @@ const DEFAULTS = {
    * ("doli x szevczor" -> "doli, szevczor").
    */
   activityName: '{artist} - {title}',
+  /**
+   * Strip the noise YouTube titles carry — "(Official Music Video)", "[HD]",
+   * "(Lyrics)" and the like — from what is displayed.
+   *
+   * Only clearly decorative parts go. Brackets that carry meaning stay, so
+   * "(Live at Wembley)", "(Remastered 2011)" and "(prod. …)" survive: dropping
+   * those would change which recording you appear to be listening to.
+   */
+  cleanTitles: true,
   showTimestamps: true,
   showButton: true,
   buttonLabel: '',
   showChannelButton: false,
-  channelButtonLabel: 'Kanal öffnen',
+  /** Empty means the translated default is used. */
+  channelButtonLabel: '',
   hideWhenPaused: false,
   /**
    * Show a small badge on the artwork for playing, paused, looping or live.
@@ -204,6 +214,15 @@ const DEFAULTS = {
   ytdlpJsRuntime: 'node',
 
   // --- system ---------------------------------------------------------------
+  /**
+   * Interface language, applied to everything the program shows — including the
+   * text that lands on your Discord profile.
+   *
+   * English by default rather than the system language: the profile text is
+   * read by other people, and English is the safest thing for them to meet.
+   * 'sys' follows the operating system instead.
+   */
+  language: 'en',
   /** 'dark' | 'light' | 'sys' — 'sys' follows the operating system. */
   theme: 'dark',
   autoStart: false,

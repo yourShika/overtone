@@ -28,6 +28,7 @@ Your friends see the song, not just "watching YouTube".
 | 🎤 **Lyrics, line by line** | Moving along with the song, or as paragraphs |
 | ▶️ **A state badge** | Playing, paused, on repeat, or live |
 | 🔗 **A button to the video** | One click and they're watching it too |
+| 🌍 **Five languages** | English, German, Polish, Russian, Spanish — including what lands on your profile |
 | 🔒 **Privacy mode** | Show that you're watching something, without saying what |
 
 ---

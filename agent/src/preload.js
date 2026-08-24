@@ -43,6 +43,10 @@ contextBridge.exposeInMainWorld('overtone', {
     extensionPath: () => ipcRenderer.invoke('app:extensionPath'),
     showExtensionFolder: () => ipcRenderer.invoke('app:showExtensionFolder'),
   },
+  i18n: {
+    get: () => ipcRenderer.invoke('i18n:get'),
+    onChange: subscribe('i18n:changed'),
+  },
   wizard: {
     finish: () => ipcRenderer.invoke('wizard:finish'),
   },

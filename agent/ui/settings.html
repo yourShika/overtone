@@ -16,12 +16,12 @@
       <header class="titlebar">
         <div class="brand">
           <span class="mark" aria-hidden="true"></span>
-          <span class="brand-name">Overtone</span>
+          <span class="brand-name" data-i18n="app.name"></span>
         </div>
         <div class="titlebar-right">
           <button class="theme-pill" id="theme-toggle" type="button">
             <span id="theme-icon" aria-hidden="true">☾</span>
-            <span id="theme-label">Dunkel</span>
+            <span id="theme-label" data-i18n="app.dark"></span>
           </button>
           <button class="winbtn" id="win-min" type="button" aria-label="Minimieren">—</button>
           <button class="winbtn" id="win-max" type="button" aria-label="Maximieren">▢</button>
@@ -34,36 +34,24 @@
         <nav class="sidebar">
           <label class="search">
             <span aria-hidden="true">⌕</span>
-            <input id="search" type="text" placeholder="Einstellung suchen" autocomplete="off" />
+            <input id="search" type="text" data-i18n-placeholder="nav.search" placeholder="" autocomplete="off" />
           </label>
 
           <div class="nav" id="nav" role="tablist">
-            <button class="nav-item" role="tab" data-panel="conn" aria-selected="true" type="button">
-              Verbindung
-              <span class="nav-tail"><span class="dot" id="nav-dot-conn"></span></span>
+            <button class="nav-item" role="tab" data-panel="conn" aria-selected="true" type="button"><span data-i18n="conn.title"></span><span class="nav-tail"><span class="dot" id="nav-dot-conn"></span></span>
             </button>
-            <button class="nav-item" role="tab" data-panel="look" aria-selected="false" type="button">
-              Darstellung
+            <button class="nav-item" role="tab" data-panel="look" aria-selected="false" type="button" data-i18n="lyr.mode"></button>
+            <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button" data-i18n="log.lyrics"></button>
+            <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button"><span data-i18n="tr.title"></span><span class="nav-tail"><span class="chip" id="nav-badge-tr" data-i18n="app.off"></span></span>
             </button>
-            <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button">
-              Lyrics
-            </button>
-            <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button">
-              Transkription
-              <span class="nav-tail"><span class="chip" id="nav-badge-tr">AUS</span></span>
-            </button>
-            <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button">
-              System
-            </button>
-            <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button">
-              Protokoll
-            </button>
+            <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button" data-i18n="sys.title"></button>
+            <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button" data-i18n="log.title"></button>
           </div>
 
           <div class="side-foot">
-            <div class="row"><span class="dot" id="foot-discord"></span><span id="foot-discord-text">Discord</span></div>
-            <div class="row"><span class="dot" id="foot-browser"></span><span id="foot-browser-text">Browser</span></div>
-            <div class="row"><span>Version</span><span id="foot-version" class="tag">—</span></div>
+            <div class="row"><span class="dot" id="foot-discord"></span><span id="foot-discord-text" data-i18n="status.discord"></span></div>
+            <div class="row"><span class="dot" id="foot-browser"></span><span id="foot-browser-text" data-i18n="status.browser"></span></div>
+            <div class="row"><span data-i18n="app.version"></span><span id="foot-version" class="tag">—</span></div>
           </div>
         </nav>
 
@@ -72,50 +60,41 @@
           <div class="scroll" id="scroll">
             <!-- Verbindung -->
             <section class="panel" id="panel-conn" data-title="Verbindung Discord Client-ID Bridge-Port">
-              <h2>Verbindung</h2>
-              <p class="sub">Wem Overtone die Presence schickt, und worüber der Browser es erreicht.</p>
+              <h2 data-i18n="conn.title"></h2>
+              <p class="sub" data-i18n="conn.sub"></p>
 
               <div class="notice bad" id="notice-discord" hidden>
-                <strong>Discord nicht erreichbar.</strong>
+                <strong data-i18n="conn.noDiscord"></strong>
                 <span id="notice-discord-text"></span>
-                <div class="row"><button class="btn" id="btn-reconnect" type="button">Erneut versuchen</button></div>
+                <div class="row"><button class="btn" id="btn-reconnect" type="button" data-i18n="app.retry"></button></div>
               </div>
 
               <div class="card">
                 <label class="field">
                   <span class="field-head">
-                    <span class="label">Discord Client-ID</span>
+                    <span class="label" data-i18n="conn.clientId"></span>
                     <button class="more" type="button" data-more="clientId">Mehr ▾</button>
                   </span>
-                  <input id="clientId" type="text" inputmode="numeric" placeholder="19 Ziffern aus dem Developer Portal" />
-                  <span class="collapse" data-collapse="clientId">
-                    <span class="hint">
-                      Aus dem Developer Portal: <em>New Application</em>, Namen vergeben, dann die
-                      <em>Application ID</em> kopieren. Der Name der Application ist der Rückfall für
-                      die Überschrift, falls du unter „Darstellung“ keine eigene Vorlage setzt.
-                    </span>
-                  </span>
+                  <input id="clientId" type="text" inputmode="numeric" data-i18n-placeholder="conn.clientIdPlaceholder" placeholder="" />
+                  <span class="collapse" data-collapse="clientId"><span class="hint" data-i18n="conn.clientIdHelp"></span></span>
                 </label>
 
                 <div class="row">
-                  <button class="btn primary" id="btn-reconnect2" type="button">Discord neu verbinden</button>
-                  <a class="btn" href="#" data-external="https://discord.com/developers/applications">Portal öffnen</a>
+                  <button class="btn primary" id="btn-reconnect2" type="button" data-i18n="conn.reconnect"></button>
+                  <a class="btn" href="#" data-external="https://discord.com/developers/applications" data-i18n="conn.openPortal"></a>
                 </div>
               </div>
 
               <div class="card">
                 <label class="field">
                   <span class="field-head">
-                    <span class="label">Bridge-Port</span>
+                    <span class="label" data-i18n="popup.bridgePort"></span>
                     <span class="chip" id="port-chip"></span>
                     <button class="more" type="button" data-more="port">Mehr ▾</button>
                   </span>
                   <input id="port" class="narrow" type="number" min="1024" max="65535" placeholder="8787" />
                   <span class="collapse" data-collapse="port">
-                    <span class="hint">
-                      Der lokale Kanal zwischen Browser-Erweiterung und Programm. Nur ändern, wenn
-                      ein anderes Programm den Port belegt — die Erweiterung muss denselben nutzen.
-                    </span>
+                    <span class="hint" data-i18n="conn.portHelp"></span>
                   </span>
                 </label>
               </div>
@@ -123,24 +102,24 @@
 
             <!-- Darstellung -->
             <section class="panel" id="panel-look" hidden data-title="Darstellung Aktivitätstyp Überschrift Fortschritt Thumbnail Button Zustand Privat">
-              <h2>Darstellung</h2>
-              <p class="sub">Was an deinem Profil steht und wie es aussieht.</p>
+              <h2 data-i18n="lyr.mode"></h2>
+              <p class="sub" data-i18n="look.sub"></p>
 
               <div class="card">
                 <div class="field">
-                  <span class="field-head"><span class="label">Aktivitätstyp</span></span>
+                  <span class="field-head"><span class="label" data-i18n="look.activityType"></span></span>
                   <div class="segmented" data-seg="activityType">
-                    <button type="button" data-value="auto">Automatisch</button>
-                    <button type="button" data-value="listening">Hört …</button>
-                    <button type="button" data-value="watching">Schaut …</button>
-                    <button type="button" data-value="playing">Spielt …</button>
+                    <button type="button" data-value="auto" data-i18n="lyr.sourceAuto"></button>
+                    <button type="button" data-value="listening" data-i18n="look.typeListening"></button>
+                    <button type="button" data-value="watching" data-i18n="look.typeWatching"></button>
+                    <button type="button" data-value="playing" data-i18n="look.typePlaying"></button>
                   </div>
-                  <p class="hint">Bestimmt nur das Präfix. Was dahinter steht, legt das Feld darunter fest.</p>
+                  <p class="hint" data-i18n="look.typeHelp"></p>
                 </div>
 
                 <label class="field">
                   <span class="field-head">
-                    <span class="label">Überschrift der Aktivität</span>
+                    <span class="label" data-i18n="look.activityName"></span>
                     <button class="more" type="button" data-more="activityName">Mehr ▾</button>
                   </span>
                   <input id="activityName" type="text" placeholder="{artist} - {title}" />
@@ -150,71 +129,64 @@
                     <button class="token" type="button" data-token="{channel}">{channel}</button>
                   </span>
                   <span class="collapse" data-collapse="activityName">
-                    <span class="hint">
-                      Leer lassen für den Namen deiner Discord-Application. Mehrere Künstler werden
-                      zur Komma-Form normalisiert. Im Privat-Modus greift die Vorlage nicht.
-                    </span>
+                    <span class="hint" data-i18n="look.activityNameHelp"></span>
                   </span>
                 </label>
               </div>
 
               <div class="card">
-                <div class="switch-row" data-switch="showTimestamps"><span class="text">Fortschrittsbalken &amp; Restzeit</span></div>
-                <div class="switch-row" data-switch="highResArtwork"><span class="text">Hochauflösendes Thumbnail</span></div>
-                <div class="switch-row" data-switch="showButton"><span class="text">Button zum Video</span></div>
+                <div class="switch-row" data-switch="showTimestamps"><span class="text" data-i18n="look.timestamps"></span></div>
+                <div class="switch-row" data-switch="highResArtwork"><span class="text" data-i18n="look.highRes"></span></div>
+                <div class="switch-row" data-switch="showButton"><span class="text" data-i18n="look.button"></span></div>
                 <div class="subblock" data-sub="showButton">
                   <label class="field">
-                    <span class="field-head"><span class="label">Button-Beschriftung</span></span>
-                    <input id="buttonLabel" type="text" maxlength="32" placeholder="Auf YouTube ansehen" />
+                    <span class="field-head"><span class="label" data-i18n="look.buttonLabel"></span></span>
+                    <input id="buttonLabel" type="text" maxlength="32" data-i18n-placeholder="presence.watchButton" placeholder="" />
                   </label>
-                  <div class="switch-row" data-switch="showChannelButton"><span class="text">Zweiter Button zum Kanal</span></div>
+                  <div class="switch-row" data-switch="showChannelButton"><span class="text" data-i18n="look.channelButton"></span></div>
                 </div>
                 <div class="switch-row" data-switch="showStateBadge">
-                  <span class="text">Zustands-Symbol auf dem Bild<small>läuft, pausiert, Wiederholung, Live</small></span>
+                  <span class="text"><span data-i18n="look.stateBadge"></span><small data-i18n="look.stateBadgeSub"></small></span>
                 </div>
                 <div class="switch-row" data-switch="showWhenBrowsing">
-                  <span class="text">Auch anzeigen, wenn nichts läuft<small>nur aus einem sichtbaren Tab</small></span>
+                  <span class="text"><span data-i18n="look.whenBrowsing"></span><small data-i18n="look.whenBrowsingSub"></small></span>
                 </div>
-                <div class="switch-row" data-switch="hideWhenPaused"><span class="text">Presence ausblenden, wenn pausiert</span></div>
+                <div class="switch-row" data-switch="hideWhenPaused"><span class="text" data-i18n="look.hidePaused"></span></div>
                 <div class="switch-row" data-switch="privacyMode">
-                  <span class="text">Privat-Modus<small>Titel und Thumbnail verbergen</small></span>
+                  <span class="text"><span data-i18n="tray.privacy"></span><small data-i18n="look.privacySub"></small></span>
                 </div>
               </div>
             </section>
 
             <!-- Lyrics -->
             <section class="panel" id="panel-lyr" hidden data-title="Lyrics Songzeile Quelle LRCLIB Untertitel zusammenfassen Feinabstimmung Cache">
-              <h2>Lyrics</h2>
-              <p class="sub">Die Songzeile läuft in der Presence mit.</p>
+              <h2 data-i18n="log.lyrics"></h2>
+              <p class="sub" data-i18n="lyr.sub"></p>
 
               <div class="card">
-                <div class="switch-row" data-switch="lyricsEnabled"><span class="text">Lyrics als Status anzeigen</span></div>
+                <div class="switch-row" data-switch="lyricsEnabled"><span class="text" data-i18n="lyr.enabled"></span></div>
 
                 <div class="subblock" data-sub="lyricsEnabled">
                   <div class="field">
                     <span class="field-head">
-                      <span class="label">Quelle</span>
+                      <span class="label" data-i18n="lyr.source"></span>
                       <button class="more" type="button" data-more="lyricsSource">Mehr ▾</button>
                     </span>
                     <div class="segmented" data-seg="lyricsSource">
-                      <button type="button" data-value="auto">Automatisch</button>
-                      <button type="button" data-value="captions">Nur Untertitel</button>
-                      <button type="button" data-value="lrclib">Nur LRCLIB</button>
+                      <button type="button" data-value="auto" data-i18n="lyr.sourceAuto"></button>
+                      <button type="button" data-value="captions" data-i18n="lyr.sourceCaptions"></button>
+                      <button type="button" data-value="lrclib" data-i18n="lyr.sourceLrclib"></button>
                     </div>
                     <span class="collapse" data-collapse="lyricsSource">
-                      <span class="hint">
-                        Untertitel greifen auch bei Songs, die keine Datenbank kennt — sie müssen im
-                        YouTube-Player aber eingeschaltet sein. LRCLIB kennt die kommenden Zeilen
-                        und kann Discords Verzögerung deshalb besser ausgleichen.
-                      </span>
+                      <span class="hint" data-i18n="lyr.sourceHelp"></span>
                     </span>
                   </div>
 
                   <div class="field">
-                    <span class="field-head"><span class="label">Darstellung</span></span>
+                    <span class="field-head"><span class="label" data-i18n="lyr.mode"></span></span>
                     <div class="segmented" data-seg="lyricsMode">
-                      <button type="button" data-value="line">Einzelne Zeile</button>
-                      <button type="button" data-value="block">Absatz</button>
+                      <button type="button" data-value="line" data-i18n="lyr.modeLine"></button>
+                      <button type="button" data-value="block" data-i18n="lyr.modeBlock"></button>
                     </div>
                     <p class="hint">
                       Absatz zeigt mehrere Zeilen zugleich und wechselt erst, wenn die letzte davon
@@ -223,33 +195,33 @@
                   </div>
 
                   <div class="field" data-only="line">
-                    <span class="field-head"><span class="label">Kurze Zeilen zusammenfassen</span></span>
+                    <span class="field-head"><span class="label" data-i18n="lyr.combine"></span></span>
                     <div class="segmented" data-seg="lyricsCombine">
-                      <button type="button" data-value="0">Aus</button>
-                      <button type="button" data-value="1">Standard</button>
-                      <button type="button" data-value="1.5">Mehr</button>
-                      <button type="button" data-value="2">Maximal</button>
+                      <button type="button" data-value="0" data-i18n="lyr.combineOff"></button>
+                      <button type="button" data-value="1" data-i18n="lyr.combineStandard"></button>
+                      <button type="button" data-value="1.5" data-i18n="lyr.combineMore"></button>
+                      <button type="button" data-value="2" data-i18n="lyr.combineMax"></button>
                     </div>
                   </div>
 
-                  <div class="switch-row" data-switch="lyricsMusicOnly"><span class="text">Nur auf YouTube Music</span></div>
-                  <div class="switch-row" data-switch="lyricsProminent"><span class="text">Songzeile in die erste, fette Zeile</span></div>
+                  <div class="switch-row" data-switch="lyricsMusicOnly"><span class="text" data-i18n="lyr.musicOnly"></span></div>
+                  <div class="switch-row" data-switch="lyricsProminent"><span class="text" data-i18n="lyr.prominent"></span></div>
                   <div class="switch-row" data-switch="lyricsSave">
-                    <span class="text">Gefundene Lyrics als Datei speichern<small>nie überschrieben, wenn du sie bearbeitest</small></span>
+                    <span class="text"><span data-i18n="lyr.save"></span><small data-i18n="lyr.saveSub"></small></span>
                   </div>
 
                   <label class="field">
-                    <span class="field-head"><span class="label">Feinabstimmung</span></span>
+                    <span class="field-head"><span class="label" data-i18n="lyr.offset"></span></span>
                     <span class="slider-row">
                       <input id="lyricsOffset" type="range" min="-5" max="5" step="0.25" />
                       <span class="value" id="lyricsOffsetOut">+0,0 s</span>
                     </span>
-                    <span class="hint">Nur nötig, wenn die Zeitmarken einer Datei selbst schief sind.</span>
+                    <span class="hint" data-i18n="lyr.offsetHelp"></span>
                   </label>
 
                   <div class="row">
-                    <button class="btn" id="btn-clear-cache" type="button">Lyrics-Cache leeren</button>
-                    <button class="btn" id="btn-open-lyrics" type="button">Lyrics-Ordner öffnen</button>
+                    <button class="btn" id="btn-clear-cache" type="button" data-i18n="lyr.clearCache"></button>
+                    <button class="btn" id="btn-open-lyrics" type="button" data-i18n="tray.openLyrics"></button>
                   </div>
                 </div>
               </div>
@@ -257,36 +229,33 @@
 
             <!-- Transkription -->
             <section class="panel" id="panel-tr" hidden data-title="Transkription Whisper Sprache Modell Höchstlänge yt-dlp">
-              <h2>Transkription</h2>
-              <p class="sub">
-                Für Songs, die weder eine Datenbank kennt noch Untertitel haben. Hilft erst beim
-                nächsten Hören — fertig wird es nie rechtzeitig für den laufenden Song.
-              </p>
+              <h2 data-i18n="tr.title"></h2>
+              <p class="sub" data-i18n="tr.sub"></p>
 
               <div class="job" id="transcribe-job">
                 <div class="spinner" id="transcribe-spinner" hidden></div>
                 <div class="job-text">
-                  <p class="job-line" id="transcribe-phase">Gerade nichts zu tun</p>
+                  <p class="job-line" id="transcribe-phase" data-i18n="tr.idle"></p>
                   <p class="job-detail" id="transcribe-detail"></p>
                 </div>
               </div>
 
               <div class="card">
                 <div class="switch-row" data-switch="transcribeEnabled">
-                  <span class="text">Fehlende Lyrics lokal erzeugen<small>lastet für einige Minuten alle CPU-Kerne aus</small></span>
+                  <span class="text"><span data-i18n="tr.enabled"></span><small data-i18n="tr.enabledSub"></small></span>
                 </div>
 
                 <div class="subblock" data-sub="transcribeEnabled">
                   <div class="switch-row" data-switch="transcribeEvenWithCaptions">
-                    <span class="text">Auch bei vorhandenen Untertiteln</span>
+                    <span class="text" data-i18n="tr.evenWithCaptions"></span>
                   </div>
 
                   <label class="field">
                     <span class="field-head">
-                      <span class="label">Sprache</span>
-                      <span class="label-note">· wichtigster Regler</span>
+                      <span class="label" data-i18n="sys.language"></span>
+                      <span class="label-note" data-i18n="tr.languageNote"></span>
                     </span>
-                    <input id="transcribeLanguage" class="narrow" type="text" maxlength="5" placeholder="leer = automatisch" />
+                    <input id="transcribeLanguage" class="narrow" type="text" maxlength="5" data-i18n-placeholder="tr.languagePlaceholder" placeholder="" />
                     <span class="hint">
                       Gemessen an einem polnischen Track: automatisch erkannt wurde „Russisch“ und
                       das Ergebnis war unbrauchbar — mit <code>pl</code> festgelegt kam lesbares
@@ -295,18 +264,18 @@
                   </label>
 
                   <label class="field">
-                    <span class="field-head"><span class="label">Höchstlänge (Minuten)</span></span>
+                    <span class="field-head"><span class="label" data-i18n="tr.maxMinutes"></span></span>
                     <input id="transcribeMaxMinutes" class="mid" type="number" min="0" max="180" />
-                    <span class="hint">Längeres wird übersprungen. 0 hebt die Grenze auf.</span>
+                    <span class="hint" data-i18n="tr.maxMinutesHelp"></span>
                   </label>
 
                   <div class="field">
-                    <span class="field-head"><span class="label">Modell</span></span>
+                    <span class="field-head"><span class="label" data-i18n="tr.model"></span></span>
                     <div class="segmented" data-seg="transcribeModel">
                       <button type="button" data-value="tiny">tiny</button>
                       <button type="button" data-value="base">base</button>
                       <button type="button" data-value="small">small</button>
-                      <button type="button" data-value="medium" style="flex: 1.4">medium · Standard</button>
+                      <button type="button" data-value="medium" style="flex: 1.4" data-i18n="tr.modelDefault"></button>
                     </div>
                   </div>
                 </div>
@@ -315,56 +284,59 @@
 
             <!-- System -->
             <section class="panel" id="panel-sys" hidden data-title="System Autostart Erscheinungsbild zurücksetzen">
-              <h2>System</h2>
-              <p class="sub">Verhalten des Programms selbst.</p>
+              <h2 data-i18n="sys.title"></h2>
+              <p class="sub" data-i18n="sys.sub"></p>
 
               <div class="card">
-                <div class="switch-row" data-switch="enabled"><span class="text">Rich Presence aktiv</span></div>
-                <div class="switch-row" data-switch="autoStart"><span class="text">Beim Anmelden automatisch starten</span></div>
+                <div class="switch-row" data-switch="enabled"><span class="text" data-i18n="sys.enabled"></span></div>
+                <div class="switch-row" data-switch="autoStart"><span class="text" data-i18n="wiz.s1.autostart"></span></div>
                 <div class="switch-row" data-switch="watchdogEnabled">
-                  <span class="text">Hängenden YouTube-Tab neu laden<small>nach 12 Sekunden ohne Fortschritt</small></span>
+                  <span class="text"><span data-i18n="sys.watchdog"></span><small data-i18n="sys.watchdogSub"></small></span>
                 </div>
               </div>
 
               <div class="card">
                 <div class="field">
-                  <span class="field-head"><span class="label">Erscheinungsbild</span></span>
+                  <span class="field-head"><span class="label" data-i18n="sys.appearance"></span></span>
+                  <label class="field" style="margin-bottom: 18px">
+                    <span class="field-head"><span class="label" data-i18n="sys.language"></span></span>
+                    <select id="language"></select>
+                    <span class="hint" data-i18n="sys.languageHelp"></span>
+                  </label>
                   <div class="segmented" data-seg="theme" style="max-width: 340px">
-                    <button type="button" data-value="dark">Dunkel</button>
-                    <button type="button" data-value="light">Hell</button>
-                    <button type="button" data-value="sys">System</button>
+                    <button type="button" data-value="dark" data-i18n="app.dark"></button>
+                    <button type="button" data-value="light" data-i18n="app.light"></button>
+                    <button type="button" data-value="sys" data-i18n="sys.title"></button>
                   </div>
                 </div>
               </div>
 
               <div class="card danger-card">
-                <h3>Auf Standard zurücksetzen</h3>
-                <p class="hint" style="margin-top: 0">
-                  Setzt alle Einstellungen zurück. Deine gespeicherten Lyrics bleiben erhalten.
-                </p>
-                <div class="row"><button class="btn danger" id="btn-reset" type="button">Zurücksetzen</button></div>
+                <h3 data-i18n="sys.reset"></h3>
+                <p class="hint" style="margin-top: 0" data-i18n="sys.resetHelp"></p>
+                <div class="row"><button class="btn danger" id="btn-reset" type="button" data-i18n="sys.resetButton"></button></div>
               </div>
             </section>
 
             <!-- Protokoll -->
             <section class="panel" id="panel-log" hidden data-title="Protokoll Log Fehler Warnungen">
-              <h2>Protokoll</h2>
-              <p class="sub">Was Overtone zuletzt getan hat.</p>
+              <h2 data-i18n="log.title"></h2>
+              <p class="sub" data-i18n="log.sub"></p>
 
               <div class="log-tools">
-                <button class="btn" id="btn-copy-log" type="button">Kopieren</button>
-                <button class="btn" id="btn-open-logs" type="button">Ordner öffnen</button>
+                <button class="btn" id="btn-copy-log" type="button" data-i18n="log.copy"></button>
+                <button class="btn" id="btn-open-logs" type="button" data-i18n="log.openFolder"></button>
               </div>
 
               <div class="log-filters" id="log-filters">
-                <button class="pill" data-level="all" aria-selected="true" type="button">Alles</button>
-                <button class="pill" data-level="warn" aria-selected="false" type="button">Warnungen</button>
-                <button class="pill" data-level="error" aria-selected="false" type="button">Fehler</button>
-                <button class="pill" data-level="lyrics" aria-selected="false" type="button">Lyrics</button>
+                <button class="pill" data-level="all" aria-selected="true" type="button" data-i18n="log.all"></button>
+                <button class="pill" data-level="warn" aria-selected="false" type="button" data-i18n="log.warnings"></button>
+                <button class="pill" data-level="error" aria-selected="false" type="button" data-i18n="log.errors"></button>
+                <button class="pill" data-level="lyrics" aria-selected="false" type="button" data-i18n="log.lyrics"></button>
               </div>
 
               <div class="log" id="log" data-noscroll></div>
-              <p class="log-foot">Zeitstempel · Stufe · Meldung</p>
+              <p class="log-foot" data-i18n="log.foot"></p>
             </section>
           </div>
 
@@ -375,14 +347,14 @@
               <div class="preview-line">
                 <span class="preview-title" id="preview-title"></span>
                 <span class="ph" id="ph-title" style="width: 190px"></span>
-                <span class="tag" id="tag-title">TITEL</span>
+                <span class="tag" id="tag-title" data-i18n="preview.titleTag"></span>
                 <span class="chip good hidden" id="preview-chip"><span class="dot on"></span><span id="preview-chip-text"></span></span>
               </div>
               <div class="preview-line second">
                 <span aria-hidden="true">♪</span>
                 <span class="preview-lyric" id="preview-lyric"></span>
                 <span class="ph" id="ph-lyric" style="width: 260px"></span>
-                <span class="tag" id="tag-lyric">SONGZEILE</span>
+                <span class="tag" id="tag-lyric" data-i18n="preview.lyricTag"></span>
               </div>
               <div class="times">
                 <span id="preview-elapsed">--:--</span>
@@ -396,6 +368,7 @@
       </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="settings.js"></script>
   </body>
 </html>

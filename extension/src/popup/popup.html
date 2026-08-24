@@ -8,19 +8,19 @@
   <body>
     <header class="head">
       <span class="mark" aria-hidden="true"></span>
-      <span class="name">Overtone Bridge</span>
+      <span class="name" data-i18n="popup.name"></span>
     </header>
 
     <section class="status" id="status">
       <span class="dot" id="status-dot"></span>
       <div class="status-text">
-        <p class="status-title" id="status-title">Verbinde …</p>
+        <p class="status-title" id="status-title" data-i18n="popup.connecting"></p>
         <p class="status-sub" id="status-sub"></p>
       </div>
     </section>
 
     <section class="block">
-      <p class="block-label">Aktiver Tab</p>
+      <p class="block-label" data-i18n="popup.activeTab"></p>
       <div class="tab-row">
         <span class="thumb" id="tab-thumb"></span>
         <div class="tab-text">
@@ -37,15 +37,15 @@
     </section>
 
     <label class="field">
-      <span class="label">Bridge-Port</span>
+      <span class="label" data-i18n="popup.bridgePort"></span>
       <input id="port" type="number" min="1024" max="65535" placeholder="8787" />
     </label>
 
     <div class="switch-row" id="captions-row">
-      <span class="text">Untertitel mitlesen</span>
+      <span class="text" data-i18n="popup.captions"></span>
     </div>
 
-    <button class="btn wide" id="reload-tabs" type="button">YouTube-Tabs neu laden</button>
+    <button class="btn wide" id="reload-tabs" type="button" data-i18n="popup.reloadTabs"></button>
 
     <script src="popup.js"></script>
   </body>

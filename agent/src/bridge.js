@@ -15,6 +15,7 @@
  */
 
 const { EventEmitter } = require('node:events');
+const { t } = require('./i18n');
 const { WebSocketServer } = require('ws');
 
 const PROTOCOL_VERSION = 1;
@@ -68,7 +69,7 @@ class Bridge extends EventEmitter {
       server.on('listening', () => {
         this.server = server;
         this._startHeartbeat();
-        this.logger.info?.(`[bridge] Lauscht auf 127.0.0.1:${this.port}`);
+        this.logger.info?.(t('msg.bridgeListening', { port: this.port }));
         resolve();
       });
 
@@ -125,7 +126,7 @@ class Bridge extends EventEmitter {
 
     this.clients.add(socket);
     this.emit('clients', this.clients.size);
-    this.logger.info?.(`[bridge] Client verbunden (${socket.meta.origin})`);
+    this.logger.info?.(t('msg.bridgeClient', { origin: socket.meta.origin }));
 
     socket.on('pong', () => {
       socket.isAlive = true;
@@ -136,7 +137,7 @@ class Bridge extends EventEmitter {
       try {
         message = JSON.parse(data.toString('utf8'));
       } catch {
-        this.logger.debug?.('[bridge] Ungültiges JSON verworfen');
+        this.logger.debug?.(t('msg.invalidJson'));
         return;
       }
       if (!message || typeof message.type !== 'string') return;
@@ -146,7 +147,7 @@ class Bridge extends EventEmitter {
     socket.on('close', () => {
       this.clients.delete(socket);
       this.emit('clients', this.clients.size);
-      this.logger.info?.('[bridge] Client getrennt');
+      this.logger.info?.(t('msg.bridgeClientGone'));
       // The last extension leaving means nothing is playing anymore.
       if (!this.clients.size) this.emit('clear', { reason: 'no-clients' }, socket);
     });

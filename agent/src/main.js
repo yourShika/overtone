@@ -22,6 +22,7 @@ const path = require('node:path');
 const { app, Tray, Menu, BrowserWindow, ipcMain, shell, nativeImage, dialog } = require('electron');
 
 const { Config } = require('./config');
+const { t, setLocale, detect, dictionary, LANGUAGES } = require('./i18n');
 const { Logger } = require('./log');
 const { Bridge } = require('./bridge');
 const { Session } = require('./session');
@@ -111,14 +112,15 @@ app.whenReady().then(async () => {
   const userData = app.getPath('userData');
 
   config = new Config(path.join(userData, 'config.json'));
+  applyLanguage();
   logger = new Logger({
     filePath: path.join(userData, 'logs', 'overtone.log'),
     level: process.argv.includes('--verbose') ? 'debug' : 'info',
     onEntry: (entry) => sendToSettings('log:entry', entry),
   });
 
-  logger.info(`Overtone Agent ${app.getVersion()} startet …`);
-  for (const note of config.migrations) logger.info(`Einstellung angepasst: ${note}`);
+  logger.info(t('msg.starting', { version: app.getVersion() }));
+  for (const note of config.migrations) logger.info(t('msg.settingAdjusted', { note }));
 
   thumbnails = new ThumbnailResolver({ logger });
   library = new LyricsLibrary({
@@ -135,8 +137,7 @@ app.whenReady().then(async () => {
   });
   if (!require('node:fs').existsSync(transcriber.script)) {
     logger.warn(
-      `Transkriptions-Skript nicht gefunden: ${transcriber.script} — ` +
-        'lokale Transkription bleibt deaktiviert.',
+      t('msg.trScriptMissing', { path: transcriber.script }),
     );
   }
 
@@ -166,7 +167,7 @@ app.whenReady().then(async () => {
   // Nothing configured yet means a first run: the wizard explains the parts in
   // order, where the settings window would just present every option at once.
   if (!config.get('clientId')) {
-    logger.info('Noch nicht eingerichtet — Assistent wird geöffnet.');
+    logger.info(t('msg.notSetUp'));
     openWizard();
   }
 });
@@ -198,23 +199,23 @@ function setupDiscord() {
 
   discord.on('connected', ({ user }) => {
     lastError = null;
-    const tag = user?.username ? `@${user.username}` : 'unbekannt';
-    logger.info(`Mit Discord verbunden (${tag})`);
+    const tag = user?.username ? `@${user.username}` : '?';
+    logger.info(t('msg.discordConnected', { user: tag }));
     refreshUi();
   });
 
   discord.on('disconnected', ({ reason }) => {
-    logger.warn(`Discord-Verbindung getrennt (${reason})`);
+    logger.warn(t('msg.discordLost', { reason }));
     refreshUi();
   });
 
   discord.on('retry', ({ reason, delay }) => {
-    logger.debug(`Neuer Discord-Versuch in ${Math.round(delay / 1000)}s (${reason})`);
+    logger.debug(t('msg.discordRetry', { seconds: Math.round(delay / 1000), reason }));
   });
 
   discord.on('error', (err) => {
     lastError = err.message;
-    logger.error(`Discord: ${err.message}`);
+    logger.error(t('msg.discordError', { error: err.message }));
     refreshUi();
   });
 
@@ -234,7 +235,7 @@ function setupDiscord() {
       });
     },
     onSend: (activity) => {
-      logger.debug(`→ Discord: ${activity ? activity.details : '(geleert)'}`);
+      logger.debug(t('msg.presenceSent', { details: activity ? activity.details : t('msg.presenceCleared') }));
       refreshUi();
     },
   });
@@ -257,11 +258,7 @@ async function setupBridge() {
           `Seite wird neu geladen (Versuch ${payload.attempt}).`,
       );
     } else {
-      logger.warn(
-        `Neu laden hat nicht geholfen (${payload.attempts} Versuche). Der Wächter ruht jetzt. ` +
-          'Das liegt dann nicht am Tab, sondern daran, dass YouTube diesem Browser keine ' +
-          'Videodaten liefert — Shields für youtube.com testweise abschalten.',
-      );
+      logger.warn(t('msg.watchdogGaveUp', { attempts: payload.attempts }));
     }
     refreshUi();
   });
@@ -273,17 +270,13 @@ async function setupBridge() {
     reportFault(payload);
 
     if (change.trackChanged) {
-      logger.info(`Neu: ${payload.title || '(ohne Titel)'}`);
+      logger.info(t('msg.nowPlaying', { title: payload.title || '—' }));
       resetLyrics();
 
       // Warn once per track rather than once per report, so the log stays
       // readable while still being impossible to miss.
       if (!session.raw.captionCapable && config.get('lyricsSource') !== 'lrclib') {
-        logger.warn(
-          'Dieser Tab läuft mit einem veralteten Content-Script und kann keine ' +
-            'Untertitel senden. Extension in brave://extensions neu laden (↻) ' +
-            'UND den YouTube-Tab aktualisieren.',
-        );
+        logger.warn(t('msg.extensionOutdated'));
       }
     }
     // These must not sit behind a lyric-boundary deferral: showing the previous
@@ -297,7 +290,7 @@ async function setupBridge() {
 
   bridge.on('clear', (payload) => {
     if (!session.active && !session.raw) return;
-    logger.debug(`Wiedergabe beendet (${payload?.reason || 'unbekannt'})`);
+    logger.debug(t('msg.playbackEnded', { reason: payload?.reason || '?' }));
     session.clear();
     resetLyrics();
     presence.clear();
@@ -309,8 +302,10 @@ async function setupBridge() {
     extension.features = Array.isArray(payload.features) ? payload.features : [];
 
     logger.info(
-      `Extension verbunden: ${payload.client || '?'} v${extension.version || '?'}` +
-        (extension.features.length ? ` [${extension.features.join(', ')}]` : ''),
+      t('msg.extensionConnected', {
+        name: payload.client || '?',
+        version: extension.version || '?',
+      }) + (extension.features.length ? ` [${extension.features.join(', ')}]` : ''),
     );
 
     socket.send(JSON.stringify({ type: 'status', payload: statusSnapshot() }));
@@ -333,12 +328,10 @@ async function setupBridge() {
   try {
     await bridge.start();
   } catch (err) {
-    logger.error(`Bridge konnte nicht starten: ${err.message}`);
+    logger.error(t('msg.bridgeFailed', { error: err.message }));
     dialog.showErrorBox(
-      'Overtone: Port belegt',
-      `Port ${config.get('port')} ist bereits belegt.\n\n` +
-        'Läuft Overtone vielleicht schon? Andernfalls ändere den Port in den Einstellungen ' +
-        '(und in den Extension-Optionen).',
+      t('msg.portTakenTitle'),
+      `${t('msg.portTaken', { port: config.get('port') })}\n\n${t('msg.portInUse')}`,
     );
   }
 }
@@ -573,7 +566,7 @@ function ensureLyricsLoaded(state, cfg) {
 
 /** Network lookup, used only when the library has nothing. */
 function fetchLyrics(state, parsed) {
-  logger.debug(`Lyrics-Suche: "${parsed.artist}" – "${parsed.track}"`);
+  logger.debug(t('msg.lyricsSearch', { artist: parsed.artist, track: parsed.track }));
 
   lyrics
     .lookup({
@@ -590,7 +583,7 @@ function fetchLyrics(state, parsed) {
         lyricState.lines = result.lines;
         lyricState.status = 'found';
         lyricState.fromLibrary = false;
-        logger.info(`Lyrics gefunden (${result.lines.length} Zeilen)`);
+        logger.info(t('msg.lyricsFound', { count: result.lines.length }));
 
         // Keep a copy, so playing this again works without the network — and
         // gives you a file to correct if the timing is off.
@@ -603,14 +596,14 @@ function fetchLyrics(state, parsed) {
               lines: result.lines,
             })
             .then((written) => {
-              if (written) logger.debug('Lyrics in der Bibliothek gespeichert');
+              if (written) logger.debug(t('msg.lyricsSaved'));
             })
             .catch(() => {});
         }
       } else {
         lyricState.lines = null;
         lyricState.status = 'none';
-        logger.debug('Keine synchronisierten Lyrics gefunden');
+        logger.debug(t('msg.lyricsNone'));
         maybeTranscribe(state, parsed);
       }
       refreshUi();
@@ -618,7 +611,7 @@ function fetchLyrics(state, parsed) {
     .catch((err) => {
       if (lyricState.trackId !== state.id) return;
       lyricState.status = 'none';
-      logger.warn(`Lyrics-Fehler: ${err.message}`);
+      logger.warn(t('msg.lyricsError', { error: err.message }));
     });
 }
 
@@ -668,10 +661,7 @@ function maybeTranscribe(state, parsed) {
   if (capMinutes > 0 && state.duration > capMinutes * 60) {
     if (transcribeSkipNoted !== state.videoId) {
       transcribeSkipNoted = state.videoId;
-      logger.info(
-        `Transkription übersprungen: "${parsed.track}" ist ${Math.round(state.duration / 60)} min ` +
-          `lang, Grenze steht bei ${capMinutes} min.`,
-      );
+      logger.info(t('msg.trSkippedLong', { track: parsed.track, minutes: Math.round(state.duration / 60), limit: capMinutes }));
     }
     return;
   }
@@ -695,7 +685,7 @@ function maybeTranscribe(state, parsed) {
     getConfig: () => config.all(),
   });
   if (outcome === 'queued') {
-    logger.info(`Transkription eingereiht: "${parsed.track}" (${transcriber.queue.length} warten)`);
+    logger.info(t('msg.trQueued', { track: parsed.track, count: transcriber.queue.length }));
   }
 }
 
@@ -821,7 +811,7 @@ function buildTrayMenu() {
 
   const nowPlaying = state
     ? `${state.paused ? '⏸ ' : '▶ '}${truncate(state.title, 48)}`
-    : 'Nichts läuft';
+    : t('tray.nothingPlaying');
 
   return Menu.buildFromTemplate([
     { label: `Overtone ${app.getVersion()}`, enabled: false },
@@ -858,11 +848,11 @@ function buildTrayMenu() {
     { type: 'separator' },
     { label: 'Einstellungen …', click: () => openSettings() },
     {
-      label: 'Lyrics-Ordner öffnen',
+      label: t('tray.openLyrics'),
       click: () => shell.openPath(path.join(app.getPath('userData'), 'lyrics')),
     },
     {
-      label: 'Log-Ordner öffnen',
+      label: t('tray.openLogs'),
       click: () => shell.openPath(path.join(app.getPath('userData'), 'logs')),
     },
     {
@@ -975,11 +965,11 @@ function registerIpc() {
   ipcMain.handle('lyrics:clearCache', async () => {
     await lyrics.clearCache();
     resetLyrics();
-    logger.info('Lyrics-Cache geleert');
+    logger.info(t('msg.cacheCleared'));
     return true;
   });
   ipcMain.handle('discord:reconnect', () => {
-    logger.info('Discord-Verbindung wird neu aufgebaut …');
+    logger.info(t('msg.reconnecting'));
     // setupDiscord() replaces both objects, so retire the old pair first —
     // otherwise the previous controller keeps a live timer on a dead socket.
     presence?.stop();
@@ -988,6 +978,12 @@ function registerIpc() {
     tick();
     return true;
   });
+  ipcMain.handle('i18n:get', () => ({
+    locale: config.get('language'),
+    languages: LANGUAGES,
+    dictionary: dictionary(),
+  }));
+
   ipcMain.handle('app:extensionPath', () =>
     app.isPackaged
       ? path.join(process.resourcesPath, 'extension')
@@ -1053,10 +1049,27 @@ function registerIpc() {
 
 // ------------------------------------------------------------------ plumbing
 
+/**
+ * The popup's strings, sent along with the status.
+ *
+ * The extension cannot read the agent's locale files, and giving it its own
+ * copy would mean two places to translate the same sentences. So the agent
+ * sends the handful of keys the popup uses and the popup just renders them.
+ */
+function popupStrings() {
+  const dict = dictionary();
+  const out = {};
+  for (const key of Object.keys(dict)) {
+    if (key.startsWith('popup.')) out[key] = dict[key];
+  }
+  return out;
+}
+
 function statusSnapshot() {
   const state = session.state;
   return {
     version: app.getVersion(),
+    i18n: popupStrings(),
     enabled: config.get('enabled'),
     discordConnected: Boolean(discord?.connected),
     discordUser: discord?.user?.username || null,
@@ -1102,7 +1115,8 @@ function statusSnapshot() {
     },
     now: state
       ? {
-          title: state.title,
+          // Cleaned the same way the presence is, so no surface disagrees.
+      title: session.displayTitle(config.get('cleanTitles') !== false),
           artist: state.artist || state.channel,
           source: state.source,
           paused: state.paused,
@@ -1152,8 +1166,29 @@ function setEnabled(enabled) {
   }
 }
 
+/**
+ * Put the chosen language into effect.
+ *
+ * 'sys' follows the operating system; anything we do not ship falls back to
+ * English, which is also the default — the presence text is read by other
+ * people, and English is the safest thing for them to meet.
+ */
+function applyLanguage() {
+  const choice = config.get('language');
+  setLocale(choice === 'sys' ? detect(app.getLocale()) : choice);
+}
+
 function onConfigChanged(changed) {
-  logger.debug(`Einstellungen geändert: ${changed.join(', ')}`);
+  if (changed.includes('language')) {
+    applyLanguage();
+    // Open windows hold their own copy of the dictionary, so hand them the new
+    // one rather than making them ask for it.
+    for (const win of [settingsWindow, wizardWindow, trayWindow]) {
+      if (win && !win.isDestroyed()) win.webContents.send('i18n:changed', dictionary());
+    }
+    refreshUi();
+  }
+  logger.debug(t('msg.settingsChanged', { keys: changed.join(', ') }));
 
   if (changed.includes('clientId')) discord.setClientId(config.get('clientId'));
   if (changed.includes('port')) {

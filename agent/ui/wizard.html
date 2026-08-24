@@ -15,7 +15,7 @@
       <header class="titlebar">
         <div class="brand">
           <span class="mark" aria-hidden="true"></span>
-          <span class="brand-name">Overtone einrichten</span>
+          <span class="brand-name" data-i18n="wiz.windowTitle"></span>
         </div>
         <div class="titlebar-right">
           <button class="winbtn close" id="win-close" type="button" aria-label="Schließen">✕</button>
@@ -27,22 +27,22 @@
         <nav class="rail">
           <div class="steps" id="steps">
             <button class="step" data-step="1" type="button">
-              <span class="circle">1</span><span class="step-name">Overtone läuft</span>
+              <span class="circle">1</span><span class="step-name" data-i18n="wiz.s1.title"></span>
             </button>
             <button class="step" data-step="2" type="button">
-              <span class="circle">2</span><span class="step-name">Discord verbinden</span>
+              <span class="circle">2</span><span class="step-name" data-i18n="wiz.s2.title"></span>
             </button>
             <button class="step" data-step="3" type="button">
-              <span class="circle">3</span><span class="step-name">Erweiterung einbauen</span>
+              <span class="circle">3</span><span class="step-name" data-i18n="wiz.s3"></span>
             </button>
             <button class="step" data-step="4" type="button">
-              <span class="circle">4</span><span class="step-name">Erster Test</span>
+              <span class="circle">4</span><span class="step-name" data-i18n="wiz.s4.title"></span>
             </button>
           </div>
 
           <div class="rail-foot">
             <span class="bar thin"><i id="wiz-progress" style="width: 25%"></i></span>
-            <p class="rail-note" id="wiz-note">Schritt 1 von 4 · etwa fünf Minuten, einmalig</p>
+            <p class="rail-note" id="wiz-note"></p>
           </div>
         </nav>
 
@@ -51,41 +51,32 @@
           <div class="scroll" id="wiz-scroll" data-noscroll>
             <!-- 1 -->
             <section class="wpanel" id="step-1">
-              <h2>Overtone läuft</h2>
-              <p class="sub">Das Programm ist installiert und im Infobereich aktiv.</p>
+              <h2 data-i18n="wiz.s1.title"></h2>
+              <p class="sub" data-i18n="wiz.s1.sub"></p>
 
-              <div class="notice good">
-                <strong>Im Infobereich aktiv.</strong> Overtone sitzt unten rechts neben der Uhr.
-                Ein Klick darauf öffnet dieses Fenster jederzeit wieder.
-              </div>
+              <div class="notice good" data-i18n="wiz.s1.running"></div>
 
               <div class="card">
                 <div class="switch-row" data-switch="autoStart">
-                  <span class="text">Beim Anmelden automatisch starten<small>damit die Presence ohne Zutun da ist</small></span>
+                  <span class="text"><span data-i18n="wiz.s1.autostart"></span><small data-i18n="wiz.s1.autostartSub"></small></span>
                 </div>
               </div>
 
-              <div class="notice warn">
-                <strong>Zur Windows-Warnung beim Start:</strong> die kommt, weil die Datei kein
-                gekauftes Signaturzertifikat trägt — nicht, weil etwas mit ihr nicht stimmt.
-                <em>Weitere Informationen → Trotzdem ausführen.</em>
-              </div>
+              <div class="notice warn" data-i18n="wiz.s1.warning"></div>
             </section>
 
             <!-- 2 -->
             <section class="wpanel" id="step-2" hidden>
-              <h2>Discord verbinden</h2>
-              <p class="sub">Discord zeigt Aktivitäten nur für angemeldete Anwendungen an.</p>
+              <h2 data-i18n="wiz.s2.title"></h2>
+              <p class="sub" data-i18n="wiz.s2.sub"></p>
 
               <div class="card num">
                 <span class="num-badge">01</span>
                 <div class="num-body">
-                  <h3>Developer Portal öffnen</h3>
-                  <p class="hint" style="margin-top: 0">Melde dich dort mit deinem Discord-Konto an.</p>
+                  <h3 data-i18n="wiz.s2.c1"></h3>
+                  <p class="hint" style="margin-top: 0" data-i18n="wiz.s2.c1sub"></p>
                   <div class="row">
-                    <button class="btn primary" data-external="https://discord.com/developers/applications" type="button">
-                      Portal öffnen
-                    </button>
+                    <button class="btn primary" data-external="https://discord.com/developers/applications" type="button" data-i18n="conn.openPortal"></button>
                   </div>
                 </div>
               </div>
@@ -93,36 +84,32 @@
               <div class="card num">
                 <span class="num-badge">02</span>
                 <div class="num-body">
-                  <h3>Application anlegen</h3>
-                  <p class="hint" style="margin-top: 0">
-                    <strong>New Application</strong> → einen Namen vergeben → <strong>Create</strong>.
-                    Dann die <strong>Application ID</strong> kopieren. Der Name ist später der
-                    Rückfall für die Überschrift, falls du keine eigene Vorlage setzt.
-                  </p>
+                  <h3 data-i18n="wiz.s2.c2"></h3>
+                  <p class="hint" style="margin-top: 0" data-i18n="wiz.s2.c2sub"></p>
                 </div>
               </div>
 
               <div class="card num focus" id="card-clientid">
                 <span class="num-badge">03</span>
                 <div class="num-body">
-                  <h3>Client-ID einfügen</h3>
+                  <h3 data-i18n="wiz.s2.c3"></h3>
                   <label class="field">
-                    <input id="clientId" type="text" inputmode="numeric" placeholder="19 Ziffern aus dem Developer Portal" />
+                    <input id="clientId" type="text" inputmode="numeric" data-i18n-placeholder="conn.clientIdPlaceholder" placeholder="" />
                   </label>
-                  <p class="status-line" id="clientid-status"><span class="dot"></span><span>wartet auf Eingabe</span></p>
+                  <p class="status-line" id="clientid-status"><span class="dot"></span><span data-i18n="wiz.s2.waiting"></span></p>
                 </div>
               </div>
             </section>
 
             <!-- 3 -->
             <section class="wpanel" id="step-3" hidden>
-              <h2>Browser-Erweiterung einbauen</h2>
-              <p class="sub">Nur im Browser kommt Overtone an den YouTube-Player.</p>
+              <h2 data-i18n="wiz.s3.title"></h2>
+              <p class="sub" data-i18n="wiz.s3.sub"></p>
 
               <div class="card num">
                 <span class="num-badge">01</span>
                 <div class="num-body">
-                  <h3>Erweiterungsseite öffnen</h3>
+                  <h3 data-i18n="wiz.s3.c1"></h3>
                   <p class="hint" style="margin-top: 0">
                     Adresse eingeben: <span class="chip mono">brave://extensions</span>
                     oder <span class="chip mono">chrome://extensions</span>
@@ -133,21 +120,19 @@
               <div class="card num">
                 <span class="num-badge">02</span>
                 <div class="num-body">
-                  <h3>Entwicklermodus einschalten</h3>
-                  <p class="hint" style="margin-top: 0">Der Schalter sitzt oben rechts auf der Seite.</p>
+                  <h3 data-i18n="wiz.s3.c2"></h3>
+                  <p class="hint" style="margin-top: 0" data-i18n="wiz.s3.c2sub"></p>
                 </div>
               </div>
 
               <div class="card num">
                 <span class="num-badge">03</span>
                 <div class="num-body">
-                  <h3>Ordner auswählen</h3>
-                  <p class="hint" style="margin-top: 0">
-                    <strong>Entpackte Erweiterung laden</strong> anklicken und diesen Ordner wählen:
-                  </p>
+                  <h3 data-i18n="wiz.s3.c3"></h3>
+                  <p class="hint" style="margin-top: 0" data-i18n="wiz.s3.c3sub"></p>
                   <p class="path" id="ext-path">…</p>
                   <div class="row">
-                    <button class="btn" id="btn-show-ext" type="button">Ordner zeigen</button>
+                    <button class="btn" id="btn-show-ext" type="button" data-i18n="wiz.s3.showFolder"></button>
                   </div>
                 </div>
               </div>
@@ -155,10 +140,8 @@
               <div class="card num">
                 <span class="num-badge">04</span>
                 <div class="num-body">
-                  <h3>YouTube-Tabs neu laden</h3>
-                  <p class="hint" style="margin-top: 0">
-                    Bereits offene Tabs bekommen die Erweiterung nicht von selbst.
-                  </p>
+                  <h3 data-i18n="popup.reloadTabs"></h3>
+                  <p class="hint" style="margin-top: 0" data-i18n="wiz.s3.c4sub"></p>
                 </div>
               </div>
 
@@ -170,14 +153,14 @@
               </div>
 
               <div class="notice good hidden" id="ext-connected">
-                <strong>Erweiterung verbunden.</strong> <span id="ext-tabs"></span>
+                <strong data-i18n="wiz.s3.connected"></strong> <span id="ext-tabs"></span>
               </div>
             </section>
 
             <!-- 4 -->
             <section class="wpanel" id="step-4" hidden>
-              <h2>Erster Test</h2>
-              <p class="sub">Spiel etwas auf YouTube ab — dein Profil sollte es zeigen.</p>
+              <h2 data-i18n="wiz.s4.title"></h2>
+              <p class="sub" data-i18n="wiz.s4.sub"></p>
 
               <div class="notice bad" id="test-bad">
                 <strong id="test-bad-title">Noch nicht verbunden.</strong>
@@ -189,28 +172,25 @@
               </div>
 
               <div class="card">
-                <h3>Eine Einstellung in Discord</h3>
-                <p class="hint" style="margin-top: 0">
-                  <strong>Einstellungen → Aktivitätsdatenschutz → „Aktivitätsstatus anzeigen“</strong>
-                  muss eingeschaltet sein. Normalerweise ist es das schon.
-                </p>
+                <h3 data-i18n="wiz.s4.discordSetting"></h3>
+                <p class="hint" style="margin-top: 0" data-i18n="wiz.s4.discordSettingSub"></p>
               </div>
 
               <div class="card">
-                <h3>Was gerade läuft</h3>
+                <h3 data-i18n="wiz.s4.nowPlaying"></h3>
                 <div class="preview-mini">
                   <img class="cover" id="wiz-cover" alt="" />
                   <div class="preview-text">
                     <div class="preview-line">
                       <span class="preview-title" id="wiz-title"></span>
                       <span class="ph" id="wiz-ph-title" style="width: 170px"></span>
-                      <span class="tag" id="wiz-tag-title">TITEL</span>
+                      <span class="tag" id="wiz-tag-title" data-i18n="preview.titleTag"></span>
                     </div>
                     <div class="preview-line second">
                       <span aria-hidden="true">♪</span>
                       <span class="preview-lyric" id="wiz-lyric"></span>
                       <span class="ph" id="wiz-ph-lyric" style="width: 220px"></span>
-                      <span class="tag" id="wiz-tag-lyric">SONGZEILE</span>
+                      <span class="tag" id="wiz-tag-lyric" data-i18n="preview.lyricTag"></span>
                     </div>
                   </div>
                 </div>
@@ -218,20 +198,21 @@
 
               <p class="hint">
                 Klemmt etwas, steht der Grund im Protokoll — in den Einstellungen unter
-                <strong>Protokoll</strong>.
+                <strong data-i18n="log.title"></strong>.
               </p>
             </section>
           </div>
 
           <footer class="wiz-foot">
-            <button class="btn" id="wiz-back" type="button">Zurück</button>
-            <button class="btn primary" id="wiz-next" type="button">Weiter</button>
-            <button class="btn ghost" id="wiz-later" type="button">Später erledigen</button>
+            <button class="btn" id="wiz-back" type="button" data-i18n="app.back"></button>
+            <button class="btn primary" id="wiz-next" type="button" data-i18n="app.next"></button>
+            <button class="btn ghost" id="wiz-later" type="button" data-i18n="app.later"></button>
           </footer>
         </div>
       </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="wizard.js"></script>
   </body>
 </html>

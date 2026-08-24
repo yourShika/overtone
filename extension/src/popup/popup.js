@@ -11,6 +11,29 @@
 
 const $ = (id) => document.getElementById(id);
 
+/**
+ * Strings come from the agent with the status, so the popup follows the
+ * language chosen in the app rather than keeping a second copy of every
+ * sentence. Until the first status arrives, elements stay empty — showing one
+ * language and then swapping reads worse than a blank frame.
+ */
+let strings = {};
+
+function t(key, vars) {
+  const template = Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '';
+  if (!vars) return template;
+  return String(template).replace(/\{(\w+)\}/g, (whole, name) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole,
+  );
+}
+
+function applyStrings() {
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    const text = t(el.dataset.i18n);
+    if (text) el.textContent = text;
+  }
+}
+
 let refreshTimer = null;
 
 init();
@@ -65,6 +88,10 @@ async function refresh() {
   }
   if (!status) return;
 
+  if (status.i18n && Object.keys(status.i18n).length) {
+    strings = status.i18n;
+    applyStrings();
+  }
   renderStatus(status);
   renderTab(status.now);
 }
@@ -74,16 +101,16 @@ function renderStatus(status) {
   const connected = Boolean(status.connected);
 
   box.dataset.state = connected ? 'on' : 'off';
-  $('status-title').textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+  $('status-title').textContent = t(connected ? 'popup.connected' : 'popup.disconnected');
 
   if (connected) {
     const tabs = status.agent?.browserClients;
-    $('status-sub').textContent = `Port ${status.port}${
-      tabs ? ` · ${tabs} YouTube-Tab${tabs > 1 ? 's' : ''}` : ''
-    }`;
+    $('status-sub').textContent = tabs
+      ? t('popup.portTabs', { port: status.port, count: tabs })
+      : t('popup.port', { port: status.port });
   } else {
     // Say what to do, not merely that something is wrong.
-    $('status-sub').textContent = `Läuft die Overtone-App? Erwartet auf Port ${status.port}.`;
+    $('status-sub').textContent = t('popup.notRunning', { port: status.port });
   }
 }
 

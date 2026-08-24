@@ -285,9 +285,9 @@ test('the badge names the playback state', () => {
   // looking at an unfamiliar presence can find out what produced it.
   const cases = [
     [{}, 'playing.png', 'YouTube · Overtone'],
-    [{ paused: true }, 'paused.png', 'Pausiert · Overtone'],
+    [{ paused: true }, 'paused.png', 'Paused · Overtone'],
     [{ live: true, duration: 0 }, 'live.png', 'Live · Overtone'],
-    [{ loop: true }, 'loop.png', 'Wiederholung · Overtone'],
+    [{ loop: true }, 'loop.png', 'Repeat · Overtone'],
   ];
 
   for (const [patch, file, text] of cases) {
@@ -328,8 +328,8 @@ test('browsing YouTube shows a presence without progress or buttons', () => {
   });
 
   assert.equal(activity.type, 3, 'watching');
-  assert.equal(activity.details, 'Auf YouTube unterwegs');
-  assert.equal(activity.state, 'Startseite');
+  assert.equal(activity.details, 'Browsing YouTube');
+  assert.equal(activity.state, 'Home');
   assert.equal(activity.timestamps, undefined, 'kein Fortschritt ohne Wiedergabe');
   assert.equal(activity.buttons, undefined, 'kein Link auf ein Video, das nicht laeuft');
   assert.equal(activity.assets, undefined, 'kein Zustands-Badge ohne Zustand');
@@ -337,10 +337,10 @@ test('browsing YouTube shows a presence without progress or buttons', () => {
 
 test('browsing names the kind of page', () => {
   const pages = [
-    ['search', 'Suche'],
-    ['channel', 'Kanal'],
-    ['subscriptions', 'Abos'],
-    ['unbekannt', 'Unterwegs'],
+    ['search', 'Search'],
+    ['channel', 'Channel'],
+    ['subscriptions', 'Subscriptions'],
+    ['unknown-page', 'Browsing'],
   ];
   for (const [page, label] of pages) {
     const activity = buildActivity({
@@ -365,7 +365,7 @@ test('a browsing state never carries a title through', () => {
     state: { ...BASE_STATE, idle: true, page: 'home' },
     config: DEFAULTS,
   });
-  assert.equal(activity.details, 'Auf YouTube unterwegs');
+  assert.equal(activity.details, 'Browsing YouTube');
   assert.notEqual(activity.details, BASE_STATE.title);
 });
 
@@ -460,6 +460,63 @@ test('a buffering video does not advance the position', () => {
   session.update({ ...base, buffering: false, position: 30 });
   session.receivedAt -= 5000;
   assert.ok(session.state.position > frozen, 'danach läuft sie weiter');
+});
+
+// ------------------------------------------------------- titles and language
+
+test('decorative YouTube noise is stripped from what is shown', () => {
+  const cases = [
+    ['lullabyboy - where are you now? (lyrics)', 'lullabyboy - where are you now?'],
+    ['Daft Punk - Instant Crush (Official Video)', 'Daft Punk - Instant Crush'],
+    ['Some Song (Official Audio) [4K]', 'Some Song'],
+  ];
+  for (const [raw, expected] of cases) {
+    const activity = buildActivity({ state: { ...BASE_STATE, title: raw }, config: DEFAULTS });
+    assert.equal(activity.details, expected);
+  }
+});
+
+test('brackets that carry meaning survive', () => {
+  // The line this draws: "(Official Video)" says nothing about the recording,
+  // "(Live at Wembley)" says which recording it is. Dropping the second would
+  // misreport what someone is listening to.
+  const keep = ['Artist - Title (Live at Wembley)', 'Track (Remastered 2011)', 'Song (prod. someone)'];
+  for (const raw of keep) {
+    const activity = buildActivity({ state: { ...BASE_STATE, title: raw }, config: DEFAULTS });
+    assert.equal(activity.details, raw, `hätte bleiben müssen: ${raw}`);
+  }
+});
+
+test('title cleaning can be switched off', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, title: 'Song (Official Video)' },
+    config: { ...DEFAULTS, cleanTitles: false },
+  });
+  assert.equal(activity.details, 'Song (Official Video)');
+});
+
+test('a title that is nothing but noise is kept rather than emptied', () => {
+  // Better a decorated title than none: an empty details line looks broken.
+  const activity = buildActivity({
+    state: { ...BASE_STATE, title: '(Official Music Video)' },
+    config: DEFAULTS,
+  });
+  assert.ok(activity.details.length > 0);
+});
+
+test('the presence follows the chosen language', () => {
+  const { setLocale } = require('../src/i18n');
+  try {
+    setLocale('pl');
+    const activity = buildActivity({
+      state: { ...BASE_STATE, idle: true, page: 'home', title: '' },
+      config: DEFAULTS,
+    });
+    assert.equal(activity.state, 'Strona główna');
+    assert.equal(activity.details, 'Przegląda YouTube');
+  } finally {
+    setLocale('en');
+  }
 });
 
 // ---------------------------------------------------------------- trackparse
@@ -619,7 +676,7 @@ test('buildActivity honours privacy mode over lyric prominence', () => {
     lyric: 'Never gonna let you down',
   });
 
-  assert.equal(activity.details, 'Schaut ein Video');
+  assert.equal(activity.details, 'Watching something');
   assert.ok(!JSON.stringify(activity).includes('Never gonna'));
 });
 
@@ -656,7 +713,7 @@ test('buildActivity drops timestamps while paused', () => {
   const activity = buildActivity({ state: { ...BASE_STATE, paused: true }, config: DEFAULTS });
 
   assert.equal(activity.timestamps, undefined);
-  assert.equal(activity.assets.small_text, 'Pausiert · Overtone');
+  assert.equal(activity.assets.small_text, 'Paused · Overtone');
 });
 
 test('buildActivity hides everything identifying in privacy mode', () => {
@@ -665,7 +722,7 @@ test('buildActivity hides everything identifying in privacy mode', () => {
     config: { ...DEFAULTS, privacyMode: true },
   });
 
-  assert.equal(activity.details, 'Schaut ein Video');
+  assert.equal(activity.details, 'Watching something');
   assert.ok(!JSON.stringify(activity).includes('Never Gonna'));
   assert.ok(!JSON.stringify(activity).includes('dQw4w9WgXcQ'));
   assert.equal(activity.buttons, undefined);

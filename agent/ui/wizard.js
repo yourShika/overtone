@@ -24,6 +24,10 @@ init().catch((err) => console.error(err));
 
 async function init() {
   config = await api.config.get();
+  await T.init(() => {
+    show(step);
+    applyStatus(status);
+  });
   document.documentElement.setAttribute('data-theme', resolveTheme(config.theme));
 
   $('ext-path').textContent = await api.actions.extensionPath();
@@ -63,9 +67,9 @@ function show(next) {
   }
 
   $('wiz-progress').style.width = `${(step / STEPS) * 100}%`;
-  $('wiz-note').textContent = `Schritt ${step} von ${STEPS} · etwa fünf Minuten, einmalig`;
+  $('wiz-note').textContent = T.t('wiz.step', { current: step, total: STEPS });
   $('wiz-back').disabled = step === 1;
-  $('wiz-next').textContent = step === STEPS ? 'Fertig' : 'Weiter';
+  $('wiz-next').textContent = T.t(step === STEPS ? 'app.finish' : 'app.next');
   $('wiz-scroll').scrollTop = 0;
 }
 
@@ -116,16 +120,16 @@ function bindClientId() {
 
     if (!value) {
       dot.className = 'dot';
-      text.textContent = 'wartet auf Eingabe';
+      text.textContent = T.t('wiz.s2.waiting');
     } else if (!/^\d{17,20}$/.test(value)) {
       // Caught here rather than at connect time: an ID that is obviously not an
       // ID produces a Discord error minutes later that explains nothing.
       dot.className = 'dot off';
-      text.textContent = 'sieht nicht nach einer Application ID aus — erwartet werden 17 bis 20 Ziffern';
+      text.textContent = T.t('wiz.s2.invalid');
       return;
     } else {
       dot.className = 'dot on';
-      text.textContent = 'gespeichert — Discord wird verbunden';
+      text.textContent = T.t('wiz.s2.saved');
       config.clientId = value;
       api.config.set({ clientId: value });
     }
@@ -158,7 +162,8 @@ function applyStatus(next) {
   // Step 3 waits for a real connection rather than assuming the click worked.
   $('ext-waiting').classList.toggle('hidden', tabs > 0);
   $('ext-connected').classList.toggle('hidden', tabs === 0);
-  $('ext-tabs').textContent = tabs === 1 ? '1 YouTube-Tab meldet sich.' : `${tabs} Tabs melden sich.`;
+  $('ext-tabs').textContent =
+    tabs === 1 ? T.t('wiz.s3.oneTab') : T.t('wiz.s3.tabs', { count: tabs });
 
   const ready = discord && tabs > 0;
   $('test-good').classList.toggle('hidden', !ready);
@@ -167,11 +172,11 @@ function applyStatus(next) {
   if (!ready) {
     const missing = [];
     if (!discord) missing.push('Discord');
-    if (!tabs) missing.push('die Browser-Erweiterung');
-    $('test-bad-title').textContent = `Noch nicht verbunden: ${missing.join(' und ')}.`;
-    $('test-bad-text').textContent = discord
-      ? 'Lade einen YouTube-Tab neu, nachdem du die Erweiterung eingebaut hast.'
-      : 'Läuft die Discord-App? Über die Browser-Version geht es nicht.';
+    if (!tabs) missing.push(T.t('wiz.s4.theExtension'));
+    $('test-bad-title').textContent = T.t('wiz.s4.notReady', {
+      what: missing.join(T.t('wiz.s4.and')),
+    });
+    $('test-bad-text').textContent = T.t(discord ? 'wiz.s4.hintExtension' : 'wiz.s4.hintDiscord');
   }
 
   const now = next.now;

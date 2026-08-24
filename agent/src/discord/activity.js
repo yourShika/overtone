@@ -9,7 +9,8 @@
  *   buttons                  : max 2, label <= 32 chars, url <= 512 chars
  */
 
-const { parseTrack, formatArtists } = require('../lyrics/trackparse');
+const { parseTrack, formatArtists, stripNoise } = require('../lyrics/trackparse');
+const { t } = require('../i18n');
 
 const MAX_TEXT = 128;
 const MAX_BUTTON_LABEL = 32;
@@ -38,16 +39,8 @@ function clamp(value, max = MAX_TEXT) {
 }
 
 /** Page names for the browsing presence. */
-const PAGE_LABELS = {
-  home: 'Startseite',
-  search: 'Suche',
-  subscriptions: 'Abos',
-  history: 'Verlauf',
-  playlist: 'Playlist',
-  channel: 'Kanal',
-  shorts: 'Shorts',
-  browsing: 'Unterwegs',
-};
+/** Page names come from the dictionary, keyed by the same identifiers. */
+const PAGES = ['home', 'search', 'subscriptions', 'history', 'playlist', 'channel', 'shorts', 'browsing'];
 
 /**
  * A YouTube tab is open but nothing is playing.
@@ -61,10 +54,11 @@ function buildBrowsing(state, config) {
   if (!config.showWhenBrowsing) return null;
 
   const isMusic = state.source === 'ytmusic';
+  const page = PAGES.includes(state.page) ? state.page : 'browsing';
   return {
     type: ActivityType.WATCHING,
-    details: clamp(isMusic ? 'YouTube Music' : 'Auf YouTube unterwegs'),
-    state: clamp(PAGE_LABELS[state.page] || PAGE_LABELS.browsing),
+    details: clamp(isMusic ? t('presence.youtubeMusic') : t('presence.browsing')),
+    state: clamp(t(`presence.page.${page}`)),
   };
 }
 
@@ -84,21 +78,21 @@ function stateBadge(state, config) {
   let text;
   if (state.paused) {
     name = 'paused';
-    text = 'Pausiert';
+    text = t('presence.paused');
   } else if (state.live) {
     name = 'live';
-    text = 'Live';
+    text = t('presence.live');
   } else if (state.loop) {
     name = 'loop';
-    text = 'Wiederholung';
+    text = t('presence.loop');
   } else {
     name = 'playing';
-    text = state.source === 'ytmusic' ? 'YouTube Music' : 'YouTube';
+    text = t(state.source === 'ytmusic' ? 'presence.youtubeMusic' : 'presence.youtube');
   }
 
   // Name the app in the tooltip. The badge is the only place someone hovering
   // an unfamiliar presence can learn what is producing it.
-  text = `${text} · Overtone`;
+  text = `${text} · ${t('app.name')}`;
 
   const custom = state.paused ? config.pausedAssetKey : config.sourceAssetKey;
   const base = String(config.stateIconBase || '').replace(/\/+$/, '');
@@ -160,6 +154,8 @@ function buildActivity({ state, config, lyric = null, image = null }) {
 
   const isMusic = state.source === 'ytmusic';
   const byline = state.artist || state.channel || '';
+  // What the profile shows, free of "(Official Music Video)" and its relatives.
+  const title = config.cleanTitles === false ? state.title : stripNoise(state.title) || state.title;
 
   const activity = {
     type: resolveType(state, config, isMusic),
@@ -174,15 +170,15 @@ function buildActivity({ state, config, lyric = null, image = null }) {
   // With lyrics active we mirror Spotify's shape: title on top, the moving line
   // underneath. Without lyrics the second line carries the channel/artist.
   if (config.privacyMode) {
-    activity.details = clamp(isMusic ? 'Hört Musik' : 'Schaut ein Video');
+    activity.details = clamp(t('presence.privateTitle'));
     activity.state = clamp('Titel ausgeblendet');
   } else if (lyric && config.lyricsProminent) {
     // Lyric first, title demoted — the closest legitimate stand-in for putting
     // the line in the custom status field.
     activity.details = clamp(`♪ ${lyric}`);
-    activity.state = clamp(secondLine(state.title, byline));
+    activity.state = clamp(secondLine(title, byline));
   } else {
-    activity.details = clamp(state.title);
+    activity.details = clamp(title);
     if (lyric) {
       activity.state = clamp(`♪ ${lyric}`);
     } else if (byline) {
@@ -213,10 +209,10 @@ function buildActivity({ state, config, lyric = null, image = null }) {
   const artwork = image || state.thumbnail;
   if (artwork && !config.privacyMode) {
     assets.large_image = artwork;
-    assets.large_text = clamp(byline || state.title);
+    assets.large_text = clamp(byline || title);
   } else if (config.fallbackAssetKey) {
     assets.large_image = config.fallbackAssetKey;
-    assets.large_text = clamp(byline || 'Overtone');
+    assets.large_text = clamp(byline || t('app.name'));
   }
 
   const badge = stateBadge(state, config);
@@ -234,7 +230,7 @@ function buildActivity({ state, config, lyric = null, image = null }) {
     const buttons = [
       {
         label: clamp(
-          config.buttonLabel || (isMusic ? 'Auf YouTube Music anhören' : 'Auf YouTube ansehen'),
+          config.buttonLabel || t(isMusic ? 'presence.listenButton' : 'presence.watchButton'),
           MAX_BUTTON_LABEL,
         ),
         url: state.url,
@@ -243,7 +239,7 @@ function buildActivity({ state, config, lyric = null, image = null }) {
 
     if (config.showChannelButton && state.channelUrl) {
       buttons.push({
-        label: clamp(config.channelButtonLabel || 'Kanal öffnen', MAX_BUTTON_LABEL),
+        label: clamp(config.channelButtonLabel || t('presence.channelButton'), MAX_BUTTON_LABEL),
         url: state.channelUrl,
       });
     }

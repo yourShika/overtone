@@ -18,6 +18,7 @@ const api = window.overtone;
 /** Text and number inputs, by element id. */
 const INPUTS = {
   clientId: 'text',
+  language: 'text',
   port: 'number',
   activityName: 'text',
   buttonLabel: 'text',
@@ -39,6 +40,14 @@ init().catch((err) => console.error(err));
 
 async function init() {
   config = await api.config.get();
+  // Paint the window in the chosen language before anything else is shown, and
+  // repaint the parts built at runtime whenever it changes.
+  await T.init(() => {
+    render();
+    applyStatus(status);
+    renderLog();
+  });
+  fillLanguages();
 
   applyTheme(config.theme || 'dark', null);
   bindWindowButtons();
@@ -111,7 +120,7 @@ function render() {
   }
 
   const badge = $('nav-badge-tr');
-  badge.textContent = config.transcribeEnabled ? 'AN' : 'AUS';
+  badge.textContent = T.t(config.transcribeEnabled ? 'app.on' : 'app.off');
   badge.className = config.transcribeEnabled ? 'chip good' : 'chip';
 
   suppress = false;
@@ -199,7 +208,7 @@ function bindDisclosures() {
     button.addEventListener('click', () => {
       const target = document.querySelector(`[data-collapse="${button.dataset.more}"]`);
       const open = target.classList.toggle('open');
-      button.textContent = open ? 'Weniger ▴' : 'Mehr ▾';
+      button.textContent = open ? `${T.t('app.less')} ▴` : `${T.t('app.more')} ▾`;
     });
   }
 }
@@ -264,7 +273,7 @@ function applyTheme(choice, event) {
 
   document.documentElement.setAttribute('data-theme', resolved);
   $('theme-icon').textContent = resolved === 'light' ? '☀' : '☾';
-  $('theme-label').textContent = resolved === 'light' ? 'Hell' : 'Dunkel';
+  $('theme-label').textContent = T.t(resolved === 'light' ? 'app.light' : 'app.dark');
 
   // Everything cross-fades for 860 ms rather than snapping colour by colour.
   document.documentElement.setAttribute('data-switching', '1');
@@ -298,6 +307,25 @@ function bindWindowButtons() {
     api.config.set({ theme: next });
     render();
   });
+}
+
+/** The picker is built from what the agent actually ships. */
+function fillLanguages() {
+  const select = $('language');
+  select.textContent = '';
+  for (const { code, label } of T.languages) {
+    const option = document.createElement('option');
+    option.value = code;
+    option.textContent = label;
+    select.appendChild(option);
+  }
+  const system = document.createElement('option');
+  system.value = 'sys';
+  system.textContent = T.t('app.system');
+  select.appendChild(system);
+
+  select.value = config.language || 'en';
+  select.addEventListener('change', () => save({ language: select.value }));
 }
 
 function bindActions() {
@@ -351,19 +379,21 @@ function applyStatus(next) {
   const discord = Boolean(next.discordConnected);
   $('foot-discord').className = `dot ${discord ? 'on' : 'off'}`;
   $('foot-discord-text').textContent = discord
-    ? `Discord${next.discordUser ? ` · @${next.discordUser}` : ''}`
-    : 'Discord getrennt';
+    ? (next.discordUser ? T.t('status.discordUser', { user: next.discordUser }) : T.t('status.discord'))
+    : T.t('status.discordOff');
   $('nav-dot-conn').className = `dot ${discord ? 'on' : 'off'}`;
 
   const tabs = next.browserClients || 0;
   $('foot-browser').className = `dot ${tabs ? 'on' : 'off'}`;
-  $('foot-browser-text').textContent = tabs ? `Browser · ${tabs} Tab` : 'Browser getrennt';
+  $('foot-browser-text').textContent = tabs
+    ? T.t('status.browserTabs', { count: tabs })
+    : T.t('status.browserOff');
 
   const notice = $('notice-discord');
   notice.hidden = discord;
   $('notice-discord-text').textContent = next.lastError || '';
 
-  $('port-chip').textContent = tabs ? 'Port erreichbar' : 'wartet auf Browser';
+  $('port-chip').textContent = T.t(tabs ? 'status.portReachable' : 'status.portWaiting');
   $('port-chip').className = tabs ? 'chip good' : 'chip';
 
   renderPreview(next);
@@ -395,7 +425,9 @@ function renderPreview(next) {
   const chip = $('preview-chip');
   if (now) {
     chip.classList.remove('hidden');
-    $('preview-chip-text').textContent = now.paused ? 'pausiert' : now.buffering ? 'lädt' : 'läuft';
+    $('preview-chip-text').textContent = T.t(
+      now.paused ? 'preview.paused' : now.buffering ? 'preview.loading' : 'preview.playing',
+    );
   } else {
     chip.classList.add('hidden');
   }
@@ -426,14 +458,17 @@ function renderTranscription(job) {
   const detail = $('transcribe-detail');
   const spinner = $('transcribe-spinner');
 
-  const PHASES = { download: 'Audio wird geladen', transcribe: 'Whisper transkribiert' };
-  const waiting = job?.queued ? `\n${job.queued} in der Warteschlange: ${job.queue.join(', ')}` : '';
+  const PHASES = { download: T.t('tr.phaseDownload'), transcribe: T.t('tr.phaseTranscribe') };
+  const waiting = job?.queued
+    ? `
+${T.t('tr.queued', { count: job.queued, names: job.queue.join(', ') })}`
+    : '';
 
   if (job?.phase) {
     box.dataset.busy = '1';
     spinner.hidden = false;
     line.textContent = `${PHASES[job.phase] || job.phase} — ${job.track || ''}`;
-    detail.textContent = `läuft seit ${duration(job.elapsed)}${waiting}`;
+    detail.textContent = `${T.t('tr.running', { time: duration(job.elapsed) })}${waiting}`;
     return;
   }
 
@@ -441,20 +476,20 @@ function renderTranscription(job) {
   box.dataset.busy = '0';
 
   if (job?.waitingFor) {
-    line.textContent = `Wartet auf „${job.waitingFor.track || '…'}“`;
-    detail.textContent = `startet in ${duration(job.waitingFor.inSeconds)} Wiedergabezeit`;
+    line.textContent = T.t('tr.waitingFor', { track: job.waitingFor.track || '…' });
+    detail.textContent = T.t('tr.startsIn', { time: duration(job.waitingFor.inSeconds) });
     return;
   }
 
   line.textContent = job?.halted
-    ? `Pausiert nach ${job.consecutiveFailures} Fehlschlägen in Folge`
-    : 'Gerade nichts zu tun';
+    ? T.t('tr.halted', { count: job.consecutiveFailures })
+    : T.t('tr.idle');
 
   const history = (job?.history || [])
     .map((h) =>
       h.outcome === 'ok'
         ? `✓ ${h.label} (${duration(h.seconds)})`
-        : `✗ ${h.label} — ${h.detail || 'fehlgeschlagen'}`,
+        : `✗ ${h.label} — ${h.detail || T.t('tr.failed')}`,
     )
     .join('\n');
   detail.textContent = [waiting.trim(), history].filter(Boolean).join('\n');

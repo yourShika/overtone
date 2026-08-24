@@ -23,6 +23,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 
 const { parseLrc } = require('./lrc');
+const { t } = require('../i18n');
 
 /** Marks a file this program wrote, and may therefore replace. */
 const MANAGED_MARKER = '[re:overtone]';
@@ -69,7 +70,7 @@ class LyricsLibrary {
 
       const lines = parseLrc(raw);
       if (!lines.length) {
-        this.logger.warn?.(`Lyrics-Datei ohne verwertbare Zeitmarken: ${name}`);
+        this.logger.warn?.(t('msg.lyricsBadFile', { file: name }));
         continue;
       }
 
@@ -113,7 +114,7 @@ class LyricsLibrary {
       await fs.writeFile(file, `${header.concat(body).join('\n')}\n`, 'utf8');
       return true;
     } catch (err) {
-      this.logger.warn?.(`Lyrics konnten nicht gespeichert werden: ${err.message}`);
+      this.logger.warn?.(t('msg.lyricsNotSaved', { error: err.message }));
       return false;
     }
   }

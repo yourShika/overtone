@@ -26,6 +26,7 @@ const { spawn } = require('node:child_process');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
+const { t } = require('../i18n');
 
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 const TRANSCRIBE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -159,26 +160,25 @@ class Transcriber extends EventEmitter {
     try {
       await fs.mkdir(this.workDir, { recursive: true });
 
-      this.logger.info?.(`Transkription: lade Audio für "${track || videoId}" …`);
+      this.logger.info?.(t('msg.trDownload', { track: track || videoId }));
       audioFile = await this._download(videoId, url, config);
 
       this._setPhase('transcribe');
-      this.logger.info?.('Transkription: Whisper läuft (dauert etwa ein Drittel der Songlänge) …');
+      this.logger.info?.(t('msg.trWhisper'));
       await this._transcribe({ audioFile, videoId, artist, track, config });
 
-      this.logger.info?.('Transkription fertig — beim nächsten Hören sind die Lyrics da.');
+      this.logger.info?.(t('msg.trDone'));
       this.consecutiveFailures = 0;
       this._record(track || videoId, 'ok', null);
       this.emit('done', { videoId });
       return true;
     } catch (err) {
       this.lastError = err.message;
-      this.logger.warn?.(`Transkription fehlgeschlagen: ${err.message}`);
+      this.logger.warn?.(t('msg.trFailed', { error: err.message }));
       this.consecutiveFailures += 1;
       if (this.halted) {
         this.logger.warn?.(
-          `Transkription pausiert nach ${this.consecutiveFailures} Fehlschlägen in Folge — ` +
-            'sieht nach einem Einrichtungsproblem aus, nicht nach dem Song.',
+          t('msg.trHalted', { count: this.consecutiveFailures }),
         );
       }
       this._record(track || videoId, 'failed', err.message);
@@ -287,7 +287,7 @@ class Transcriber extends EventEmitter {
       try {
         child = spawn(command, args, { windowsHide: true });
       } catch (err) {
-        reject(new Error(`${label} nicht startbar: ${err.message}`));
+        reject(new Error(t('msg.spawnNotStartable', { label, error: err.message })));
         return;
       }
 
@@ -300,19 +300,19 @@ class Transcriber extends EventEmitter {
 
       const timer = setTimeout(() => {
         child.kill();
-        reject(new Error(`${label} überschritt das Zeitlimit`));
+        reject(new Error(t('msg.spawnTimeout', { label })));
       }, timeoutMs);
       timer.unref?.();
 
       child.on('error', (err) => {
         clearTimeout(timer);
-        reject(new Error(`${label} nicht gefunden (${command}): ${err.message}`));
+        reject(new Error(t('msg.spawnNotFound', { label, command, error: err.message })));
       });
 
       child.on('close', (code) => {
         clearTimeout(timer);
         if (code === 0) resolve();
-        else reject(new Error(`${label} endete mit Code ${code}${lastLine(stderr)}`));
+        else reject(new Error(t('msg.spawnExit', { label, code, detail: lastLine(stderr) })));
       });
     });
   }

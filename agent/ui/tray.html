@@ -14,8 +14,8 @@
     <div class="pop">
       <header class="pop-head">
         <span class="mark big" aria-hidden="true"></span>
-        <span class="pop-name">Overtone</span>
-        <span class="chip good" id="pop-state"><span class="dot on"></span><span id="pop-state-text">aktiv</span></span>
+        <span class="pop-name" data-i18n="app.name"></span>
+        <span class="chip good" id="pop-state"><span class="dot on"></span><span id="pop-state-text" data-i18n="tray.active"></span></span>
       </header>
 
       <div class="now">
@@ -41,24 +41,25 @@
 
       <nav class="menu">
         <button class="menu-row" id="pop-pause" type="button">
-          <span class="menu-label" id="pop-pause-label">Presence pausieren</span>
+          <span class="menu-label" id="pop-pause-label" data-i18n="tray.pause"></span>
         </button>
 
         <div class="menu-row" id="pop-privacy">
-          <span class="menu-label">Privat-Modus</span>
+          <span class="menu-label" data-i18n="tray.privacy"></span>
         </div>
 
         <button class="menu-row" id="pop-settings" type="button">
-          <span class="menu-label">Einstellungen öffnen</span>
+          <span class="menu-label" data-i18n="tray.settings"></span>
           <span class="arrow" aria-hidden="true">›</span>
         </button>
 
         <button class="menu-row danger" id="pop-quit" type="button">
-          <span class="menu-label">Overtone beenden</span>
+          <span class="menu-label" data-i18n="tray.quit"></span>
         </button>
       </nav>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="tray.js"></script>
   </body>
 </html>

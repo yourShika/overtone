@@ -11,6 +11,8 @@
  */
 
 /** A snapshot older than this means the tab died without telling us. */
+const { stripNoise } = require('./lyrics/trackparse');
+
 const STALE_AFTER_MS = 20000;
 
 class Session {
@@ -76,6 +78,17 @@ class Session {
   get state() {
     if (!this.raw) return null;
     return { ...this.raw, position: this.position };
+  }
+
+  /**
+   * The title as it should be shown, with YouTube's decoration removed.
+   *
+   * Computed here rather than in each surface so the presence, the settings
+   * preview and the tray popup can never disagree about what is playing.
+   */
+  displayTitle(clean = true) {
+    if (!this.raw?.title) return '';
+    return clean ? stripNoise(this.raw.title) || this.raw.title : this.raw.title;
   }
 }
 

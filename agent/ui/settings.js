@@ -18,7 +18,6 @@ const api = window.overtone;
 /** Text and number inputs, by element id. */
 const INPUTS = {
   clientId: 'text',
-  language: 'text',
   port: 'number',
   activityName: 'text',
   buttonLabel: 'text',
@@ -118,6 +117,8 @@ function render() {
   for (const el of all('[data-only="line"]')) {
     el.classList.toggle('hidden', config.lyricsMode === 'block');
   }
+
+  markLanguage();
 
   const badge = $('nav-badge-tr');
   badge.textContent = T.t(config.transcribeEnabled ? 'app.on' : 'app.off');
@@ -309,23 +310,37 @@ function bindWindowButtons() {
   });
 }
 
-/** The picker is built from what the agent actually ships. */
+/**
+ * The language picker, built from what the agent actually ships.
+ *
+ * Pills rather than a dropdown: this window has no other dropdown — the design
+ * uses segmented controls — and a list that may gain entries wraps better as
+ * pills than it fits into a fixed row of segments.
+ */
 function fillLanguages() {
-  const select = $('language');
-  select.textContent = '';
-  for (const { code, label } of T.languages) {
-    const option = document.createElement('option');
-    option.value = code;
-    option.textContent = label;
-    select.appendChild(option);
-  }
-  const system = document.createElement('option');
-  system.value = 'sys';
-  system.textContent = T.t('app.system');
-  select.appendChild(system);
+  const box = $('language');
+  box.textContent = '';
 
-  select.value = config.language || 'en';
-  select.addEventListener('change', () => save({ language: select.value }));
+  const choices = [...T.languages, { code: 'sys', label: T.t('app.system') }];
+  for (const { code, label } of choices) {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pill';
+    pill.dataset.value = code;
+    pill.textContent = label;
+    pill.setAttribute('role', 'radio');
+    pill.addEventListener('click', () => save({ language: code }));
+    box.appendChild(pill);
+  }
+  markLanguage();
+}
+
+/** Highlight whichever pill is current. */
+function markLanguage() {
+  const current = config.language || 'en';
+  for (const pill of all('#language .pill')) {
+    pill.setAttribute('aria-selected', pill.dataset.value === current ? 'true' : 'false');
+  }
 }
 
 function bindActions() {

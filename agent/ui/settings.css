@@ -104,7 +104,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 9px;
+  padding: 6px 8px;
   border: 1px solid var(--bd);
   border-radius: 9px;
   background: var(--inp);
@@ -116,18 +116,26 @@
 }
 
 .search span {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--dim2);
 }
 
 .search input {
   flex: 1;
   min-width: 0;
+  /* The global input rule adds 10px of padding, which made this field half
+   * again as tall as it looks like it should be. The wrapper supplies the
+   * padding here. */
+  padding: 0;
   border: 0;
   background: transparent;
   color: var(--tx);
-  font: 400 11.5px var(--font);
+  font: 400 11px var(--font);
   outline: none;
+}
+
+.search input:focus {
+  box-shadow: none;
 }
 
 .search input::placeholder {
@@ -406,10 +414,19 @@ input[type="range"]::-webkit-slider-thumb {
   border-bottom: 1px solid var(--bd);
 }
 
-.log-filters {
+.log-filters,
+.pill-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
+}
+
+/* A dropdown would be the only one in the window: the design replaces them
+ * with segmented controls, and a list that may grow fits pills better than a
+ * fixed row of segments. */
+.pill-row {
+  margin-bottom: 0;
 }
 
 .pill {

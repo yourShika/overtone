@@ -1,11 +1,15 @@
 /* Tray popup. Tokens and shared parts come from theme.css. */
 
 body {
+  /* Padding, not margin: the window is sized to this document, and the shadow
+   * needs somewhere to fall that is inside it. */
+  padding: 10px;
   background: transparent;
+  overflow: hidden;
 }
 
 .pop {
-  width: 340px;
+  width: 320px;
   padding: 14px;
   border: 1px solid var(--bd);
   border-radius: 12px;

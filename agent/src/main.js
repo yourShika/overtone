@@ -772,7 +772,7 @@ function toggleTrayPopup() {
   if (!trayWindow || trayWindow.isDestroyed()) {
     trayWindow = new BrowserWindow({
       width: 340,
-      height: 330,
+      height: 200,
       show: false,
       frame: false,
       resizable: false,
@@ -1011,6 +1011,19 @@ function registerIpc() {
     trayWindow?.hide();
     openSettings();
   });
+  // The popup sizes itself: a fixed height left transparent dead space below
+  // the content, which Windows renders as a faint smear rather than nothing.
+  ipcMain.handle('tray:resize', (_event, height) => {
+    if (!trayWindow || trayWindow.isDestroyed()) return;
+    const wanted = Math.round(Number(height) || 0);
+    if (!Number.isFinite(wanted) || wanted < 120 || wanted > 700) return;
+
+    const bounds = trayWindow.getBounds();
+    if (bounds.height === wanted) return;
+    trayWindow.setBounds({ ...bounds, height: wanted }, false);
+    positionTrayPopup();
+  });
+
   ipcMain.handle('tray:quit', () => {
     trayWindow?.hide();
     app.quit();

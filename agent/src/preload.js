@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('overtone', {
     openSettings: () => ipcRenderer.invoke('tray:openSettings'),
     quit: () => ipcRenderer.invoke('tray:quit'),
     onShow: subscribe('tray:show'),
+    resize: (height) => ipcRenderer.invoke('tray:resize', height),
   },
   // The window is frameless, so its buttons are ours to implement.
   window: {

@@ -50,6 +50,22 @@ async function init() {
   renderConfig();
   applyStatus(await api.status.get());
   api.status.onUpdate(applyStatus);
+
+  fitWindow();
+  // The lyric line wraps or disappears as songs change, so the height is not
+  // fixed once. Re-measuring on every mutation keeps the window on the content
+  // rather than leaving transparent dead space below it.
+  new ResizeObserver(fitWindow).observe(document.querySelector('.pop'));
+}
+
+let lastHeight = 0;
+
+/** Ask the window to be exactly as tall as what is in it. */
+function fitWindow() {
+  const height = Math.ceil(document.querySelector('.pop').getBoundingClientRect().height) + 20;
+  if (height === lastHeight) return;
+  lastHeight = height;
+  api.tray.resize(height);
 }
 
 function resolveTheme(choice) {

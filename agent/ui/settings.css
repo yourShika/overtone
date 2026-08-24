@@ -103,8 +103,8 @@
 .search {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 7px 9px;
   border: 1px solid var(--bd);
   border-radius: 9px;
   background: var(--inp);
@@ -116,6 +116,7 @@
 }
 
 .search span {
+  font-size: 12px;
   color: var(--dim2);
 }
 
@@ -125,8 +126,12 @@
   border: 0;
   background: transparent;
   color: var(--tx);
-  font: 400 12.5px var(--font);
+  font: 400 11.5px var(--font);
   outline: none;
+}
+
+.search input::placeholder {
+  color: var(--dim2);
 }
 
 .nav {
@@ -262,6 +267,10 @@
 }
 
 .collapse {
+  /* Block, not inline: max-height has no effect on an inline element, so the
+   * markup's <span> kept its full height and merely turned invisible — an
+   * empty gap where the explanation used to be. */
+  display: block;
   overflow: hidden;
   max-height: 0;
   opacity: 0;
@@ -388,10 +397,19 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* --- log ---------------------------------------------------------------- */
 
+.log-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bd);
+}
+
 .log-filters {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .pill {

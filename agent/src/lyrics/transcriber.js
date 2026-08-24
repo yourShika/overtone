@@ -105,16 +105,23 @@ class Transcriber extends EventEmitter {
 
   /**
    * Take this track now, or remember it for when the current job finishes.
-   * @returns {'started'|'queued'|'skipped'}
+   *
+   * 'deferred' and 'skipped' are deliberately different answers. The first is
+   * "not now" — the queue is full, or a run of failures has stopped everything
+   * — and the caller should keep the track and offer it again later; the second
+   * is "never", and holding on to it would only leak. They were one answer
+   * once, which is why a track that arrived while the queue was full was
+   * dropped as if it had already been transcribed.
+   * @returns {'started'|'queued'|'deferred'|'skipped'}
    */
   submit(job) {
     if (!job.videoId) return 'skipped';
     if (this.attempted.has(job.videoId)) return 'skipped';
-    if (this.halted) return 'skipped';
     if (this.queue.some((item) => item.videoId === job.videoId)) return 'skipped';
+    if (this.halted) return 'deferred';
 
     if (this.busy) {
-      if (this.queue.length >= MAX_QUEUE) return 'skipped';
+      if (this.queue.length >= MAX_QUEUE) return 'deferred';
       this.queue.push(job);
       this.emit('change');
       return 'queued';

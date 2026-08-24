@@ -140,8 +140,10 @@ module.exports = {
   'tr.phaseTranscribe': 'Whisper is transcribing',
   'tr.running': 'running for {time}',
   'tr.queued': '{count} waiting: {names}',
+  'tr.alsoWaiting': '{count} more part-listened: {names}',
   'tr.waitingFor': 'Waiting for “{track}”',
-  'tr.startsIn': 'starts after {time} of playback',
+  'tr.startsIn': 'starts after {time} more listening',
+  'tr.held': 'ready — waiting for a free slot',
   'tr.halted': 'Paused after {count} failures in a row',
   'tr.failed': 'failed',
 
@@ -302,6 +304,7 @@ module.exports = {
   'msg.trHalted':
     'Transcription paused after {count} failures in a row — this looks like a setup problem rather than the song.',
   'msg.trQueued': 'Transcription queued: “{track}” ({count} waiting)',
+  'msg.trHeld': 'Transcription queue is full — “{track}” keeps its place and waits for a slot.',
   'msg.trSkippedLong': 'Transcription skipped: “{track}” is {minutes} min long, the limit is {limit} min.',
   'msg.trScriptMissing': 'Transcription script not found: {path} — local transcription stays off.',
   'msg.bridgeListening': '[bridge] Listening on 127.0.0.1:{port}',

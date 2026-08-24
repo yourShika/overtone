@@ -123,8 +123,10 @@ module.exports = {
   'tr.phaseTranscribe': 'Whisper transkrybuje',
   'tr.running': 'trwa od {time}',
   'tr.queued': '{count} w kolejce: {names}',
+  'tr.alsoWaiting': 'częściowo odsłuchane ({count}): {names}',
   'tr.waitingFor': 'Czeka na „{track}”',
-  'tr.startsIn': 'zacznie po {time} odtwarzania',
+  'tr.startsIn': 'zacznie po {time} dalszego słuchania',
+  'tr.held': 'gotowe — czeka na wolne miejsce',
   'tr.halted': 'Wstrzymane po {count} niepowodzeniach z rzędu',
   'tr.failed': 'nie powiodło się',
 
@@ -277,6 +279,8 @@ module.exports = {
   'msg.trHalted':
     'Transkrypcja wstrzymana po {count} niepowodzeniach z rzędu — wygląda to na problem z konfiguracją, nie z utworem.',
   'msg.trQueued': 'Transkrypcja w kolejce: „{track}” ({count} czeka)',
+  'msg.trHeld':
+    'Kolejka transkrypcji jest pełna — „{track}” zachowuje swoje miejsce i czeka na wolny slot.',
   'msg.trSkippedLong':
     'Transkrypcja pominięta: „{track}” trwa {minutes} min, limit to {limit} min.',
   'msg.trScriptMissing':

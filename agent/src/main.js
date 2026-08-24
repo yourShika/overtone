@@ -375,8 +375,38 @@ let latestImage = null;
 /** Set when the next tick carries a change that must not be deferred. */
 let urgentTick = false;
 
-/** Track waiting for enough listening time before transcription starts. */
-let pendingTranscribe = null;
+/**
+ * Tracks that have been part-listened and may still earn a transcription.
+ *
+ * A single slot used to hold one of these, so changing songs threw away
+ * whatever listening time the last one had collected — the complaint this map
+ * answers. Keyed by video id, it outlives track changes: a song you keep
+ * coming back to keeps its credit, and a song you skimmed for three seconds
+ * simply never reaches the threshold, which is what the playlist gate in
+ * noteTranscribeCandidate() was always for.
+ * @type {Map<string, {videoId: string, url: string, artist: string,
+ *   track: string, watched: number, position: number, at: number,
+ *   ripe: boolean, held: boolean}>}
+ */
+const watching = new Map();
+
+/**
+ * How many part-listened tracks to remember at once.
+ *
+ * Only a track whose lyric lookup came back empty ever lands here, so this
+ * fills slowly; the cap is there so a night of unknown songs cannot grow it
+ * without end. When it is reached the least-listened entry goes — that is the
+ * one the least is invested in.
+ */
+const MAX_WATCHING = 12;
+
+/**
+ * Video id the listening clock is anchored to, or null while browsing.
+ *
+ * The anchor has to be re-set whenever attention moved elsewhere, or the first
+ * tick back on a track would credit the whole gap at once.
+ */
+let creditingId = null;
 
 /** Last track whose length we already complained about, to log it once. */
 let transcribeSkipNoted = null;
@@ -395,10 +425,17 @@ async function tick() {
 }
 
 async function runTick() {
-  if (!config.get('enabled')) {
+  const cfg = config.all();
+  if (!cfg.enabled) {
     presence.clear();
     return;
   }
+
+  // Feed the queue first, and deliberately before the early returns below: a
+  // track turned away because the queue was full gets its slot the moment one
+  // frees up, and nothing else would bring it back — the lyric lookup that
+  // first noticed it runs once per track, minutes and several songs ago.
+  flushTranscribeQueue(cfg);
 
   // A snapshot that stopped arriving means the tab or browser is gone.
   if (!session.active) {
@@ -411,7 +448,11 @@ async function runTick() {
   }
 
   const state = session.state;
-  const cfg = config.all();
+
+  // Credit the listening this tick actually delivered. Above the `idle` branch
+  // on purpose, so a track keeps its credit while the tab wanders off to the
+  // home page and comes back.
+  creditListening(state);
 
   // Browsing has no track, so none of the per-track machinery applies: no
   // lyrics to look up, no artwork to resolve, nothing to transcribe.
@@ -438,17 +479,6 @@ async function runTick() {
   // a network round-trip.
   ensureLyricsLoaded(state, cfg);
 
-  // A track that waited for enough listening time gets picked up here, once it
-  // has proved it is actually being listened to rather than skipped.
-  if (
-    pendingTranscribe &&
-    pendingTranscribe.videoId === state.videoId &&
-    state.position >= (cfg.transcribeAfterSeconds ?? 45)
-  ) {
-    const { parsed } = pendingTranscribe;
-    pendingTranscribe = null;
-    maybeTranscribe(state, parsed);
-  }
 }
 
 /** Character budget for the lyric, leaving room for the "♪ " prefix. */
@@ -630,7 +660,7 @@ function fetchLyrics(state, parsed) {
         lyricState.lines = null;
         lyricState.status = 'none';
         logger.debug(t('msg.lyricsNone'));
-        maybeTranscribe(state, parsed);
+        noteTranscribeCandidate(state, parsed);
       }
       refreshUi();
     })
@@ -665,13 +695,16 @@ function nextLyricChangeAt(state, cfg) {
 }
 
 /**
- * Start a transcription, but only when it is genuinely the last option.
+ * Remember a track as a transcription candidate, once it is genuinely the last
+ * option left.
  *
- * Deliberately conservative: this pins every CPU core for minutes, so it waits
- * until the track has actually been listened to rather than skipped past, and
- * never runs while subtitles are already supplying a line.
+ * Deliberately conservative: a job pins every CPU core for minutes, so nothing
+ * starts while subtitles are already supplying a line, and nothing starts until
+ * the track has actually been listened to rather than skipped past. This only
+ * writes the candidate down — creditListening() decides when it has earned its
+ * place and flushTranscribeQueue() hands it over.
  */
-function maybeTranscribe(state, parsed) {
+function noteTranscribeCandidate(state, parsed) {
   const cfg = config.all();
   if (!cfg.transcribeEnabled || !cfg.lyricsEnabled) return;
   if (cfg.lyricsSource === 'captions') return;
@@ -679,7 +712,11 @@ function maybeTranscribe(state, parsed) {
   // an auto-generated or translated track is not the sung text, which is
   // exactly when someone would want their own transcription anyway.
   if (state.caption && !cfg.transcribeEvenWithCaptions) return;
-  if (!state.videoId || transcriber.attempted.has(state.videoId) || transcriber.halted) return;
+  // No `halted` check any more: a run of failures is nearly always a broken
+  // setup, and once it is fixed the songs listened to meanwhile should still be
+  // there. The transcriber turns them away with 'deferred' until resetFailures()
+  // lifts the stop, which is the whole point of keeping them.
+  if (!state.videoId || transcriber.attempted.has(state.videoId)) return;
 
   // Cost scales with length: a two-hour mix would hold the queue for an hour
   // and yield something nobody wants as a lyric line.
@@ -692,27 +729,153 @@ function maybeTranscribe(state, parsed) {
     return;
   }
 
-  // Skipping through a playlist should not queue a job per track.
-  const after = cfg.transcribeAfterSeconds ?? 45;
-  if (state.position < after) {
-    pendingTranscribe = { videoId: state.videoId, parsed, startsAt: after };
+  // Skipping through a playlist should not queue a job per track — the gate
+  // that says so is still here, but it counts listening rather than the seek
+  // bar. A track skimmed for three seconds never reaches it however often it
+  // comes round, so the flood this guards against still cannot happen; what
+  // changed is that the time is kept per track instead of in one slot, so
+  // leaving a song no longer throws away what it had already earned. The two
+  // only looked opposed while "listened to" was read off `state.position`,
+  // which also let dropping into the middle of a song clear the gate outright.
+  const existing = watching.get(state.videoId);
+  if (existing) {
+    // Back for another go. Refresh what the job will need, keep the credit.
+    existing.url = state.url;
+    existing.artist = parsed.artistFull || parsed.artist;
+    existing.track = parsed.track;
     return;
   }
-  pendingTranscribe = null;
 
-  const outcome = transcriber.submit({
+  if (watching.size >= MAX_WATCHING) forgetLeastListened();
+  watching.set(state.videoId, {
     videoId: state.videoId,
     url: state.url,
     artist: parsed.artistFull || parsed.artist,
     track: parsed.track,
-    config: cfg,
-    // Re-read at start time: a queued job may wait minutes, and the language or
-    // model it should use is whatever is set when it actually runs.
-    getConfig: () => config.all(),
+    // Starts at zero rather than at the current position, for the same reason
+    // the credit is measured below: the position says where the song is, not
+    // how much of it was heard.
+    watched: 0,
+    position: state.position,
+    at: Date.now(),
+    ripe: false,
+    held: false,
   });
-  if (outcome === 'queued') {
-    logger.info(t('msg.trQueued', { track: parsed.track, count: transcriber.queue.length }));
+}
+
+/**
+ * Add the listening time this tick really delivered to the current candidate.
+ *
+ * Measured rather than read off the position, which is the hole the old
+ * `position >= after` test left open: a seek would hand a track forty-five
+ * seconds of "listening" in a single tick, so dropping into the middle of a
+ * song counted as having heard all of it. Pausing, buffering and seeking
+ * backwards all credit nothing, because the position does not advance.
+ */
+function creditListening(state) {
+  // Browsing has no track, and coming back from it must not credit the gap.
+  const key = state.idle ? null : state.videoId;
+  const moved = creditingId !== key;
+  creditingId = key;
+  if (!key) return;
+
+  const candidate = watching.get(key);
+  if (!candidate) return;
+
+  const now = Date.now();
+  if (moved) {
+    // First tick on this track, or the first after coming back to it: the time
+    // since the last one was spent elsewhere and the position may have jumped
+    // anywhere, so re-anchor without crediting.
+    candidate.position = state.position;
+    candidate.at = now;
+    return;
   }
+
+  const advanced = state.position - candidate.position;
+  const elapsed = (now - candidate.at) / 1000;
+  // Half a second of slack: the tick is not a metronome and the position is
+  // extrapolated, so an exact comparison would shave time off every tick.
+  const credited = Math.max(0, Math.min(advanced, elapsed * (state.playbackRate || 1) + 0.5));
+
+  candidate.watched += credited;
+  candidate.position = state.position;
+  candidate.at = now;
+
+  if (!candidate.ripe && candidate.watched >= (config.get('transcribeAfterSeconds') ?? 45)) {
+    candidate.ripe = true;
+    refreshUi();
+  }
+}
+
+/**
+ * Hand every candidate that has earned its place to the transcriber.
+ *
+ * Deliberately not tied to what is playing. The queue has room again only when
+ * a job finishes — usually minutes and several songs later — and a track turned
+ * away back then has nothing left to trigger a second attempt.
+ */
+function flushTranscribeQueue(cfg) {
+  if (!watching.size) return;
+  if (!cfg.transcribeEnabled || !cfg.lyricsEnabled) return;
+
+  for (const candidate of watching.values()) {
+    if (!candidate.ripe) continue;
+
+    const outcome = transcriber.submit({
+      videoId: candidate.videoId,
+      url: candidate.url,
+      artist: candidate.artist,
+      track: candidate.track,
+      config: cfg,
+      // Re-read at start time: a queued job may wait minutes, and the language
+      // or model it should use is whatever is set when it actually runs.
+      getConfig: () => config.all(),
+    });
+
+    if (outcome === 'deferred') {
+      // No slot right now, and everything behind it would be turned away for
+      // the same reason. Say so once per track: a finished song with no job
+      // running and nothing in the log is otherwise unexplainable.
+      if (!candidate.held) {
+        candidate.held = true;
+        logger.info(t('msg.trHeld', { track: candidate.track }));
+      }
+      return;
+    }
+
+    watching.delete(candidate.videoId);
+    if (outcome === 'queued') {
+      logger.info(t('msg.trQueued', { track: candidate.track, count: transcriber.queue.length }));
+    }
+  }
+}
+
+/** Make room by dropping the track the least listening is invested in. */
+function forgetLeastListened() {
+  let victim = null;
+  for (const candidate of watching.values()) {
+    if (candidate.ripe) continue; // one that already earned its place stays
+    if (!victim || candidate.watched < victim.watched) victim = candidate;
+  }
+  // Everything is ripe and waiting for a slot: drop the oldest instead, since
+  // insertion order is the closest thing to a queue position they have.
+  if (!victim) victim = watching.values().next().value;
+  if (victim) watching.delete(victim.videoId);
+}
+
+/** The part-listened track playing right now, for the settings window. */
+function waitingForReport() {
+  const current = session.state && watching.get(session.state.videoId);
+  if (!current) return null;
+  return {
+    track: current.track || null,
+    inSeconds: Math.max(
+      0,
+      Math.round((config.get('transcribeAfterSeconds') ?? 45) - current.watched),
+    ),
+    ripe: current.ripe,
+  };
 }
 
 /**
@@ -1142,16 +1305,12 @@ function statusSnapshot() {
           ...transcriber.report(),
           // A job that has not started yet is the most common reason the whole
           // thing "seems delayed"; without this the window shows only idleness.
-          waitingFor:
-            pendingTranscribe && session.state
-              ? {
-                  track: pendingTranscribe.parsed?.track || null,
-                  inSeconds: Math.max(
-                    0,
-                    Math.round(pendingTranscribe.startsAt - (session.state.position || 0)),
-                  ),
-                }
-              : null,
+          waitingFor: waitingForReport(),
+          // Everything else that has collected listening time. These were
+          // invisible until now, because only one could exist at a time.
+          watching: [...watching.values()]
+            .filter((item) => item.videoId !== session.state?.videoId)
+            .map((item) => item.track || item.videoId),
         }
       : null,
     lyrics: {

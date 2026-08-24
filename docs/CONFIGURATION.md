@@ -102,7 +102,7 @@ is the point.
 | `transcribeModel` | `medium` | `tiny`, `base`, `small`, `medium` |
 | `transcribeEvenWithCaptions` | `false` | Transcribe even when subtitles exist |
 | `transcribeMaxMinutes` | `7` | Skip anything longer; 0 disables the limit |
-| `transcribeAfterSeconds` | `45` | Listen this long before starting a job |
+| `transcribeAfterSeconds` | `45` | Listen this long before starting a job. Counted as time actually heard and kept per track, so changing songs does not throw the credit away and seeking past the mark does not earn it |
 | `pythonPath` | `python` | Python interpreter |
 | `ytdlpPath` | `yt-dlp` | yt-dlp executable |
 | `ytdlpJsRuntime` | `node` | JS runtime yt-dlp needs; empty to leave it alone |

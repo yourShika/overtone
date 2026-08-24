@@ -495,12 +495,17 @@ function renderTranscription(job) {
     ? `
 ${T.t('tr.queued', { count: job.queued, names: job.queue.join(', ') })}`
     : '';
+  // Tracks that have collected listening time but are not in the queue yet.
+  const also = job?.watching?.length
+    ? `
+${T.t('tr.alsoWaiting', { count: job.watching.length, names: job.watching.join(', ') })}`
+    : '';
 
   if (job?.phase) {
     box.dataset.busy = '1';
     spinner.hidden = false;
     line.textContent = `${PHASES[job.phase] || job.phase} — ${job.track || ''}`;
-    detail.textContent = `${T.t('tr.running', { time: duration(job.elapsed) })}${waiting}`;
+    detail.textContent = `${T.t('tr.running', { time: duration(job.elapsed) })}${waiting}${also}`;
     return;
   }
 
@@ -509,7 +514,12 @@ ${T.t('tr.queued', { count: job.queued, names: job.queue.join(', ') })}`
 
   if (job?.waitingFor) {
     line.textContent = T.t('tr.waitingFor', { track: job.waitingFor.track || '…' });
-    detail.textContent = T.t('tr.startsIn', { time: duration(job.waitingFor.inSeconds) });
+    // A track that has already earned its place is not counting down any more;
+    // "starts after 0 s" next to an idle-looking window reads as a bug.
+    const head = job.waitingFor.ripe
+      ? T.t('tr.held')
+      : T.t('tr.startsIn', { time: duration(job.waitingFor.inSeconds) });
+    detail.textContent = `${head}${waiting}${also}`;
     return;
   }
 
@@ -524,7 +534,7 @@ ${T.t('tr.queued', { count: job.queued, names: job.queue.join(', ') })}`
         : `✗ ${h.label} — ${h.detail || T.t('tr.failed')}`,
     )
     .join('\n');
-  detail.textContent = [waiting.trim(), history].filter(Boolean).join('\n');
+  detail.textContent = [waiting.trim(), also.trim(), history].filter(Boolean).join('\n');
 }
 
 function duration(total) {

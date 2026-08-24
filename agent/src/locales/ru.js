@@ -123,8 +123,10 @@ module.exports = {
   'tr.phaseTranscribe': 'Whisper расшифровывает',
   'tr.running': 'идёт уже {time}',
   'tr.queued': 'в очереди {count}: {names}',
+  'tr.alsoWaiting': 'частично прослушано ({count}): {names}',
   'tr.waitingFor': 'Ожидает «{track}»',
-  'tr.startsIn': 'начнётся через {time} прослушивания',
+  'tr.startsIn': 'начнётся ещё через {time} прослушивания',
+  'tr.held': 'готово — ждёт свободного места',
   'tr.halted': 'Приостановлено после {count} неудач подряд',
   'tr.failed': 'не удалось',
 
@@ -277,6 +279,8 @@ module.exports = {
   'msg.trHalted':
     'Расшифровка приостановлена после {count} неудач подряд — похоже на проблему с настройкой, а не с песней.',
   'msg.trQueued': 'Расшифровка в очереди: «{track}» (ждут: {count})',
+  'msg.trHeld':
+    'Очередь расшифровки заполнена — «{track}» сохраняет своё место и ждёт свободного слота.',
   'msg.trSkippedLong':
     'Расшифровка пропущена: «{track}» длится {minutes} мин, предел — {limit} мин.',
   'msg.trScriptMissing':

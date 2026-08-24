@@ -1171,3 +1171,55 @@ test('upscaleGoogleArt leaves foreign hosts alone', () => {
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+// --------------------------------------------------------------- transcriber
+
+const { Transcriber } = require('../src/lyrics/transcriber');
+
+/** A transcriber that never spawns anything, so submit() can be exercised. */
+function stubTranscriber() {
+  const transcriber = new Transcriber({
+    workDir: 'C:/nowhere',
+    libraryDir: 'C:/nowhere',
+    script: 'C:/nowhere/x.py',
+    logger: { info() {}, warn() {}, error() {}, debug() {} },
+  });
+  transcriber.run = function (job) {
+    this.busyWith = job.videoId;
+  };
+  return transcriber;
+}
+
+test('submit defers when the queue is full rather than discarding the track', () => {
+  const transcriber = stubTranscriber();
+  transcriber.run({ videoId: 'busy' });
+
+  let outcome = 'started';
+  for (let i = 0; outcome !== 'deferred' && i < 20; i++) {
+    outcome = transcriber.submit({ videoId: `q${i}` });
+  }
+
+  // main.js keeps a deferred candidate and retries it; treating a full queue as
+  // 'skipped' is what silently threw part-listened tracks away.
+  assert.equal(outcome, 'deferred');
+});
+
+test('submit still skips a track it has already tried or already holds', () => {
+  const transcriber = stubTranscriber();
+
+  transcriber.attempted.add('done');
+  assert.equal(transcriber.submit({ videoId: 'done' }), 'skipped');
+
+  transcriber.run({ videoId: 'busy' });
+  assert.equal(transcriber.submit({ videoId: 'waiting' }), 'queued');
+  assert.equal(transcriber.submit({ videoId: 'waiting' }), 'skipped', 'kein Doppeleintrag');
+});
+
+test('submit defers while the transcriber is halted, so the track survives', () => {
+  const transcriber = stubTranscriber();
+  // 'halted' is derived from the failure run, not a settable flag.
+  transcriber.consecutiveFailures = 99;
+  assert.equal(transcriber.halted, true, 'Vorbedingung');
+
+  assert.equal(transcriber.submit({ videoId: 'later' }), 'deferred');
+});

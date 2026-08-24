@@ -23,6 +23,7 @@ const INPUTS = {
   buttonLabel: 'text',
   transcribeLanguage: 'text',
   transcribeMaxMinutes: 'number',
+  transcribeAfterSeconds: 'number',
   lyricsOffset: 'number',
 };
 

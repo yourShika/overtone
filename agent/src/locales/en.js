@@ -134,6 +134,9 @@ module.exports = {
     'Measured on a Polish track: left to guess it chose Russian and the result was unusable — pinned to pl it produced readable Polish, and faster.',
   'tr.maxMinutes': 'Maximum length (minutes)',
   'tr.maxMinutesHelp': 'Anything longer is skipped. 0 removes the limit.',
+  'tr.afterSeconds': 'Start after (seconds listened)',
+  'tr.afterSecondsHelp':
+    'How much of a track you must have heard before a job is queued, so skipping through a playlist does not start one per track. The time is kept across song changes, so a track you keep coming back to eventually qualifies. 0 starts at once.',
   'tr.model': 'Model',
   'tr.modelDefault': 'medium · default',
   'tr.phaseDownload': 'Downloading audio',

@@ -117,6 +117,9 @@ module.exports = {
     'Medido con una canción polaca: dejado a su aire eligió ruso y el resultado fue inservible — fijado en pl salió polaco legible, y además más rápido.',
   'tr.maxMinutes': 'Duración máxima (minutos)',
   'tr.maxMinutesHelp': 'Lo más largo se omite. 0 quita el límite.',
+  'tr.afterSeconds': 'Empezar tras (segundos escuchados)',
+  'tr.afterSecondsHelp':
+    'Cuánto has de haber escuchado de una pista antes de que se ponga un trabajo en la cola, para que saltar por una lista no genere uno por pista. El tiempo se conserva al cambiar de canción, así que una pista a la que vuelves acaba entrando. 0 empieza de inmediato.',
   'tr.model': 'Modelo',
   'tr.modelDefault': 'medium · predeterminado',
   'tr.phaseDownload': 'Descargando el audio',

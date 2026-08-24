@@ -117,6 +117,9 @@ module.exports = {
     'Gemessen an einem polnischen Track: automatisch erkannt wurde „Russisch“ und das Ergebnis war unbrauchbar — mit pl festgelegt kam lesbares Polnisch heraus, und zwar schneller.',
   'tr.maxMinutes': 'Höchstlänge (Minuten)',
   'tr.maxMinutesHelp': 'Längeres wird übersprungen. 0 hebt die Grenze auf.',
+  'tr.afterSeconds': 'Start nach (gehörten Sekunden)',
+  'tr.afterSecondsHelp':
+    'Wie viel von einem Stück du gehört haben musst, bevor ein Auftrag in die Warteschlange geht — so löst das Durchskippen einer Playlist nicht pro Stück einen aus. Die Zeit bleibt über Titelwechsel hinweg erhalten, ein Stück, zu dem du zurückkehrst, kommt also irgendwann dran. 0 startet sofort.',
   'tr.model': 'Modell',
   'tr.modelDefault': 'medium · Standard',
   'tr.phaseDownload': 'Audio wird geladen',

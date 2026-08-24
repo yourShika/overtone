@@ -367,6 +367,12 @@ function sanitise(input) {
   if (out.lyricsCombine !== undefined) {
     out.lyricsCombine = Math.min(3, Math.max(0, out.lyricsCombine));
   }
+  // The field's min/max only drive the stepper — a typed 9999 arrives intact,
+  // and a wait longer than any song means nothing is ever transcribed while
+  // the window keeps showing "waiting for …", which reads like a hang.
+  if (out.transcribeAfterSeconds !== undefined) {
+    out.transcribeAfterSeconds = Math.min(300, Math.max(0, Math.round(out.transcribeAfterSeconds)));
+  }
   if (out.clientId !== undefined) {
     // Snowflakes are digits only; strip anything a copy-paste dragged along.
     out.clientId = out.clientId.replace(/\D/g, '');

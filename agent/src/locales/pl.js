@@ -117,6 +117,9 @@ module.exports = {
     'Zmierzone na polskim utworze: zdany na siebie model wybrał rosyjski i wynik był bezużyteczny — ustawiony na pl dał czytelny polski, i to szybciej.',
   'tr.maxMinutes': 'Maksymalna długość (minuty)',
   'tr.maxMinutesHelp': 'Dłuższe są pomijane. 0 znosi ograniczenie.',
+  'tr.afterSeconds': 'Start po (przesłuchanych sekundach)',
+  'tr.afterSecondsHelp':
+    'Ile utworu musisz przesłuchać, zanim zadanie trafi do kolejki — dzięki temu przewijanie playlisty nie tworzy zadania na każdy utwór. Czas zachowuje się mimo zmiany utworu, więc utwór, do którego wracasz, w końcu się załapie. 0 startuje od razu.',
   'tr.model': 'Model',
   'tr.modelDefault': 'medium · domyślny',
   'tr.phaseDownload': 'Pobieranie dźwięku',

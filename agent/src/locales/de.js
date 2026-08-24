@@ -355,4 +355,9 @@ module.exports = {
   'search.tr': 'Transkription Whisper Sprache Modell Höchstlänge yt-dlp',
   'search.sys': 'System Autostart Erscheinungsbild Sprache zurücksetzen',
   'search.log': 'Protokoll Log Fehler Warnungen',
+  'msg.extensionVersionMismatch':
+    'Im Browser läuft Erweiterung {extension}, die App ist {app}. Erweiterungsseite des Browsers öffnen, bei Overtone auf Neu laden (↻) drücken und danach die YouTube-Tabs aktualisieren — bis dahin bleibt die alte Brücke zuständig.',
+  'conn.extOutdated': 'Die Browser-Erweiterung ist veraltet.',
+  'conn.extOutdatedText':
+    'Geladen: {extension} · App: {app}. Auf der Erweiterungsseite des Browsers bei Overtone auf Neu laden (↻) drücken, dann die YouTube-Tabs aktualisieren.',
 };

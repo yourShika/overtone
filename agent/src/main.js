@@ -311,6 +311,19 @@ async function setupBridge() {
       }) + (extension.features.length ? ` [${extension.features.join(', ')}]` : ''),
     );
 
+    // The features list says what this build can do; the version says whether
+    // it is the build that shipped with this agent. Both are needed: an
+    // unpacked copy keeps running until it is reloaded by hand, so updating the
+    // app alone leaves an old bridge in the browser saying nothing is wrong.
+    if (extension.version && extension.version !== app.getVersion()) {
+      logger.warn(
+        t('msg.extensionVersionMismatch', {
+          extension: extension.version,
+          app: app.getVersion(),
+        }),
+      );
+    }
+
     socket.send(JSON.stringify({ type: 'status', payload: statusSnapshot() }));
     refreshUi();
   });
@@ -1097,6 +1110,8 @@ function statusSnapshot() {
     extension: {
       version: extension.version,
       features: extension.features,
+      appVersion: app.getVersion(),
+      outdated: Boolean(extension.version) && extension.version !== app.getVersion(),
       /**
        * The content script in the reporting tab is too old to send subtitles.
        * Keyed off the snapshot, not the extension handshake — see

@@ -29,6 +29,16 @@ Deine Freunde sehen den Song — nicht bloß „schaut YouTube".
 
 ---
 
+## Ein Blick hinein
+
+<div align="center">
+<img src="docs/img/settings.gif" alt="Rundgang durch das Einstellungsfenster: Verbindung, Darstellung, Lyrics, Transkription, Sprache und Protokoll, unten eine mitlaufende Vorschau der Discord-Anzeige" width="100%">
+</div>
+
+Zu jeder Option steht in normalem Deutsch, was sie tut. Der Streifen unten ist eine mitlaufende Vorschau dessen, was gerade auf deinem Profil steht — keine Attrappe. Und wenn etwas klemmt, steht im Protokoll, was das Programm gerade macht.
+
+---
+
 ## Einrichten
 
 Etwa fünf Minuten, einmalig.
@@ -60,6 +70,12 @@ Das ist der einzige umständliche Schritt, und du machst ihn genau einmal.
 2. Oben rechts den **Entwicklermodus** einschalten
 3. **Entpackte Erweiterung laden** und den Ordner `extension` auswählen
 4. Offene YouTube-Tabs einmal neu laden
+
+<div align="center">
+<img src="docs/img/extension-popup.png" alt="Das Popup der Erweiterung: grüner Verbunden-Hinweis, Port und Anzahl der Tabs, der gerade laufende YouTube-Tab, das Feld für den Bridge-Port und ein Schalter für die Untertitel" width="300">
+</div>
+
+Ein Klick auf das Symbol der Erweiterung zeigt, ob die Brücke steht und welcher Tab gelesen wird. Steht dort, die App sei nicht erreichbar, läuft sie nicht oder die Ports stimmen nicht überein.
 
 ### 4 · Eine Einstellung in Discord
 

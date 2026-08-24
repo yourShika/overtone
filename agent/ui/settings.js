@@ -417,6 +417,14 @@ function applyStatus(next) {
   notice.hidden = discord;
   $('notice-discord-text').textContent = next.lastError || '';
 
+  // An extension left un-reloaded keeps working well enough to look fine, so
+  // the only way to notice used to be spotting a stale label by eye.
+  const ext = next.extension || {};
+  $('notice-ext').hidden = !ext.outdated;
+  $('notice-ext-text').textContent = ext.outdated
+    ? T.t('conn.extOutdatedText', { extension: ext.version, app: ext.appVersion })
+    : '';
+
   $('port-chip').textContent = T.t(tabs ? 'status.portReachable' : 'status.portWaiting');
   $('port-chip').className = tabs ? 'chip good' : 'chip';
 

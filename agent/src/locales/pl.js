@@ -354,4 +354,9 @@ module.exports = {
   'search.tr': 'Transkrypcja Whisper język model maksymalna długość yt-dlp',
   'search.sys': 'System autostart wygląd język resetowanie',
   'search.log': 'Dziennik log błędy ostrzeżenia',
+  'msg.extensionVersionMismatch':
+    'W przeglądarce działa rozszerzenie {extension}, a aplikacja to {app}. Otwórz stronę rozszerzeń przeglądarki, kliknij przeładuj (↻) przy Overtone, a potem odśwież karty YouTube — do tego czasu rządzi stary mostek.',
+  'conn.extOutdated': 'Rozszerzenie przeglądarki jest nieaktualne.',
+  'conn.extOutdatedText':
+    'Załadowane: {extension} · Aplikacja: {app}. Kliknij przeładuj (↻) przy Overtone na stronie rozszerzeń, następnie odśwież karty YouTube.',
 };

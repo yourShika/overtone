@@ -33,6 +33,16 @@ Your friends see the song, not just "watching YouTube".
 
 ---
 
+## A look at it
+
+<div align="center">
+<img src="docs/img/settings.gif" alt="A tour of the settings window: connection, appearance, lyrics, transcription, language and the log, with a live preview of the Discord presence along the bottom edge" width="100%">
+</div>
+
+Every option says what it does in plain language. The strip along the bottom is a live preview of what is on your profile right now — not a mock-up — and the log says what the program is doing when something looks wrong.
+
+---
+
 ## Setup
 
 About five minutes, once.
@@ -62,6 +72,12 @@ This is the only fiddly step, and it is done once.
 2. Enable **Developer mode** (top right)
 3. **Load unpacked** → select the `extension` folder
 4. Reload any YouTube tabs that were already open
+
+<div align="center">
+<img src="docs/img/extension-popup.png" alt="The extension popup: a green connected badge, the port and tab count, the YouTube tab currently playing, the bridge port field and a switch for reading subtitles" width="300">
+</div>
+
+Clicking the extension's icon tells you whether the bridge is up and which tab it is reading. If it says it cannot reach the app, the app is not running or the ports differ.
 
 ### 4 · Check one Discord setting
 

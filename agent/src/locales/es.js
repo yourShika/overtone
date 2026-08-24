@@ -354,4 +354,9 @@ module.exports = {
   'search.tr': 'Transcripción Whisper idioma modelo duración máxima yt-dlp',
   'search.sys': 'Sistema inicio automático apariencia idioma restablecer',
   'search.log': 'Registro log errores advertencias',
+  'msg.extensionVersionMismatch':
+    'El navegador ejecuta la extensión {extension} mientras que la aplicación es {app}. Abre la página de extensiones del navegador, pulsa recargar (↻) en Overtone y luego actualiza las pestañas de YouTube — hasta entonces manda el puente antiguo.',
+  'conn.extOutdated': 'La extensión del navegador está desactualizada.',
+  'conn.extOutdatedText':
+    'Cargada: {extension} · Aplicación: {app}. Pulsa recargar (↻) en Overtone en la página de extensiones y después actualiza las pestañas de YouTube.',
 };

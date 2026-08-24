@@ -376,4 +376,9 @@ module.exports = {
   'search.tr': 'Transcription Whisper language model maximum length yt-dlp',
   'search.sys': 'System autostart appearance language reset',
   'search.log': 'Log errors warnings',
+  'msg.extensionVersionMismatch':
+    'The browser is running extension {extension} while the app is {app}. Open your browser’s extensions page, press reload (↻) on Overtone, then refresh your YouTube tabs — until you do, the old bridge stays in charge.',
+  'conn.extOutdated': 'The browser extension is out of date.',
+  'conn.extOutdatedText':
+    'Loaded: {extension} · App: {app}. Press reload (↻) on Overtone in your browser’s extensions page, then refresh your YouTube tabs.',
 };

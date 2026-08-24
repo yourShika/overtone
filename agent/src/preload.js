@@ -40,6 +40,16 @@ contextBridge.exposeInMainWorld('overtone', {
     openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
     openLyricsFolder: () => ipcRenderer.invoke('app:openLyricsFolder'),
     openLogFolder: () => ipcRenderer.invoke('app:openLogFolder'),
+    extensionPath: () => ipcRenderer.invoke('app:extensionPath'),
+    showExtensionFolder: () => ipcRenderer.invoke('app:showExtensionFolder'),
+  },
+  wizard: {
+    finish: () => ipcRenderer.invoke('wizard:finish'),
+  },
+  tray: {
+    openSettings: () => ipcRenderer.invoke('tray:openSettings'),
+    quit: () => ipcRenderer.invoke('tray:quit'),
+    onShow: subscribe('tray:show'),
   },
   // The window is frameless, so its buttons are ours to implement.
   window: {

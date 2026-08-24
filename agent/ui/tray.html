@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://i.ytimg.com https://lh3.googleusercontent.com data:; font-src 'self';"
+    />
+    <title>Overtone</title>
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="tray.css" />
+  </head>
+  <body>
+    <div class="pop">
+      <header class="pop-head">
+        <span class="mark big" aria-hidden="true"></span>
+        <span class="pop-name">Overtone</span>
+        <span class="chip good" id="pop-state"><span class="dot on"></span><span id="pop-state-text">aktiv</span></span>
+      </header>
+
+      <div class="now">
+        <img class="cover" id="pop-cover" alt="" />
+        <div class="now-text">
+          <div class="now-line">
+            <span class="now-title" id="pop-title"></span>
+            <span class="ph" id="pop-ph-title" style="width: 140px"></span>
+          </div>
+          <div class="now-line second">
+            <span class="now-by" id="pop-by"></span>
+            <span class="ph" id="pop-ph-by" style="width: 100px"></span>
+          </div>
+          <div class="now-line second">
+            <span aria-hidden="true">♪</span>
+            <span class="now-lyric" id="pop-lyric"></span>
+            <span class="ph" id="pop-ph-lyric" style="width: 150px"></span>
+          </div>
+        </div>
+      </div>
+
+      <span class="bar thin"><i id="pop-fill" style="width: 0%"></i></span>
+
+      <nav class="menu">
+        <button class="menu-row" id="pop-pause" type="button">
+          <span class="menu-label" id="pop-pause-label">Presence pausieren</span>
+        </button>
+
+        <div class="menu-row" id="pop-privacy">
+          <span class="menu-label">Privat-Modus</span>
+        </div>
+
+        <button class="menu-row" id="pop-settings" type="button">
+          <span class="menu-label">Einstellungen öffnen</span>
+          <span class="arrow" aria-hidden="true">›</span>
+        </button>
+
+        <button class="menu-row danger" id="pop-quit" type="button">
+          <span class="menu-label">Overtone beenden</span>
+        </button>
+      </nav>
+    </div>
+
+    <script src="tray.js"></script>
+  </body>
+</html>

@@ -33,6 +33,9 @@ module.exports = {
     { from: '../tools', to: 'tools', filter: ['**/*.py'] },
     // The licence and third-party notices travel with the binary, because the
     // components inside it require their terms to accompany distribution.
+    // The wizard tells people to load this folder, so it has to exist beside
+    // the installed app rather than only in a checkout.
+    { from: '../extension', to: 'extension' },
     { from: '../LICENSE', to: 'LICENSE' },
     { from: '../THIRD-PARTY-NOTICES.md', to: 'THIRD-PARTY-NOTICES.md' },
   ],

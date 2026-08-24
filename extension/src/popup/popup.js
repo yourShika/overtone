@@ -1,9 +1,12 @@
 'use strict';
 
 /**
- * Popup: status at a glance plus the two settings that live on the browser side
- * (master switch and bridge port). Everything else belongs to the agent, so the
- * "Einstellungen" button just asks it to raise its own window.
+ * Extension popup: whether the bridge is up, what the active tab is playing,
+ * and the two settings that belong to the browser side rather than the agent.
+ *
+ * Everything else lives in the agent's own settings window — duplicating it
+ * here would give two places to change the same value and no rule for which
+ * one wins.
  */
 
 const $ = (id) => document.getElementById(id);
@@ -13,32 +16,39 @@ let refreshTimer = null;
 init();
 
 async function init() {
-  const { enabled, port, autoReload } = await chrome.storage.local.get({
-    enabled: true,
-    port: 8787,
-    autoReload: true,
-  });
-  $('enabled').checked = enabled;
+  const { port, captions } = await chrome.storage.local.get({ port: 8787, captions: true });
+
   $('port').value = port;
-
-  $('autoReload').checked = autoReload;
-  $('autoReload').addEventListener('change', (event) => {
-    chrome.storage.local.set({ autoReload: event.target.checked });
-  });
-
-  $('enabled').addEventListener('change', (event) => {
-    chrome.storage.local.set({ enabled: event.target.checked });
-    refresh();
-  });
-
   $('port').addEventListener('change', (event) => {
-    const port = clampPort(Number(event.target.value));
-    event.target.value = port;
-    chrome.storage.local.set({ port });
+    const value = clampPort(Number(event.target.value));
+    event.target.value = value;
+    chrome.storage.local.set({ port: value });
   });
 
-  $('open-settings').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'popup:command', name: 'openSettings' });
+  const knob = document.createElement('button');
+  knob.type = 'button';
+  knob.className = 'switch';
+  knob.setAttribute('role', 'switch');
+  knob.setAttribute('aria-checked', captions ? 'true' : 'false');
+  knob.innerHTML = '<span class="knob"></span>';
+  $('captions-row').appendChild(knob);
+
+  $('captions-row').addEventListener('click', async () => {
+    const next = knob.getAttribute('aria-checked') !== 'true';
+    knob.setAttribute('aria-checked', next ? 'true' : 'false');
+    await chrome.storage.local.set({ captions: next });
+  });
+
+  // Asks the worker to do it: it already tracks the reporting tabs, so this
+  // needs no `tabs` permission. The extension holds only `storage` and
+  // `alarms`, and keeping it that way is worth a message round-trip.
+  $('reload-tabs').addEventListener('click', async () => {
+    try {
+      await chrome.runtime.sendMessage({ type: 'popup:reloadTabs' });
+    } catch {
+      /* worker restarting */
+    }
+    window.close();
   });
 
   refresh();
@@ -51,62 +61,48 @@ async function refresh() {
   try {
     status = await chrome.runtime.sendMessage({ type: 'popup:status' });
   } catch {
-    return; // worker restarting
+    return; // the service worker is restarting
   }
   if (!status) return;
 
-  $('dot').classList.toggle('on', Boolean(status.connected));
-  renderTrack(status);
-  renderStatusLine(status);
+  renderStatus(status);
+  renderTab(status.now);
 }
 
-function renderTrack(status) {
-  const now = status.now;
+function renderStatus(status) {
+  const box = $('status');
+  const connected = Boolean(status.connected);
 
-  $('track').classList.toggle('hidden', !now);
-  $('empty').classList.toggle('hidden', Boolean(now));
-  if (!now) return;
+  box.dataset.state = connected ? 'on' : 'off';
+  $('status-title').textContent = connected ? 'Verbunden' : 'Nicht verbunden';
 
-  $('title').textContent = now.title || '—';
-  $('sub').textContent = [now.paused ? '⏸ Pausiert' : '▶ Läuft', now.artist || now.channel]
-    .filter(Boolean)
-    .join(' · ');
-
-  const lyric = status.agent?.lyrics?.line;
-  $('lyric').textContent = lyric ? `♪ ${lyric}` : '';
-
-  const art = now.thumbnail || (now.videoId ? `https://i.ytimg.com/vi/${now.videoId}/mqdefault.jpg` : '');
-  if (art && $('art').src !== art) $('art').src = art;
+  if (connected) {
+    const tabs = status.agent?.browserClients;
+    $('status-sub').textContent = `Port ${status.port}${
+      tabs ? ` · ${tabs} YouTube-Tab${tabs > 1 ? 's' : ''}` : ''
+    }`;
+  } else {
+    // Say what to do, not merely that something is wrong.
+    $('status-sub').textContent = `Läuft die Overtone-App? Erwartet auf Port ${status.port}.`;
+  }
 }
 
-function renderStatusLine(status) {
-  const el = $('status-line');
+function renderTab(now) {
+  fill('tab-title', 'ph-title', now?.title);
+  fill('tab-by', 'ph-by', now && (now.artist || now.channel));
 
-  if (!$('enabled').checked) {
-    el.textContent = 'Deaktiviert.';
-    return;
-  }
-  if (!status.connected) {
-    el.textContent = `Agent nicht erreichbar (Port ${status.port}). Läuft Overtone?`;
-    return;
-  }
+  const thumb = $('tab-thumb');
+  const art =
+    now?.thumbnail || (now?.videoId ? `https://i.ytimg.com/vi/${now.videoId}/mqdefault.jpg` : '');
+  thumb.style.backgroundImage = art ? `url("${art}")` : '';
+}
 
-  const agent = status.agent;
-  if (!agent) {
-    el.textContent = 'Mit Agent verbunden.';
-    return;
-  }
-  if (!agent.discordConnected) {
-    el.textContent = 'Agent läuft — wartet auf Discord.';
-    return;
-  }
-
-  const who = agent.discordUser ? ` als @${agent.discordUser}` : '';
-  const lyrics = { loading: ' · Lyrics werden gesucht', none: ' · keine Lyrics', found: ' · Lyrics aktiv' }[
-    agent.lyrics?.status
-  ] ?? '';
-
-  el.textContent = `Verbunden${who}${lyrics}`;
+/** Placeholders stay until real values arrive; nothing is invented. */
+function fill(textId, placeholderId, value) {
+  const has = Boolean(value);
+  $(textId).textContent = value || '';
+  $(textId).classList.toggle('hidden', !has);
+  $(placeholderId).classList.toggle('hidden', has);
 }
 
 function clampPort(value) {

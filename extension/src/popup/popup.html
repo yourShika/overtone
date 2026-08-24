@@ -2,59 +2,50 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
-    <title>Overtone</title>
+    <title>Overtone Bridge</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <header>
+    <header class="head">
       <span class="mark" aria-hidden="true"></span>
-      <h1>Overtone</h1>
-      <span class="dot" id="dot" title="Agent-Verbindung"></span>
+      <span class="name">Overtone Bridge</span>
     </header>
 
-    <section class="now" id="now">
-      <p class="empty" id="empty">Kein YouTube-Tab aktiv.</p>
+    <section class="status" id="status">
+      <span class="dot" id="status-dot"></span>
+      <div class="status-text">
+        <p class="status-title" id="status-title">Verbinde …</p>
+        <p class="status-sub" id="status-sub"></p>
+      </div>
+    </section>
 
-      <div class="track hidden" id="track">
-        <img id="art" alt="" />
-        <div class="meta">
-          <p class="title" id="title"></p>
-          <p class="sub" id="sub"></p>
-          <p class="lyric" id="lyric"></p>
+    <section class="block">
+      <p class="block-label">Aktiver Tab</p>
+      <div class="tab-row">
+        <span class="thumb" id="tab-thumb"></span>
+        <div class="tab-text">
+          <div class="tab-line">
+            <span class="tab-title" id="tab-title"></span>
+            <span class="ph" id="ph-title"></span>
+          </div>
+          <div class="tab-line second">
+            <span class="tab-by" id="tab-by"></span>
+            <span class="ph small" id="ph-by"></span>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="status" id="status">
-      <p id="status-line">Verbinde …</p>
-    </section>
+    <label class="field">
+      <span class="label">Bridge-Port</span>
+      <input id="port" type="number" min="1024" max="65535" placeholder="8787" />
+    </label>
 
-    <section class="controls">
-      <label class="toggle">
-        <input type="checkbox" id="autoReload" />
-        <span>Hängenden Player automatisch neu laden</span>
-      </label>
-      <p class="hint">
-        Lädt die Seite neu, wenn YouTube behauptet zu spielen, aber keine Daten hat und die
-        Zeit stillsteht — 20 Sekunden am Stück. Höchstens dreimal pro Tab und nie, während du
-        tippst.
-      </p>
+    <div class="switch-row" id="captions-row">
+      <span class="text">Untertitel mitlesen</span>
+    </div>
 
-      <label class="toggle">
-        <input type="checkbox" id="enabled" />
-        <span>Aktiv</span>
-      </label>
-      <button class="link" id="open-settings">Einstellungen</button>
-    </section>
-
-    <details class="advanced">
-      <summary>Erweitert</summary>
-      <label class="field">
-        <span>Bridge-Port</span>
-        <input type="number" id="port" min="1024" max="65535" />
-      </label>
-      <p class="hint">Muss mit dem Port im Overtone-Agent übereinstimmen.</p>
-    </details>
+    <button class="btn wide" id="reload-tabs" type="button">YouTube-Tabs neu laden</button>
 
     <script src="popup.js"></script>
   </body>

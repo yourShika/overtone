@@ -107,6 +107,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Reload from here rather than from the popup: the worker already knows which
+  // tabs are reporting, so this needs no `tabs` permission to find them. The
+  // extension holds only `storage` and `alarms`, and that is worth keeping.
+  if (message?.type === 'popup:reloadTabs') {
+    let count = 0;
+    for (const id of tabs.keys()) {
+      try {
+        chrome.tabs.reload(id);
+        count += 1;
+      } catch {
+        /* the tab closed between listing and reloading */
+      }
+    }
+    sendResponse({ ok: true, count });
+    return true;
+  }
+
   // Content script reports.
   const tabId = sender?.tab?.id;
   if (typeof tabId !== 'number') return false;

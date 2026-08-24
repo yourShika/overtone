@@ -56,6 +56,10 @@ app.setAppUserModelId('com.overtone.agent');
 let tray = null;
 /** @type {BrowserWindow|null} */
 let settingsWindow = null;
+/** @type {BrowserWindow|null} */
+let trayWindow = null;
+/** @type {BrowserWindow|null} */
+let wizardWindow = null;
 
 let config;
 let logger;
@@ -159,9 +163,11 @@ app.whenReady().then(async () => {
 
   tickTimer = setInterval(tick, TICK_MS);
 
+  // Nothing configured yet means a first run: the wizard explains the parts in
+  // order, where the settings window would just present every option at once.
   if (!config.get('clientId')) {
-    logger.warn('Keine Discord Client-ID gesetzt — Einstellungen werden geöffnet.');
-    openSettings();
+    logger.info('Noch nicht eingerichtet — Assistent wird geöffnet.');
+    openWizard();
   }
 });
 
@@ -744,8 +750,63 @@ function resetLyrics() {
 function setupTray() {
   tray = new Tray(trayIcon());
   tray.setToolTip('Overtone');
+  // Left click shows the popup window; the native menu stays on right click,
+  // because a window cannot be a context menu and some people expect one.
+  tray.on('click', () => toggleTrayPopup());
   tray.on('double-click', () => openSettings());
   refreshUi();
+}
+
+/**
+ * The tray popup.
+ *
+ * A frameless window rather than a native menu: a menu cannot show artwork, a
+ * progress bar or a lyric. It hides on blur so it still behaves like one.
+ */
+function toggleTrayPopup() {
+  if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
+    trayWindow.hide();
+    return;
+  }
+
+  if (!trayWindow || trayWindow.isDestroyed()) {
+    trayWindow = new BrowserWindow({
+      width: 340,
+      height: 330,
+      show: false,
+      frame: false,
+      resizable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      transparent: true,
+      webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: true },
+    });
+    trayWindow.loadFile(path.join(__dirname, '..', 'ui', 'tray.html'));
+    trayWindow.on('blur', () => trayWindow?.hide());
+  }
+
+  positionTrayPopup();
+  trayWindow.show();
+  trayWindow.webContents.send('tray:show');
+}
+
+/** Anchor the popup to the tray icon, kept inside the screen it sits on. */
+function positionTrayPopup() {
+  const bounds = tray?.getBounds?.();
+  const size = trayWindow.getBounds();
+  if (!bounds || !bounds.width) {
+    trayWindow.center();
+    return;
+  }
+
+  const { screen } = require('electron');
+  const area = screen.getDisplayMatching(bounds).workArea;
+  const x = Math.round(
+    Math.min(Math.max(area.x + 8, bounds.x + bounds.width / 2 - size.width / 2), area.x + area.width - size.width - 8),
+  );
+  // Taskbar at the top or the bottom decides which side the popup opens on.
+  const y = bounds.y > area.y + area.height / 2 ? bounds.y - size.height - 8 : bounds.y + bounds.height + 8;
+  trayWindow.setPosition(x, Math.round(y), false);
 }
 
 function trayIcon() {
@@ -832,6 +893,30 @@ function lyricsStatusLabel() {
 
 // ------------------------------------------------------------------ settings
 
+function openWizard() {
+  if (wizardWindow && !wizardWindow.isDestroyed()) {
+    wizardWindow.show();
+    wizardWindow.focus();
+    return;
+  }
+
+  wizardWindow = new BrowserWindow({
+    width: 720,
+    height: 560,
+    resizable: false,
+    frame: false,
+    show: false,
+    backgroundColor: '#0c0c11',
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: true },
+  });
+
+  wizardWindow.loadFile(path.join(__dirname, '..', 'ui', 'wizard.html'));
+  wizardWindow.once('ready-to-show', () => wizardWindow.show());
+  wizardWindow.on('closed', () => {
+    wizardWindow = null;
+  });
+}
+
 function openSettings() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.show();
@@ -903,6 +988,34 @@ function registerIpc() {
     tick();
     return true;
   });
+  ipcMain.handle('app:extensionPath', () =>
+    app.isPackaged
+      ? path.join(process.resourcesPath, 'extension')
+      : path.join(__dirname, '..', '..', 'extension'),
+  );
+  ipcMain.handle('app:showExtensionFolder', async () => {
+    const target = app.isPackaged
+      ? path.join(process.resourcesPath, 'extension')
+      : path.join(__dirname, '..', '..', 'extension');
+    shell.showItemInFolder(target);
+  });
+
+  ipcMain.handle('wizard:finish', () => {
+    wizardWindow?.close();
+    // Straight into the settings so the window they will actually live in is
+    // the one that opens next, rather than nothing at all.
+    openSettings();
+  });
+
+  ipcMain.handle('tray:openSettings', () => {
+    trayWindow?.hide();
+    openSettings();
+  });
+  ipcMain.handle('tray:quit', () => {
+    trayWindow?.hide();
+    app.quit();
+  });
+
   ipcMain.handle('app:openLyricsFolder', () =>
     shell.openPath(path.join(app.getPath('userData'), 'lyrics')),
   );

@@ -29,6 +29,7 @@ Your friends see the song, not just "watching YouTube".
 | ▶️ **A state badge** | Playing, paused, on repeat, or live |
 | 🔗 **A button to the video** | One click and they're watching it too |
 | 🌍 **Five languages** | English, German, Polish, Russian, Spanish — including what lands on your profile |
+| 📚 **A library you can edit** | Every lyric file Overtone saved, in a list — read it, correct it, or have it transcribed again |
 | 🔒 **Privacy mode** | Show that you're watching something, without saying what |
 
 ---

@@ -227,6 +227,57 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Deliberately a sibling card and not inside the subblock
+                   above: .subblock.open caps at max-height 640px with overflow
+                   hidden, so a list that grows would simply be cut off. The
+                   folder is also worth looking through when the lyric line
+                   itself is switched off. -->
+              <div class="card">
+                <h3 data-i18n="lib.title"></h3>
+                <p class="hint" data-i18n="lib.sub"></p>
+
+                <div class="log-tools">
+                  <input id="lib-search" class="mid" type="text" data-i18n-placeholder="lib.search" placeholder="" autocomplete="off" />
+                  <span class="chip" id="lib-count"></span>
+                  <button class="btn ghost" id="lib-refresh" type="button" data-i18n="lib.refresh"></button>
+                </div>
+
+                <div class="log-filters" id="lib-filters">
+                  <button class="pill" data-kind="all" aria-selected="true" type="button" data-i18n="lib.filterAll"></button>
+                  <button class="pill" data-kind="managed" aria-selected="false" type="button" data-i18n="lib.filterManaged"></button>
+                  <button class="pill" data-kind="own" aria-selected="false" type="button" data-i18n="lib.filterOwn"></button>
+                </div>
+
+                <!-- .log is the existing scrolling mono box; .nav-item is the
+                     existing selectable row with its aria-selected state and
+                     .nav-tail slot. Neither is coupled to where it is used. -->
+                <div class="log" id="lib-list" data-noscroll></div>
+                <p class="hint hidden" id="lib-empty" data-i18n="lib.empty"></p>
+
+                <div class="notice" id="lib-note" hidden></div>
+
+                <div class="row hidden" id="lib-actions">
+                  <button class="btn" id="lib-reveal" type="button" data-i18n="lib.reveal"></button>
+                  <button class="btn" id="lib-edit" type="button" data-i18n="lib.edit"></button>
+                  <button class="btn" id="lib-regen" type="button" data-i18n="lib.regenerate"></button>
+                  <button class="btn danger" id="lib-delete" type="button" data-i18n="lib.delete"></button>
+                </div>
+
+                <div class="field hidden" id="lib-detail">
+                  <span class="field-head">
+                    <span class="label" id="lib-detail-name"></span>
+                    <span class="chip" id="lib-detail-tag"></span>
+                  </span>
+                  <div class="log" id="lib-view" data-noscroll></div>
+                  <textarea id="lib-raw" class="hidden" spellcheck="false"></textarea>
+                  <span class="hint hidden" id="lib-edit-hint" data-i18n="lib.editHint"></span>
+                  <span class="row hidden" id="lib-edit-actions">
+                    <button class="btn primary" id="lib-save" type="button" data-i18n="lib.save"></button>
+                    <button class="btn ghost" id="lib-cancel" type="button" data-i18n="lib.cancel"></button>
+                  </span>
+                </div>
+              </div>
             </section>
 
             <!-- Transkription -->

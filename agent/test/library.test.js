@@ -139,6 +139,96 @@ test('stats separates saved copies from files you wrote', async () => {
   });
 });
 
+test('list reports what a person would recognise, newest first', async () => {
+  await withLibrary(async (library, dir) => {
+    await library.store({ videoId: 'aaaaaaaaaaa', artist: 'doli', track: '162020', lines: LINES });
+    await fs.writeFile(path.join(dir, 'eigenes.lrc'), '[00:00.00]Text\n', 'utf8');
+
+    const entries = await library.list();
+    assert.equal(entries.length, 2);
+
+    const stored = entries.find((e) => e.name === 'aaaaaaaaaaa.lrc');
+    assert.equal(stored.title, '162020');
+    assert.equal(stored.artist, 'doli');
+    assert.equal(stored.managed, true);
+    assert.equal(stored.lines, 3);
+
+    const own = entries.find((e) => e.name === 'eigenes.lrc');
+    assert.equal(own.managed, false);
+    assert.equal(own.title, 'eigenes', 'ohne [ti:] steht der Dateiname da');
+  });
+});
+
+test('a name from the window cannot reach out of the folder', async () => {
+  await withLibrary(async (library) => {
+    assert.equal(library.resolve('../config.json'), null);
+    assert.equal(library.resolve('..\\config.json'), null);
+    assert.equal(library.resolve('sub/other.lrc'), null);
+    assert.equal(library.resolve('C:\\Windows\\win.lrc'), null);
+    assert.equal(library.resolve('notes.txt'), null);
+    assert.notEqual(library.resolve('abc123.lrc'), null);
+  });
+});
+
+test('saving an edit drops the marker, so nothing may overwrite it again', async () => {
+  await withLibrary(async (library, dir) => {
+    await library.store({ videoId: 'abc123', track: 'A', lines: LINES });
+
+    const edited = await library.read('abc123.lrc');
+    assert.equal(edited.managed, true);
+
+    assert.equal(await library.write('abc123.lrc', `${edited.text}[02:00.00]Korrektur\n`), true);
+
+    const raw = await fs.readFile(path.join(dir, 'abc123.lrc'), 'utf8');
+    assert.equal(raw.includes(MANAGED_MARKER), false, 'Marke muss weg sein');
+
+    // The point of dropping it: a later fetch must now bounce off.
+    assert.equal(await library.store({ videoId: 'abc123', track: 'B', lines: LINES }), false);
+  });
+});
+
+test('write refuses text no player could use', async () => {
+  await withLibrary(async (library) => {
+    await library.store({ videoId: 'abc123', track: 'A', lines: LINES });
+    assert.equal(await library.write('abc123.lrc', 'nur Text, keine Zeitmarken'), false);
+    assert.equal((await library.read('abc123.lrc')).text.includes('[00:00.00]'), true);
+  });
+});
+
+test('remove protects a hand-made file until it is forced', async () => {
+  await withLibrary(async (library, dir) => {
+    const file = path.join(dir, 'eigenes.lrc');
+    await fs.writeFile(file, '[00:00.00]Meine Fassung\n', 'utf8');
+
+    assert.equal(await library.remove('eigenes.lrc'), 'protected');
+    assert.equal((await library.read('eigenes.lrc')).text.includes('Meine Fassung'), true);
+
+    assert.equal(await library.remove('eigenes.lrc', { force: true }), 'deleted');
+    assert.equal(await library.read('eigenes.lrc'), null);
+  });
+});
+
+test('remove hands the file to the trash hook rather than unlinking it', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'overtone-lyrics-'));
+  try {
+    const trashed = [];
+    const library = new LyricsLibrary({
+      directory: dir,
+      logger: QUIET,
+      trash: async (file) => {
+        trashed.push(file);
+      },
+    });
+    await library.store({ videoId: 'abc123', track: 'A', lines: LINES });
+
+    assert.equal(await library.remove('abc123.lrc'), 'deleted');
+    assert.deepEqual(trashed, [path.join(dir, 'abc123.lrc')]);
+    assert.notEqual(await library.read('abc123.lrc'), null, 'der Hook loescht, nicht wir');
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('formatTimestamp matches the LRC form players expect', () => {
   assert.equal(formatTimestamp(0), '[00:00.00]');
   assert.equal(formatTimestamp(5.5), '[00:05.50]');

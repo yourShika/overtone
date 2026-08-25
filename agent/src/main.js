@@ -131,6 +131,10 @@ app.whenReady().then(async () => {
   library = new LyricsLibrary({
     directory: path.join(userData, 'lyrics'),
     logger,
+    // The recycle bin, not fs.rm. A file you corrected by hand is the only
+    // thing in this folder nothing can fetch again, so the delete a person can
+    // reach from the window has to be one they can walk back.
+    trash: (file) => shell.trashItem(file),
   });
   library.ensureDirectory().catch(() => {});
 
@@ -1182,6 +1186,86 @@ function registerIpc() {
     resetLyrics();
     logger.info(t('msg.cacheCleared'));
     return true;
+  });
+
+  // --- the lyrics folder ---------------------------------------------------
+  //
+  // Every one of these takes a file name from the renderer, so every one of
+  // them goes through library.resolve() — see the note on it. Nothing here
+  // takes a path.
+
+  ipcMain.handle('library:list', () => library.list());
+  ipcMain.handle('library:read', (_event, name) => library.read(name));
+
+  ipcMain.handle('library:reveal', (_event, name) => {
+    const file = library.resolve(name);
+    if (file) shell.showItemInFolder(file);
+  });
+
+  ipcMain.handle('library:write', async (_event, name, text) => {
+    const ok = await library.write(name, text);
+    if (!ok) return false;
+    logger.info(t('msg.libraryEdited', { file: name }));
+    // The file changed under a lookup that already ran. Same move the
+    // transcriber makes on 'done': force the next tick to read it again rather
+    // than keep the lines loaded at track change.
+    lyricState.trackId = null;
+    refreshUi();
+    return true;
+  });
+
+  ipcMain.handle('library:remove', async (_event, name) => {
+    const entry = await library.read(name);
+    if (!entry) return 'missing';
+
+    // A file this program did not write is a version somebody made or corrected
+    // themselves. It costs a second, explicit yes, in a dialog that names it.
+    if (!entry.managed) {
+      const { response } = await dialog.showMessageBox(settingsWindow ?? undefined, {
+        type: 'warning',
+        buttons: [t('lib.delete'), t('lib.cancel')],
+        defaultId: 1,
+        cancelId: 1,
+        title: t('lib.deleteTitle'),
+        message: t('lib.deleteOwn', { file: name }),
+        detail: t('lib.deleteOwnDetail'),
+      });
+      if (response !== 0) return 'cancelled';
+    }
+
+    const outcome = await library.remove(name, { force: true });
+    if (outcome === 'deleted') {
+      logger.info(t('msg.libraryDeleted', { file: name }));
+      lyricState.trackId = null;
+      refreshUi();
+    }
+    return outcome;
+  });
+
+  ipcMain.handle('library:regenerate', async (_event, name) => {
+    const entry = await library.read(name);
+    if (!entry) return 'missing';
+    // Both store() and the Whisper worker refuse to replace a file they did not
+    // write. Say so now rather than queue a job that dies at its last step.
+    if (!entry.managed) return 'protected';
+
+    const videoId = name.slice(0, -4);
+    // Only an id-named file can be regenerated: the worker downloads by video
+    // id, and "Artist - Title.lrc" does not say which upload it came from.
+    if (!/^[\w-]{11}$/.test(videoId)) return 'noVideo';
+    if (transcriber.busy) return 'busy';
+
+    transcriber.forget(videoId);
+    logger.info(t('msg.libraryRegenerate', { file: name }));
+
+    return transcriber.submit({
+      videoId,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      artist: entry.artist,
+      track: entry.title,
+      config: config.all(),
+      getConfig: () => config.all(),
+    });
   });
   ipcMain.handle('discord:reconnect', () => {
     logger.info(t('msg.reconnecting'));

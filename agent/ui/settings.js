@@ -36,6 +36,13 @@ let logEntries = [];
 let logFilter = 'all';
 let suppress = false;
 
+/** The lyrics folder, as last read. Refreshed when the panel is opened. */
+let libEntries = [];
+let libFilter = 'all';
+let libSearch = '';
+let libSelected = null;
+let libEditing = false;
+
 /**
  * The track a subtitle was last seen on, by url.
  *
@@ -57,6 +64,7 @@ async function init() {
     render();
     applyStatus(status);
     renderLog();
+    renderLibrary();
   });
   fillLanguages();
 
@@ -253,6 +261,11 @@ function selectPanel(name) {
   for (const panel of all('.panel')) {
     panel.hidden = panel.id !== `panel-${name}`;
   }
+  // Read the folder when the panel is actually opened rather than at startup:
+  // it is one readdir plus a read per file, and it is stale the moment a track
+  // is found anyway.
+  if (name === 'lyr') loadLibrary().catch(() => {});
+
   // Re-trigger the entry animation, which only runs on a fresh element.
   const shown = $(`panel-${name}`);
   if (shown) {
@@ -371,6 +384,71 @@ function bindActions() {
 
   $('btn-clear-cache').addEventListener('click', () => api.actions.clearLyricsCache());
   $('btn-open-lyrics').addEventListener('click', () => api.actions.openLyricsFolder());
+
+  $('lib-refresh').addEventListener('click', () => loadLibrary());
+  $('lib-search').addEventListener('input', (event) => {
+    libSearch = event.target.value;
+    renderLibrary();
+  });
+  for (const pill of all('#lib-filters .pill')) {
+    pill.addEventListener('click', () => {
+      libFilter = pill.dataset.kind;
+      for (const other of all('#lib-filters .pill')) {
+        other.setAttribute('aria-selected', other === pill ? 'true' : 'false');
+      }
+      renderLibrary();
+    });
+  }
+
+  $('lib-reveal').addEventListener('click', () => api.library.reveal(libSelected));
+
+  $('lib-edit').addEventListener('click', () => {
+    libEditing = true;
+    showDetail();
+  });
+  $('lib-cancel').addEventListener('click', () => {
+    libEditing = false;
+    selectEntry(libSelected);
+  });
+  $('lib-save').addEventListener('click', async () => {
+    const ok = await api.library.write(libSelected, $('lib-raw').value);
+    note(ok ? 'good' : 'bad', ok ? 'lib.saved' : 'lib.saveFailed');
+    if (!ok) return;
+    libEditing = false;
+    await loadLibrary();
+    await selectEntry(libSelected);
+  });
+
+  $('lib-delete').addEventListener('click', async () => {
+    // The confirmation is a native dialog raised by the agent, not a window
+    // built here: it has to name the file and it must not be dismissible by
+    // the same stray click that opened it.
+    const outcome = await api.library.remove(libSelected);
+    if (outcome === 'cancelled') return;
+    if (outcome !== 'deleted') {
+      note('warn', 'lib.deleteFailed');
+      return;
+    }
+    note('good', 'lib.deleted');
+    libSelected = null;
+    libEditing = false;
+    $('lib-detail').classList.add('hidden');
+    await loadLibrary();
+  });
+
+  $('lib-regen').addEventListener('click', async () => {
+    const outcome = await api.library.regenerate(libSelected);
+    note(
+      outcome === 'started' || outcome === 'queued' ? 'good' : 'warn',
+      {
+        started: 'lib.regenQueued',
+        queued: 'lib.regenQueued',
+        busy: 'lib.regenBusy',
+        protected: 'lib.regenProtected',
+        noVideo: 'lib.regenNoVideo',
+      }[outcome] || 'lib.regenFailed',
+    );
+  });
   $('btn-open-logs').addEventListener('click', () => api.actions.openLogFolder());
 
   $('btn-copy-log').addEventListener('click', () => {
@@ -610,6 +688,122 @@ function duration(total) {
   const seconds = Math.max(0, Math.round(total || 0));
   if (seconds < 60) return `${seconds} s`;
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} min`;
+}
+
+// ------------------------------------------------------------------ library
+
+async function loadLibrary() {
+  libEntries = await api.library.list();
+  renderLibrary();
+}
+
+function visibleLibrary() {
+  const needle = libSearch.trim().toLowerCase();
+  return libEntries.filter((entry) => {
+    if (libFilter === 'managed' && !entry.managed) return false;
+    if (libFilter === 'own' && entry.managed) return false;
+    if (!needle) return true;
+    return `${entry.artist} ${entry.title} ${entry.name}`.toLowerCase().includes(needle);
+  });
+}
+
+function renderLibrary() {
+  const box = $('lib-list');
+  const rows = visibleLibrary();
+
+  box.textContent = '';
+  for (const entry of rows) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'nav-item';
+    row.dataset.name = entry.name;
+    row.setAttribute('aria-selected', entry.name === libSelected ? 'true' : 'false');
+
+    const label = document.createElement('span');
+    // Trimmed here rather than in CSS: .nav-item lays its children out with no
+    // min-width, so an untrimmed title pushes the badge off the row.
+    label.textContent = cut(entry.artist ? `${entry.artist} — ${entry.title}` : entry.title, 52);
+
+    const tail = document.createElement('span');
+    tail.className = 'nav-tail';
+    const chip = document.createElement('span');
+    // Green is the protected one. A file Overtone wrote is replaceable and
+    // therefore unremarkable; a file you wrote is the one nothing may touch.
+    chip.className = entry.managed ? 'chip' : 'chip good';
+    chip.textContent = T.t(entry.managed ? 'msg.libraryStored' : 'msg.librarySelfMade');
+    tail.appendChild(chip);
+
+    row.append(label, tail);
+    row.addEventListener('click', () => selectEntry(entry.name));
+    box.appendChild(row);
+  }
+
+  $('lib-empty').classList.toggle('hidden', rows.length > 0);
+  $('lib-count').textContent = T.t('lib.count', {
+    shown: rows.length,
+    total: libEntries.length,
+  });
+  $('lib-actions').classList.toggle('hidden', !libSelected);
+}
+
+async function selectEntry(name) {
+  libSelected = name;
+  const entry = name ? await api.library.read(name) : null;
+  libDetail = entry;
+  renderLibrary();
+  showDetail();
+}
+
+/** The file as last read, so the editor can be reopened without a round trip. */
+let libDetail = null;
+
+function showDetail() {
+  const entry = libDetail;
+  $('lib-detail').classList.toggle('hidden', !entry);
+  $('lib-regen').disabled = !entry?.managed;
+  if (!entry) return;
+
+  $('lib-detail-name').textContent = entry.name;
+  const tag = $('lib-detail-tag');
+  tag.className = entry.managed ? 'chip' : 'chip good';
+  tag.textContent = T.t(entry.managed ? 'msg.libraryStored' : 'msg.librarySelfMade');
+
+  $('lib-view').classList.toggle('hidden', libEditing);
+  $('lib-raw').classList.toggle('hidden', !libEditing);
+  $('lib-edit-hint').classList.toggle('hidden', !libEditing);
+  $('lib-edit-actions').classList.toggle('hidden', !libEditing);
+  $('lib-raw').value = entry.text;
+
+  // One .log-row per cue: the timestamp lands in .when, dim and fixed width,
+  // exactly as the log panel already renders a time against a message.
+  const view = $('lib-view');
+  view.textContent = '';
+  for (const line of entry.text.split('\n')) {
+    const cue = /^\s*(\[[^\]]+\])\s*(.*)$/.exec(line);
+    if (!cue) continue;
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const when = document.createElement('span');
+    when.className = 'when';
+    when.textContent = cue[1];
+    const msg = document.createElement('span');
+    msg.className = 'msg';
+    msg.textContent = cue[2];
+    row.append(when, msg);
+    view.appendChild(row);
+  }
+}
+
+function note(kind, key) {
+  const box = $('lib-note');
+  box.className = `notice ${kind}`;
+  box.textContent = T.t(key);
+  box.hidden = false;
+}
+
+function cut(value, max) {
+  const text = String(value || '');
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 // ---------------------------------------------------------------------- log

@@ -104,6 +104,18 @@ class Transcriber extends EventEmitter {
   }
 
   /**
+   * Let this track be attempted again.
+   *
+   * `attempted` exists so a track that failed is not retried every four
+   * seconds. Somebody pointing at one file and asking for a fresh transcription
+   * is the one case where the repeat is the point, so the halt lifts with it.
+   */
+  forget(videoId) {
+    this.attempted.delete(videoId);
+    this.resetFailures();
+  }
+
+  /**
    * Take this track now, or remember it for when the current job finishes.
    *
    * 'deferred' and 'skipped' are deliberately different answers. The first is

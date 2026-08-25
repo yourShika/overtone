@@ -47,6 +47,17 @@ contextBridge.exposeInMainWorld('overtone', {
     get: () => ipcRenderer.invoke('i18n:get'),
     onChange: subscribe('i18n:changed'),
   },
+  // The .lrc files in %APPDATA%/Overtone/lyrics. Named after its channels, the
+  // way config/status/log/tray/window are — `actions` is the grab bag, and a
+  // set of operations on one thing is not that.
+  library: {
+    list: () => ipcRenderer.invoke('library:list'),
+    read: (name) => ipcRenderer.invoke('library:read', name),
+    write: (name, text) => ipcRenderer.invoke('library:write', name, text),
+    remove: (name) => ipcRenderer.invoke('library:remove', name),
+    reveal: (name) => ipcRenderer.invoke('library:reveal', name),
+    regenerate: (name) => ipcRenderer.invoke('library:regenerate', name),
+  },
   wizard: {
     finish: () => ipcRenderer.invoke('wizard:finish'),
   },

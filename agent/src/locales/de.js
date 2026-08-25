@@ -377,4 +377,45 @@ module.exports = {
   'conn.extOutdated': 'Die Browser-Erweiterung ist veraltet.',
   'conn.extOutdatedText':
     'Geladen: {extension} · App: {app}. Auf der Erweiterungsseite des Browsers bei Overtone auf Neu laden (↻) drücken, dann die YouTube-Tabs aktualisieren.',
+  'lib.title': 'Gespeicherte Lyrics',
+  'lib.sub':
+    'Jede .lrc-Datei in deinem Lyrics-Ordner. Eine Datei, die du bearbeitet hast, gilt als deine und wird von keiner Suche mehr überschrieben.',
+  'lib.search': 'Nach Titel oder Künstler filtern',
+  'lib.refresh': 'Neu laden',
+  'lib.count': '{shown} von {total}',
+  'lib.filterAll': 'Alles',
+  'lib.filterManaged': 'Von Overtone erstellt',
+  'lib.filterOwn': 'Deine',
+  'lib.empty':
+    'Noch nichts da. Lyrics landen hier, sobald ein Song gefunden wird — und du kannst jederzeit selbst eine .lrc hineinlegen.',
+  'lib.reveal': 'Im Ordner zeigen',
+  'lib.edit': 'Bearbeiten',
+  'lib.save': 'Speichern',
+  'lib.cancel': 'Abbrechen',
+  'lib.editHint':
+    'Eine Zeile je Einsatz, geschrieben als [mm:ss.xx]. Beim Speichern gilt die Datei als deine, danach ersetzt sie weder eine Suche noch eine Transkription.',
+  'lib.saved': 'Gespeichert. Die Datei gehört jetzt dir und bleibt, wie du sie hinterlassen hast.',
+  'lib.saveFailed':
+    'Nicht gespeichert: keine Zeile in diesem Text trägt einen Zeitstempel, dem ein Player folgen könnte.',
+  'lib.delete': 'Löschen',
+  'lib.deleteTitle': 'Lyrics-Datei löschen',
+  'lib.deleteOwn': '„{file}“ löschen?',
+  'lib.deleteOwnDetail':
+    'Diese Datei stammt nicht von Overtone, sie ist also eine Fassung, die du selbst angelegt oder korrigiert hast. Keine Datenbank kann sie zurückgeben. Sie wandert in den Papierkorb.',
+  'lib.deleted': 'Gelöscht. Im Papierkorb, falls du sie zurückholen willst.',
+  'lib.deleteFailed':
+    'Diese Datei ließ sich nicht löschen. Vielleicht ist sie schon weg, oder ein anderes Programm hält sie offen.',
+  'lib.regenerate': 'Neu transkribieren',
+  'lib.regenQueued': 'In der Warteschlange. Der Fortschritt steht unter Transkription.',
+  'lib.regenBusy':
+    'Es läuft bereits eine Transkription. Immer nur eine — Whisper nimmt sich jeden Kern.',
+  'lib.regenProtected':
+    'Ersetzt werden können nur Dateien, die Overtone geschrieben hat. Lösche diese zuerst, wenn du sie frisch transkribieren willst.',
+  'lib.regenNoVideo':
+    'Diese Datei ist nach dem Song benannt und nicht nach einem Video, es gibt also nichts herunterzuladen.',
+  'lib.regenFailed': 'Das ließ sich nicht starten. Warum, steht im Protokoll unter Protokoll.',
+  'msg.libraryEdited': 'Lyrics-Datei bearbeitet: {file} — sie gilt ab jetzt als deine',
+  'msg.libraryDeleted': 'Lyrics-Datei gelöscht: {file}',
+  'msg.libraryDeleteFailed': 'Lyrics-Datei ließ sich nicht löschen: {error}',
+  'msg.libraryRegenerate': 'Wird auf Wunsch neu transkribiert: {file}',
 };

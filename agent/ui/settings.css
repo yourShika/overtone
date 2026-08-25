@@ -583,3 +583,30 @@ input[type="range"]::-webkit-slider-thumb {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- lyrics library ------------------------------------------------------
+ *
+ * The list, the filters and the viewer are .log / .log-row / .nav-item / .pill
+ * / .chip as they already stand. The editor is the one thing with no existing
+ * component: this window has no <textarea> anywhere, and reusing the mono .log
+ * box for it would mean a contenteditable div, because .log sets no
+ * white-space and would collapse every newline in an .lrc into a space. Eight
+ * lines of borrowed input styling is the cheaper answer. */
+
+#lib-raw {
+  width: 100%;
+  height: 300px;
+  padding: 12px 14px;
+  border: 1px solid var(--bd);
+  border-radius: 11px;
+  background: var(--inp);
+  color: var(--tx);
+  font: 400 11.5px/1.7 var(--mono);
+  resize: vertical;
+  outline: none;
+}
+
+#lib-raw:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accsoft);
+}

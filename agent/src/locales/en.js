@@ -397,4 +397,44 @@ module.exports = {
   'conn.extOutdated': 'The browser extension is out of date.',
   'conn.extOutdatedText':
     'Loaded: {extension} · App: {app}. Press reload (↻) on Overtone in your browser’s extensions page, then refresh your YouTube tabs.',
+  'lib.title': 'Saved lyrics',
+  'lib.sub':
+    'Every .lrc file in your lyrics folder. A file you have edited is marked as yours and is never overwritten by a lookup.',
+  'lib.search': 'Filter by title or artist',
+  'lib.refresh': 'Reload',
+  'lib.count': '{shown} of {total}',
+  'lib.filterAll': 'Everything',
+  'lib.filterManaged': 'Written by Overtone',
+  'lib.filterOwn': 'Yours',
+  'lib.empty':
+    'Nothing here yet. Lyrics land in this folder as soon as a song is found, and you can drop an .lrc in yourself at any time.',
+  'lib.reveal': 'Show in folder',
+  'lib.edit': 'Edit',
+  'lib.save': 'Save',
+  'lib.cancel': 'Cancel',
+  'lib.editHint':
+    'One cue per line, written as [mm:ss.xx]. Saving marks the file as yours, so no lookup and no transcription will replace it again.',
+  'lib.saved': 'Saved. This file is yours now and stays as you left it.',
+  'lib.saveFailed': 'Not saved: no line in this text carries a timestamp a player could follow.',
+  'lib.delete': 'Delete',
+  'lib.deleteTitle': 'Delete lyrics file',
+  'lib.deleteOwn': 'Delete “{file}”?',
+  'lib.deleteOwnDetail':
+    'Overtone did not write this file, so it is a version you made or corrected yourself. No database can hand it back. It goes to the recycle bin.',
+  'lib.deleted': 'Deleted. It is in the recycle bin if you want it back.',
+  'lib.deleteFailed':
+    'That file could not be deleted. It may already be gone, or another program is holding it open.',
+  'lib.regenerate': 'Transcribe again',
+  'lib.regenQueued': 'Queued. Progress is shown under Transcription.',
+  'lib.regenBusy':
+    'A transcription is already running. Only one at a time — Whisper uses every core.',
+  'lib.regenProtected':
+    'Only files Overtone wrote can be replaced. Delete this one first if you want a fresh transcription of it.',
+  'lib.regenNoVideo':
+    'This file is named after the song rather than after a video, so there is nothing to download for it.',
+  'lib.regenFailed': 'That could not be started. The log under Log says why.',
+  'msg.libraryEdited': 'Lyrics file edited: {file} — it counts as yours from now on',
+  'msg.libraryDeleted': 'Lyrics file deleted: {file}',
+  'msg.libraryDeleteFailed': 'Lyrics file could not be deleted: {error}',
+  'msg.libraryRegenerate': 'Transcribing again on request: {file}',
 };

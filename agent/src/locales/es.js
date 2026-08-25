@@ -376,4 +376,45 @@ module.exports = {
   'conn.extOutdated': 'La extensión del navegador está desactualizada.',
   'conn.extOutdatedText':
     'Cargada: {extension} · Aplicación: {app}. Pulsa recargar (↻) en Overtone en la página de extensiones y después actualiza las pestañas de YouTube.',
+  'lib.title': 'Letras guardadas',
+  'lib.sub':
+    'Cada archivo .lrc de tu carpeta de letras. Un archivo que hayas editado queda marcado como tuyo y ninguna búsqueda lo sobrescribe.',
+  'lib.search': 'Filtrar por título o artista',
+  'lib.refresh': 'Recargar',
+  'lib.count': '{shown} de {total}',
+  'lib.filterAll': 'Todo',
+  'lib.filterManaged': 'Escritas por Overtone',
+  'lib.filterOwn': 'Tuyas',
+  'lib.empty':
+    'Aquí no hay nada todavía. Las letras llegan a esta carpeta en cuanto se encuentra una canción, y puedes dejar un .lrc tú mismo cuando quieras.',
+  'lib.reveal': 'Mostrar en la carpeta',
+  'lib.edit': 'Editar',
+  'lib.save': 'Guardar',
+  'lib.cancel': 'Cancelar',
+  'lib.editHint':
+    'Una entrada por línea, escrita como [mm:ss.xx]. Al guardar, el archivo pasa a ser tuyo, así que ni una búsqueda ni una transcripción volverán a reemplazarlo.',
+  'lib.saved': 'Guardado. Este archivo ya es tuyo y se queda como lo has dejado.',
+  'lib.saveFailed':
+    'No se ha guardado: ninguna línea de este texto lleva una marca de tiempo que un reproductor pueda seguir.',
+  'lib.delete': 'Eliminar',
+  'lib.deleteTitle': 'Eliminar archivo de letra',
+  'lib.deleteOwn': '¿Eliminar «{file}»?',
+  'lib.deleteOwnDetail':
+    'Este archivo no lo escribió Overtone, así que es una versión que has hecho o corregido tú. Ninguna base de datos puede devolverla. Va a la papelera.',
+  'lib.deleted': 'Eliminado. Está en la papelera por si lo quieres de vuelta.',
+  'lib.deleteFailed':
+    'Ese archivo no se ha podido eliminar. Puede que ya no esté, o que otro programa lo tenga abierto.',
+  'lib.regenerate': 'Transcribir de nuevo',
+  'lib.regenQueued': 'En cola. El progreso se ve en Transcripción.',
+  'lib.regenBusy':
+    'Ya hay una transcripción en marcha. Solo una a la vez — Whisper usa todos los núcleos.',
+  'lib.regenProtected':
+    'Solo se pueden reemplazar los archivos escritos por Overtone. Elimina este primero si quieres una transcripción nueva.',
+  'lib.regenNoVideo':
+    'Este archivo lleva el nombre de la canción y no el de un vídeo, así que no hay nada que descargar.',
+  'lib.regenFailed': 'No se ha podido iniciar. El registro dice por qué.',
+  'msg.libraryEdited': 'Archivo de letra editado: {file} — a partir de ahora cuenta como tuyo',
+  'msg.libraryDeleted': 'Archivo de letra eliminado: {file}',
+  'msg.libraryDeleteFailed': 'No se ha podido eliminar el archivo de letra: {error}',
+  'msg.libraryRegenerate': 'Transcribiendo de nuevo a petición: {file}',
 };

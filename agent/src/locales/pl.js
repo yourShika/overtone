@@ -376,4 +376,43 @@ module.exports = {
   'conn.extOutdated': 'Rozszerzenie przeglądarki jest nieaktualne.',
   'conn.extOutdatedText':
     'Załadowane: {extension} · Aplikacja: {app}. Kliknij przeładuj (↻) przy Overtone na stronie rozszerzeń, następnie odśwież karty YouTube.',
+  'lib.title': 'Zapisane teksty',
+  'lib.sub':
+    'Każdy plik .lrc w twoim folderze tekstów. Plik, który edytowałeś, jest oznaczony jako twój i żadne wyszukiwanie go nie nadpisze.',
+  'lib.search': 'Filtruj po tytule lub wykonawcy',
+  'lib.refresh': 'Odśwież',
+  'lib.count': '{shown} z {total}',
+  'lib.filterAll': 'Wszystko',
+  'lib.filterManaged': 'Utworzone przez Overtone',
+  'lib.filterOwn': 'Twoje',
+  'lib.empty':
+    'Jeszcze nic tu nie ma. Teksty trafiają do tego folderu, gdy tylko utwór zostanie znaleziony — możesz też sam wrzucić plik .lrc.',
+  'lib.reveal': 'Pokaż w folderze',
+  'lib.edit': 'Edytuj',
+  'lib.save': 'Zapisz',
+  'lib.cancel': 'Anuluj',
+  'lib.editHint':
+    'Jedna linia na wers, zapisana jako [mm:ss.xx]. Zapis oznacza plik jako twój, więc nie zastąpi go ani wyszukiwanie, ani transkrypcja.',
+  'lib.saved': 'Zapisano. Ten plik jest teraz twój i zostanie taki, jaki go zostawiłeś.',
+  'lib.saveFailed':
+    'Nie zapisano: żadna linia w tym tekście nie ma znacznika czasu, za którym mógłby podążyć odtwarzacz.',
+  'lib.delete': 'Usuń',
+  'lib.deleteTitle': 'Usuń plik z tekstem',
+  'lib.deleteOwn': 'Usunąć „{file}”?',
+  'lib.deleteOwnDetail':
+    'Tego pliku nie napisał Overtone, to wersja, którą sam stworzyłeś lub poprawiłeś. Żadna baza jej nie odda. Trafi do kosza.',
+  'lib.deleted': 'Usunięto. Jest w koszu, gdybyś chciał go odzyskać.',
+  'lib.deleteFailed':
+    'Nie udało się usunąć tego pliku. Możliwe, że już go nie ma albo inny program go trzyma.',
+  'lib.regenerate': 'Transkrybuj ponownie',
+  'lib.regenQueued': 'W kolejce. Postęp widać w sekcji Transkrypcja.',
+  'lib.regenBusy': 'Transkrypcja już trwa. Tylko jedna naraz — Whisper wykorzystuje każdy rdzeń.',
+  'lib.regenProtected':
+    'Zastąpić można tylko pliki napisane przez Overtone. Usuń ten najpierw, jeśli chcesz świeżą transkrypcję.',
+  'lib.regenNoVideo': 'Ten plik jest nazwany od utworu, a nie od filmu, więc nie ma czego pobrać.',
+  'lib.regenFailed': 'Nie udało się tego uruchomić. Powód znajdziesz w dzienniku.',
+  'msg.libraryEdited': 'Plik z tekstem zmieniony: {file} — od teraz liczy się jako twój',
+  'msg.libraryDeleted': 'Plik z tekstem usunięty: {file}',
+  'msg.libraryDeleteFailed': 'Nie udało się usunąć pliku z tekstem: {error}',
+  'msg.libraryRegenerate': 'Ponowna transkrypcja na życzenie: {file}',
 };

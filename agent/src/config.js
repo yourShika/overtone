@@ -13,6 +13,14 @@ const path = require('node:path');
 const { EventEmitter } = require('node:events');
 
 /**
+ * Browsers yt-dlp can read a YouTube session from.
+ *
+ * A closed list rather than free text: the value goes straight onto a command
+ * line, and these are the names yt-dlp itself accepts.
+ */
+const BROWSERS = ['brave', 'chrome', 'chromium', 'edge', 'firefox', 'opera', 'vivaldi'];
+
+/**
  * Bumped whenever an existing config needs adjusting rather than merely
  * gaining new keys. New keys need no migration — they fall back to their
  * default automatically — but a *changed* default does, because the stored file
@@ -204,6 +212,20 @@ const DEFAULTS = {
   pythonPath: 'python',
   ytdlpPath: 'yt-dlp',
   /**
+   * Browser whose YouTube session yt-dlp may borrow, or '' for none.
+   *
+   * Age-restricted videos are not a format problem and no amount of retrying
+   * gets past one: YouTube wants to know the viewer is old enough, and the only
+   * honest answer is to be signed in. With a browser named here, yt-dlp reads
+   * that browser's cookies and asks as you — the same account, the same
+   * permission you already have when you press play yourself.
+   *
+   * Off by default, because it reaches into a cookie store that holds far more
+   * than YouTube. Nothing is copied anywhere: yt-dlp reads it, uses it for the
+   * one request, and the session never leaves the machine.
+   */
+  cookiesFromBrowser: '',
+  /**
    * JavaScript runtime yt-dlp uses to solve YouTube's challenge.
    *
    * Required, not cosmetic: without one the embedded player client offers no
@@ -370,6 +392,14 @@ function sanitise(input) {
   // The field's min/max only drive the stepper — a typed 9999 arrives intact,
   // and a wait longer than any song means nothing is ever transcribed while
   // the window keeps showing "waiting for …", which reads like a hang.
+  // Straight onto a command line, so it is a choice from a list rather than
+  // free text. An unknown name would become an argument yt-dlp cannot read.
+  if (out.cookiesFromBrowser !== undefined) {
+    out.cookiesFromBrowser = BROWSERS.includes(out.cookiesFromBrowser)
+      ? out.cookiesFromBrowser
+      : '';
+  }
+
   if (out.transcribeAfterSeconds !== undefined) {
     out.transcribeAfterSeconds = Math.min(300, Math.max(0, Math.round(out.transcribeAfterSeconds)));
   }
@@ -381,4 +411,4 @@ function sanitise(input) {
   return out;
 }
 
-module.exports = { Config, DEFAULTS, CONFIG_VERSION, migrate };
+module.exports = { Config, DEFAULTS, CONFIG_VERSION, migrate, BROWSERS };

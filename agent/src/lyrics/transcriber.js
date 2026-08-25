@@ -33,6 +33,76 @@ const TRANSCRIBE_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_CONSECUTIVE_FAILURES = 3;
 const MAX_QUEUE = 5;
 
+/**
+ * Player clients to try, best first.
+ *
+ * Measured against one video with everything else held equal: `web_embedded`
+ * returns format 251, a real audio-only stream at about 129 kbit/s. Every other
+ * client returns format 18 — a 360p muxed mp4 carrying thinner audio inside a
+ * file several times larger. So the tail of this list is a fallback in the
+ * literal sense: a worse transcription is better than none, but only once the
+ * good path has actually failed.
+ */
+const DOWNLOAD_CLIENTS = ['web_embedded', 'tv_simply', 'mweb'];
+
+/**
+ * Decide whether another attempt could possibly help.
+ *
+ * Trying again is free in code and expensive in someone's patience, so the
+ * cases where it cannot work are named rather than lumped in. None of these is
+ * a defect in Overtone and none has a workaround here — the point is to say so
+ * instead of grinding through a list of clients that will all be refused for
+ * the same reason.
+ *
+ * @param {string} message stderr from yt-dlp
+ * @returns {'needsSignIn'|'unavailable'|'drm'|'noCookies'|'retryable'}
+ */
+function classifyDownloadError(message) {
+  const text = String(message || '').toLowerCase();
+
+  // The cookie jar itself was unreadable — usually the browser holding its
+  // database open. Distinct from having no cookies configured at all.
+  if (
+    text.includes('could not copy') ||
+    text.includes('unable to open') ||
+    (text.includes('cookie') && (text.includes('database') || text.includes('locked')))
+  ) {
+    return 'noCookies';
+  }
+
+  // Age or bot checks. Both are answered by being signed in, not by retrying.
+  if (
+    text.includes('sign in to confirm') ||
+    text.includes('age-restricted') ||
+    text.includes('age restricted') ||
+    text.includes('confirm your age') ||
+    text.includes('login required') ||
+    text.includes('account associated')
+  ) {
+    return 'needsSignIn';
+  }
+
+  if (text.includes('drm')) return 'drm';
+
+  if (
+    text.includes('video unavailable') ||
+    text.includes('private video') ||
+    text.includes('has been removed') ||
+    // Deliberately not a bare "is not available": "Requested format is not
+    // available" says the opposite of gone — it is the one failure another
+    // client is most likely to fix, and swallowing it here would stop the
+    // fallback before it started.
+    text.includes('video is not available') ||
+    text.includes('content is not available') ||
+    text.includes('members-only') ||
+    text.includes('members only')
+  ) {
+    return 'unavailable';
+  }
+
+  return 'retryable';
+}
+
 class Transcriber extends EventEmitter {
   /**
    * @param {object} options
@@ -192,15 +262,27 @@ class Transcriber extends EventEmitter {
       this.emit('done', { videoId });
       return true;
     } catch (err) {
-      this.lastError = err.message;
+      // Say what to do about it, not just what yt-dlp printed. Its own advice
+      // is a paragraph of URLs; the setting it points at is two clicks away in
+      // the window the message appears in.
+      const kind = classifyDownloadError(err.message);
+      const advice = kind === 'retryable' ? null : t(`msg.trWhy.${kind}`);
+
+      this.lastError = advice || err.message;
       this.logger.warn?.(t('msg.trFailed', { error: err.message }));
-      this.consecutiveFailures += 1;
+      if (advice) this.logger.warn?.(advice);
+
+      // Only a fault that better setup could fix counts towards the stop. A
+      // run of age-restricted songs says nothing about whether Whisper works,
+      // and halting on them would take the feature away for the next track.
+      if (kind === 'retryable' || kind === 'noCookies') this.consecutiveFailures += 1;
+
       if (this.halted) {
         this.logger.warn?.(
           t('msg.trHalted', { count: this.consecutiveFailures }),
         );
       }
-      this._record(track || videoId, 'failed', err.message);
+      this._record(track || videoId, 'failed', advice || err.message);
       return false;
     } finally {
       // The audio is a means to an end and must not linger, whether the run
@@ -249,20 +331,57 @@ class Transcriber extends EventEmitter {
     };
   }
 
+  /**
+   * Fetch the audio, trying the next client when the last one failed for a
+   * reason another might not share.
+   *
+   * The order is not arbitrary. Measured against the same video: web_embedded
+   * is the only client that offers a real audio-only stream (format 251, about
+   * 129 kbit/s); every other client falls back to format 18, a 360p muxed mp4
+   * whose audio is thinner and whose download is several times the size. So the
+   * others are a last resort rather than an alternative — worse lyrics beat no
+   * lyrics, but only once the good path is genuinely gone.
+   */
   async _download(videoId, url, config) {
+    let lastError = null;
+
+    for (const client of DOWNLOAD_CLIENTS) {
+      try {
+        return await this._downloadWith(videoId, url, config, client);
+      } catch (err) {
+        lastError = err;
+        const kind = classifyDownloadError(err.message);
+
+        // Retrying cannot conjure permission, undo a takedown, or break DRM.
+        if (kind !== 'retryable') throw err;
+
+        this.logger.debug?.(
+          t('msg.trClientFailed', { client, error: lastLine(err.message) }),
+        );
+      }
+    }
+
+    throw lastError;
+  }
+
+  async _downloadWith(videoId, url, config, client) {
     const template = path.join(this.workDir, `${videoId}.%(ext)s`);
     const args = [
       '--no-update',
       '--no-playlist',
       '--quiet',
       '--no-warnings',
-      // Measured: the default client 403s, this one delivers.
       '--extractor-args',
-      'youtube:player_client=web_embedded',
+      `youtube:player_client=${client}`,
       // Not optional. Without a JS runtime this client exposes no audio-only
       // format at all and the download dies on "Requested format is not
       // available" — which reads like a format problem and is not one.
       ...(config.ytdlpJsRuntime ? ['--js-runtimes', config.ytdlpJsRuntime] : []),
+      // Asks as the user rather than as a stranger. The only thing that gets
+      // past an age check, and it does so by satisfying it, not by dodging it.
+      ...(config.cookiesFromBrowser
+        ? ['--cookies-from-browser', config.cookiesFromBrowser]
+        : []),
       // Fall back to a combined stream: Whisper reads it through ffmpeg either
       // way, so a video track is wasteful rather than fatal.
       '-f',
@@ -354,4 +473,4 @@ function lastLine(text) {
   return line ? `: ${line.slice(0, 160)}` : '';
 }
 
-module.exports = { Transcriber };
+module.exports = { Transcriber, classifyDownloadError, DOWNLOAD_CLIENTS };

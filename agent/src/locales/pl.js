@@ -423,4 +423,16 @@ module.exports = {
   'lib.saveError': 'Nie zapisano: nie udało się zapisać pliku. Powód znajdziesz w dzienniku.',
   'lib.noMatch': 'Żaden plik nie pasuje do tego filtru.',
   'lib.regenGone': 'Tego pliku już nie ma w folderze.',
+  'msg.trClientFailed': 'Klient pobierania {client} nie zadziałał{error} — próbuję następnego.',
+  'msg.trWhy.needsSignIn':
+    'YouTube wymaga tu zalogowanego widza, zwykle dlatego, że film ma ograniczenie wiekowe. W sekcji Transkrypcja ustaw „Zaloguj jako” na przeglądarkę, w której oglądasz YouTube — Overtone zapyta wtedy twoją własną sesją, a do tego czasu żadna kolejna próba nie pomoże.',
+  'msg.trWhy.unavailable':
+    'Samego filmu nie da się pobrać — jest prywatny, usunięty albo tylko dla członków. Tego nic tu nie zmieni.',
+  'msg.trWhy.drm': 'Ten film jest chroniony DRM. Overtone nie będzie próbował tego obchodzić.',
+  'msg.trWhy.noCookies':
+    'Nie udało się odczytać ciasteczek przeglądarki. Zwykle pomaga jednorazowe zamknięcie tej przeglądarki albo wybór innej w sekcji Transkrypcja.',
+  'tr.cookies': 'Zaloguj jako',
+  'tr.cookiesHelp':
+    'Utwory z ograniczeniem wiekowym są odrzucane, dopóki nikt nie jest zalogowany. Po wskazaniu przeglądarki yt-dlp pożycza jej sesję YouTube i pyta jako ty. Jest czytana na miejscu i nigdzie nie kopiowana; zostaw wyłączone, jeśli wolisz, by nic nie sięgało do twoich ciasteczek.',
+  'tr.cookiesOff': 'Wyłączone',
 };

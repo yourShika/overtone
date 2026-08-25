@@ -445,4 +445,16 @@ module.exports = {
   'lib.saveError': 'Not saved: the file could not be written. The log says why.',
   'lib.noMatch': 'No file matches this filter.',
   'lib.regenGone': 'That file is no longer in the folder.',
+  'msg.trClientFailed': 'Download client {client} did not work{error} — trying the next one.',
+  'msg.trWhy.needsSignIn':
+    'YouTube wants a signed-in viewer for this one, usually because it is age-restricted. Under Transcription, set “Sign in as” to the browser you watch YouTube in — Overtone then asks with your own session, and no retry can help until it does.',
+  'msg.trWhy.unavailable':
+    'The video itself cannot be fetched — private, removed, or members-only. Nothing here can change that.',
+  'msg.trWhy.drm': 'This video is DRM protected. Overtone will not attempt to get around that.',
+  'msg.trWhy.noCookies':
+    'The browser cookies could not be read. Closing that browser once usually frees the file, or pick a different browser under Transcription.',
+  'tr.cookies': 'Sign in as',
+  'tr.cookiesHelp':
+    'Age-restricted songs are refused unless the viewer is signed in. With a browser picked here, yt-dlp borrows that browser’s YouTube session so it asks as you. It is read on the spot and never copied anywhere; leave it off if you would rather it not touch your cookies.',
+  'tr.cookiesOff': 'Off',
 };

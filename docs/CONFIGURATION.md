@@ -106,6 +106,7 @@ is the point.
 | `pythonPath` | `python` | Python interpreter |
 | `ytdlpPath` | `yt-dlp` | yt-dlp executable |
 | `ytdlpJsRuntime` | `node` | JS runtime yt-dlp needs; empty to leave it alone |
+| `cookiesFromBrowser` | `` | Borrow a browser's YouTube session so age-restricted songs can be fetched as you. One of `brave`, `chrome`, `chromium`, `edge`, `firefox`, `opera`, `vivaldi`; empty means no cookies are read at all. Nothing is copied anywhere — yt-dlp reads the store for the one request |
 
 Requires `yt-dlp`, `ffmpeg`, Python with `stable-ts`, and a JavaScript runtime
 for yt-dlp. That last one is not optional: without it the embedded player

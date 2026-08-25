@@ -67,8 +67,14 @@ async function init() {
     applyStatus(status);
     renderLog();
     renderLibrary();
+    // Built in JS, so the generic [data-i18n] sweep cannot reach their labels:
+    // the browser row carries a translated "Off" and the language row a
+    // translated "System", and both stayed in the old language without this.
+    fillLanguages();
+    fillBrowsers();
   });
   fillLanguages();
+  fillBrowsers();
 
   applyTheme(config.theme || 'dark', null);
   bindWindowButtons();
@@ -148,6 +154,7 @@ function render() {
   }
 
   markLanguage();
+  markBrowser();
 
   const badge = $('nav-badge-tr');
   badge.textContent = T.t(config.transcribeEnabled ? 'app.on' : 'app.off');
@@ -375,6 +382,44 @@ function fillLanguages() {
 }
 
 /** Highlight whichever pill is current. */
+/**
+ * The browsers yt-dlp can borrow a session from.
+ *
+ * Written out here rather than fetched, because it is the same closed list the
+ * agent validates against and a mismatch would let the window offer something
+ * that gets thrown away on save.
+ */
+const BROWSERS = ['brave', 'chrome', 'chromium', 'edge', 'firefox', 'opera', 'vivaldi'];
+
+function fillBrowsers() {
+  const box = $('cookiesFromBrowser');
+  box.textContent = '';
+
+  // Off first, because off is the default and the one that touches nothing.
+  const choices = [{ code: '', label: T.t('tr.cookiesOff') }].concat(
+    BROWSERS.map((code) => ({ code, label: code[0].toUpperCase() + code.slice(1) })),
+  );
+
+  for (const { code, label } of choices) {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pill';
+    pill.dataset.value = code;
+    pill.textContent = label;
+    pill.setAttribute('role', 'radio');
+    pill.addEventListener('click', () => save({ cookiesFromBrowser: code }));
+    box.appendChild(pill);
+  }
+  markBrowser();
+}
+
+function markBrowser() {
+  const current = config.cookiesFromBrowser || '';
+  for (const pill of all('#cookiesFromBrowser .pill')) {
+    pill.setAttribute('aria-selected', pill.dataset.value === current ? 'true' : 'false');
+  }
+}
+
 function markLanguage() {
   const current = config.language || 'en';
   for (const pill of all('#language .pill')) {

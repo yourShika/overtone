@@ -427,4 +427,16 @@ module.exports = {
     'Nicht gespeichert: die Datei ließ sich nicht schreiben. Warum, steht im Protokoll.',
   'lib.noMatch': 'Zu diesem Filter passt keine Datei.',
   'lib.regenGone': 'Diese Datei liegt nicht mehr im Ordner.',
+  'msg.trClientFailed': 'Download-Client {client} ging nicht{error} — versuche den nächsten.',
+  'msg.trWhy.needsSignIn':
+    'YouTube verlangt hier einen angemeldeten Zuschauer, meist weil das Video altersbeschränkt ist. Stelle unter Transkription „Anmelden als“ auf den Browser, in dem du YouTube schaust — Overtone fragt dann mit deiner eigenen Sitzung, und bis dahin hilft kein weiterer Versuch.',
+  'msg.trWhy.unavailable':
+    'Das Video selbst ist nicht abrufbar — privat, entfernt oder nur für Mitglieder. Daran lässt sich hier nichts ändern.',
+  'msg.trWhy.drm': 'Dieses Video ist DRM-geschützt. Overtone versucht nicht, das zu umgehen.',
+  'msg.trWhy.noCookies':
+    'Die Browser-Cookies ließen sich nicht lesen. Diesen Browser einmal zu schließen gibt die Datei meist frei, oder wähle unter Transkription einen anderen.',
+  'tr.cookies': 'Anmelden als',
+  'tr.cookiesHelp':
+    'Altersbeschränkte Songs werden abgewiesen, solange niemand angemeldet ist. Mit einem Browser hier leiht sich yt-dlp dessen YouTube-Sitzung und fragt als du. Sie wird an Ort und Stelle gelesen und nirgendwohin kopiert; lass es aus, wenn dir lieber ist, dass nichts an deine Cookies geht.',
+  'tr.cookiesOff': 'Aus',
 };

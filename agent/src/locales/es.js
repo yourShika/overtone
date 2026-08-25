@@ -426,4 +426,17 @@ module.exports = {
     'No se ha guardado: el archivo no se ha podido escribir. El registro dice por qué.',
   'lib.noMatch': 'Ningún archivo coincide con este filtro.',
   'lib.regenGone': 'Ese archivo ya no está en la carpeta.',
+  'msg.trClientFailed':
+    'El cliente de descarga {client} no ha funcionado{error} — pruebo el siguiente.',
+  'msg.trWhy.needsSignIn':
+    'YouTube exige aquí un espectador con la sesión iniciada, normalmente por restricción de edad. En Transcripción, pon «Iniciar sesión como» en el navegador donde ves YouTube — Overtone preguntará entonces con tu propia sesión, y hasta que lo hagas ningún reintento sirve.',
+  'msg.trWhy.unavailable':
+    'El vídeo en sí no se puede obtener: es privado, se ha eliminado o es solo para miembros. Eso no se puede cambiar desde aquí.',
+  'msg.trWhy.drm': 'Este vídeo está protegido con DRM. Overtone no va a intentar sortearlo.',
+  'msg.trWhy.noCookies':
+    'No se han podido leer las cookies del navegador. Cerrar ese navegador una vez suele liberar el archivo, o elige otro en Transcripción.',
+  'tr.cookies': 'Iniciar sesión como',
+  'tr.cookiesHelp':
+    'Las canciones con restricción de edad se rechazan mientras no haya una sesión iniciada. Al elegir un navegador, yt-dlp toma prestada su sesión de YouTube y pregunta como tú. Se lee en el momento y no se copia a ningún sitio; déjalo apagado si prefieres que nada toque tus cookies.',
+  'tr.cookiesOff': 'Desactivado',
 };

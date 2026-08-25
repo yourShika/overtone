@@ -1303,3 +1303,134 @@ test('a report with no video id is ignored rather than counted', () => {
   assert.equal(watch.resumed(undefined), false);
   assert.equal(watch.countFor(''), 0);
 });
+
+// ------------------------------------------------------- download fallback
+
+const path = require('node:path');
+const { classifyDownloadError, DOWNLOAD_CLIENTS } = require('../src/lyrics/transcriber');
+
+test('a refusal no retry can fix is told apart from one that might pass', () => {
+  // The message the user actually hit.
+  assert.equal(
+    classifyDownloadError(
+      'ERROR: [youtube] RWB7SnYN3kA: Sign in to confirm your age. This video may be ' +
+        'inappropriate for some users. Use --cookies-from-browser or --cookies for the authentication',
+    ),
+    'needsSignIn',
+  );
+  assert.equal(
+    classifyDownloadError('This video is age-restricted; some formats may be missing'),
+    'needsSignIn',
+  );
+  assert.equal(
+    classifyDownloadError("Sign in to confirm you're not a bot"),
+    'needsSignIn',
+    'die Bot-Abfrage wird genauso beantwortet: angemeldet sein',
+  );
+
+  assert.equal(classifyDownloadError('ERROR: This video is DRM protected'), 'drm');
+  assert.equal(classifyDownloadError('ERROR: Video unavailable'), 'unavailable');
+  assert.equal(classifyDownloadError('ERROR: Private video. Sign in if you have been granted access'), 'unavailable');
+  assert.equal(classifyDownloadError('This video is available to members only'), 'unavailable');
+
+  // Cookie jar unreadable is its own thing: the setting is right, the file is busy.
+  assert.equal(
+    classifyDownloadError('ERROR: Could not copy Chrome cookie database. See  https://…'),
+    'noCookies',
+  );
+
+  // Everything else is worth another client.
+  assert.equal(classifyDownloadError('ERROR: unable to download video data: HTTP Error 403'), 'retryable');
+  assert.equal(classifyDownloadError('ERROR: Requested format is not available'), 'retryable');
+  assert.equal(classifyDownloadError(''), 'retryable');
+  assert.equal(classifyDownloadError(undefined), 'retryable');
+});
+
+test('a private video is not mistaken for one needing a sign-in', () => {
+  // Both mention signing in; only one of them can be helped by doing so.
+  const priv = 'ERROR: Private video. Sign in if you have been granted access to this video';
+  assert.equal(classifyDownloadError(priv), 'unavailable');
+});
+
+test('the client chain leads with the one that yields real audio', () => {
+  // Measured, not assumed: web_embedded returns format 251 (audio-only, ~129
+  // kbit/s) where the others fall back to format 18, a 360p muxed mp4. The
+  // order encodes that, so the fallbacks stay fallbacks.
+  assert.equal(DOWNLOAD_CLIENTS[0], 'web_embedded');
+  assert.equal(DOWNLOAD_CLIENTS.length > 1, true, 'es muss überhaupt einen Notnagel geben');
+  assert.equal(new Set(DOWNLOAD_CLIENTS).size, DOWNLOAD_CLIENTS.length, 'keine Dubletten');
+});
+
+test('the chain moves on after a retryable failure and stops after a permanent one', async () => {
+  const os = require('node:os');
+  const fsp = require('node:fs/promises');
+
+  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'overtone-dl-'));
+  try {
+    const tried = [];
+
+    /** Records the client each attempt used, then fails the way we ask it to. */
+    function harness(failWith) {
+      const transcriber = new Transcriber({
+        workDir: dir,
+        libraryDir: dir,
+        script: 'x.py',
+        logger: { info() {}, warn() {}, error() {}, debug() {} },
+      });
+      transcriber._spawn = async (_cmd, args) => {
+        const flag = args[args.indexOf('--extractor-args') + 1];
+        tried.push(flag.replace('youtube:player_client=', ''));
+        throw new Error(failWith);
+      };
+      return transcriber;
+    }
+
+    // 403 is worth another client.
+    tried.length = 0;
+    await assert.rejects(
+      () => harness('HTTP Error 403: Forbidden')._download('abc', '', {}),
+      /403/,
+    );
+    assert.deepEqual(tried, DOWNLOAD_CLIENTS, 'jeder Client wird versucht');
+
+    // An age gate is not, and grinding through the list would only be slower.
+    tried.length = 0;
+    await assert.rejects(
+      () => harness('ERROR: Sign in to confirm your age')._download('abc', '', {}),
+      /Sign in/,
+    );
+    assert.deepEqual(tried, [DOWNLOAD_CLIENTS[0]], 'nach dem ersten ist Schluss');
+  } finally {
+    await fsp.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('the browser session is only passed when one was chosen', async () => {
+  const os = require('node:os');
+  const fsp = require('node:fs/promises');
+
+  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'overtone-dl-'));
+  try {
+    let seen = [];
+    const transcriber = new Transcriber({
+      workDir: dir,
+      libraryDir: dir,
+      script: 'x.py',
+      logger: { info() {}, warn() {}, error() {}, debug() {} },
+    });
+    transcriber._spawn = async (_cmd, args) => {
+      seen = args;
+      throw new Error('stop here');
+    };
+
+    await assert.rejects(() => transcriber._download('abc', '', {}));
+    assert.equal(seen.includes('--cookies-from-browser'), false, 'aus heißt aus');
+
+    await assert.rejects(() =>
+      transcriber._download('abc', '', { cookiesFromBrowser: 'brave' }),
+    );
+    assert.equal(seen[seen.indexOf('--cookies-from-browser') + 1], 'brave');
+  } finally {
+    await fsp.rm(dir, { recursive: true, force: true });
+  }
+});

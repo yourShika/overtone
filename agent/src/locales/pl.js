@@ -417,4 +417,10 @@ module.exports = {
   'msg.libraryRegenerate': 'Ponowna transkrypcja na życzenie: {file}',
   'msg.playerRestarting':
     'Odtwarzacz wciąż uruchamia „{title}” od nowa — tak wygląda zacięty YouTube. Zwykle pomaga przeładowanie karty; jeśli wraca, spróbuj wyłączyć osłony przeglądarki dla youtube.com.',
+  'preview.srcStored': 'Zapisana kopia · {count} wersów',
+  'msg.trHeldHalted':
+    'Transkrypcja stoi po powtarzających się błędach — „{track}” zachowuje swoje miejsce, aż ruszy ponownie.',
+  'lib.saveError': 'Nie zapisano: nie udało się zapisać pliku. Powód znajdziesz w dzienniku.',
+  'lib.noMatch': 'Żaden plik nie pasuje do tego filtru.',
+  'lib.regenGone': 'Tego pliku już nie ma w folderze.',
 };

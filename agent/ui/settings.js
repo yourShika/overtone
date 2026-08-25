@@ -42,6 +42,8 @@ let libFilter = 'all';
 let libSearch = '';
 let libSelected = null;
 let libEditing = false;
+/** Which panel is showing, so re-selecting the same one is not a fresh open. */
+let currentPanel = 'conn';
 
 /**
  * The track a subtitle was last seen on, by url.
@@ -264,7 +266,10 @@ function selectPanel(name) {
   // Read the folder when the panel is actually opened rather than at startup:
   // it is one readdir plus a read per file, and it is stale the moment a track
   // is found anyway.
-  if (name === 'lyr') loadLibrary().catch(() => {});
+  const entered = name !== currentPanel;
+  currentPanel = name;
+  if (name === 'lyr' && entered) loadLibrary().catch(() => {});
+  if (!entered) clearNote();
 
   // Re-trigger the entry animation, which only runs on a fresh element.
   const shown = $(`panel-${name}`);
@@ -411,9 +416,12 @@ function bindActions() {
     selectEntry(libSelected);
   });
   $('lib-save').addEventListener('click', async () => {
-    const ok = await api.library.write(libSelected, $('lib-raw').value);
-    note(ok ? 'good' : 'bad', ok ? 'lib.saved' : 'lib.saveFailed');
-    if (!ok) return;
+    const outcome = await api.library.write(libSelected, $('lib-raw').value);
+    note(
+      outcome === 'saved' ? 'good' : 'bad',
+      { saved: 'lib.saved', noCues: 'lib.saveFailed' }[outcome] || 'lib.saveError',
+    );
+    if (outcome !== 'saved') return;
     libEditing = false;
     await loadLibrary();
     await selectEntry(libSelected);
@@ -446,8 +454,12 @@ function bindActions() {
         busy: 'lib.regenBusy',
         protected: 'lib.regenProtected',
         noVideo: 'lib.regenNoVideo',
+        missing: 'lib.regenGone',
       }[outcome] || 'lib.regenFailed',
     );
+    // The row points at nothing any more; leaving it clickable invites a second
+    // attempt at a file that is gone.
+    if (outcome === 'missing') await loadLibrary();
   });
   $('btn-open-logs').addEventListener('click', () => api.actions.openLogFolder());
 
@@ -603,7 +615,14 @@ function lyricSource(lyrics, now) {
 
   if (lyrics.status === 'found' && lyrics.lineCount > 0) {
     return {
-      key: lyrics.fromLibrary ? 'preview.srcLibrary' : 'preview.srcLrclib',
+      // Three cases, not two. A file in the folder is either one Overtone put
+      // there — a cached download or a transcription — or one the user wrote,
+      // and only the second is honestly "yours".
+      key: !lyrics.fromLibrary
+        ? 'preview.srcLrclib'
+        : lyrics.libraryManaged
+          ? 'preview.srcStored'
+          : 'preview.srcLibrary',
       tone: 'good',
     };
   }
@@ -659,7 +678,9 @@ ${T.t('tr.alsoWaiting', { count: job.watching.length, names: job.watching.join('
   spinner.hidden = true;
   box.dataset.busy = '0';
 
-  if (job?.waitingFor) {
+  // A stopped transcriber is not queueing, it is refusing. Saying "waiting for a
+  // free slot" hid the run of failures that actually needs attention.
+  if (job?.waitingFor && !job?.halted) {
     line.textContent = T.t('tr.waitingFor', { track: job.waitingFor.track || '…' });
     // A track that has already earned its place is not counting down any more;
     // "starts after 0 s" next to an idle-looking window reads as a bug.
@@ -738,7 +759,13 @@ function renderLibrary() {
     box.appendChild(row);
   }
 
-  $('lib-empty').classList.toggle('hidden', rows.length > 0);
+  // "Nothing here yet" under a folder full of files that simply did not match
+  // reads as data loss. The unfiltered count decides which sentence is true.
+  const empty = $('lib-empty');
+  const key = libEntries.length ? 'lib.noMatch' : 'lib.empty';
+  empty.dataset.i18n = key;
+  empty.textContent = T.t(key);
+  empty.classList.toggle('hidden', rows.length > 0);
   $('lib-count').textContent = T.t('lib.count', {
     shown: rows.length,
     total: libEntries.length,
@@ -747,6 +774,10 @@ function renderLibrary() {
 }
 
 async function selectEntry(name) {
+  // Editing belongs to the file it started on. Carrying the flag over silently
+  // replaced the typed text with the next file's and left Save armed on it.
+  libEditing = false;
+  clearNote();
   libSelected = name;
   const entry = name ? await api.library.read(name) : null;
   libDetail = entry;
@@ -792,6 +823,11 @@ function showDetail() {
     row.append(when, msg);
     view.appendChild(row);
   }
+}
+
+/** Drop whatever the last action said; it belonged to the last selection. */
+function clearNote() {
+  $('lib-note').hidden = true;
 }
 
 function note(kind, key) {

@@ -420,4 +420,11 @@ module.exports = {
   'msg.libraryRegenerate': 'Wird auf Wunsch neu transkribiert: {file}',
   'msg.playerRestarting':
     'Der Player startet „{title}“ immer wieder neu — so sieht ein festhängendes YouTube aus. Den Tab neu zu laden hilft meist; kommt es wieder, teste die Shields deines Browsers für youtube.com abzuschalten.',
+  'preview.srcStored': 'Gespeicherte Kopie · {count} Zeilen',
+  'msg.trHeldHalted':
+    'Transkription steht nach wiederholten Fehlschlägen still — „{track}“ behält seinen Platz, bis es wieder losgeht.',
+  'lib.saveError':
+    'Nicht gespeichert: die Datei ließ sich nicht schreiben. Warum, steht im Protokoll.',
+  'lib.noMatch': 'Zu diesem Filter passt keine Datei.',
+  'lib.regenGone': 'Diese Datei liegt nicht mehr im Ordner.',
 };

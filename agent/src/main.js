@@ -91,6 +91,10 @@ const lyricState = {
   // Which of the two database sources filled `lines`. Only meaningful while
   // status is 'found'; the two are always written together.
   fromLibrary: false,
+  // Whether that library file is one Overtone wrote or one the user did. Both
+  // arrive through the same door; only the marker in the file tells them apart,
+  // and calling a cached download "your file" would be a plain lie.
+  libraryManaged: false,
   nextTime: null, // track seconds; cue of the first line not yet shown
   merged: 1, // how many lyric lines the current text carries
   blocks: null, // packed paragraphs, built lazily in block mode
@@ -448,6 +452,9 @@ async function runTick() {
   const cfg = config.all();
   if (!cfg.enabled) {
     presence.clear();
+    // Stop the listening clock with it. Leaving the anchor set means the first
+    // tick after switching back on books the whole gap as time heard.
+    creditingId = null;
     return;
   }
 
@@ -464,6 +471,9 @@ async function runTick() {
       resetLyrics();
     }
     presence.clear();
+    // Same reason: a paused player stops reporting, the session goes stale, and
+    // a later seek would otherwise be credited as listening that never happened.
+    creditingId = null;
     return;
   }
 
@@ -604,6 +614,9 @@ function ensureLyricsLoaded(state, cfg) {
   lyricState.trackId = state.id;
   lyricState.status = 'loading';
   lyricState.lines = null;
+  // Derived from lines, so it cannot outlive them — a forced re-read after an
+  // edit would otherwise keep serving paragraphs packed from the old file.
+  lyricState.blocks = null;
   lyricState.current = null;
   refreshUi();
 
@@ -624,6 +637,7 @@ function ensureLyricsLoaded(state, cfg) {
       lyricState.lines = hit.lines;
       lyricState.status = 'found';
       lyricState.fromLibrary = true;
+      lyricState.libraryManaged = Boolean(hit.managed);
       logger.info(
         t('msg.lyricsFromLibrary', {
           count: hit.lines.length,
@@ -659,6 +673,7 @@ function fetchLyrics(state, parsed) {
         lyricState.lines = result.lines;
         lyricState.status = 'found';
         lyricState.fromLibrary = false;
+        lyricState.libraryManaged = false;
         logger.info(t('msg.lyricsFound', { count: result.lines.length }));
 
         // Keep a copy, so playing this again works without the network — and
@@ -778,6 +793,12 @@ function noteTranscribeCandidate(state, parsed) {
     watched: 0,
     position: state.position,
     at: Date.now(),
+    // Whether a subtitle was ever seen on this track. The check above only
+    // sees the instant the candidate is written down, which for most songs is
+    // the intro — before YouTube has rendered its first cue. Watching for the
+    // whole listening window is the only way it can honestly say "subtitles
+    // are already supplying this".
+    sawCaption: Boolean(state.caption),
     ripe: false,
     held: false,
   });
@@ -801,6 +822,10 @@ function creditListening(state) {
 
   const candidate = watching.get(key);
   if (!candidate) return;
+
+  // Before the re-anchor return below, so a subtitle appearing on the very tick
+  // attention came back is still recorded.
+  if (state.caption) candidate.sawCaption = true;
 
   const now = Date.now();
   if (moved) {
@@ -842,6 +867,15 @@ function flushTranscribeQueue(cfg) {
   for (const candidate of watching.values()) {
     if (!candidate.ripe) continue;
 
+    // Checked here rather than only when the candidate was written down. Most
+    // songs are noted during the intro, before YouTube has rendered a single
+    // cue, so the guard at that moment saw nothing and let a job through for a
+    // track that turned out to carry the lyrics as subtitles all along.
+    if (candidate.sawCaption && !cfg.transcribeEvenWithCaptions) {
+      watching.delete(candidate.videoId);
+      continue;
+    }
+
     const outcome = transcriber.submit({
       videoId: candidate.videoId,
       url: candidate.url,
@@ -859,7 +893,14 @@ function flushTranscribeQueue(cfg) {
       // running and nothing in the log is otherwise unexplainable.
       if (!candidate.held) {
         candidate.held = true;
-        logger.info(t('msg.trHeld', { track: candidate.track }));
+        // Two different reasons a ripe candidate is not moving, and telling
+        // someone the queue is full while nothing is running sends them to look
+        // in the wrong place entirely.
+        logger.info(
+          transcriber.halted
+            ? t('msg.trHeldHalted', { track: candidate.track })
+            : t('msg.trHeld', { track: candidate.track }),
+        );
       }
       return;
     }
@@ -957,6 +998,7 @@ function resetLyrics() {
   lyricState.merged = 1;
   lyricState.blocks = null;
   lyricState.fromLibrary = false;
+  lyricState.libraryManaged = false;
 }
 
 // ---------------------------------------------------------------------- tray
@@ -1214,15 +1256,15 @@ function registerIpc() {
   });
 
   ipcMain.handle('library:write', async (_event, name, text) => {
-    const ok = await library.write(name, text);
-    if (!ok) return false;
+    const outcome = await library.write(name, text);
+    if (outcome !== 'saved') return outcome;
     logger.info(t('msg.libraryEdited', { file: name }));
     // The file changed under a lookup that already ran. Same move the
     // transcriber makes on 'done': force the next tick to read it again rather
     // than keep the lines loaded at track change.
     lyricState.trackId = null;
     refreshUi();
-    return true;
+    return outcome;
   });
 
   ipcMain.handle('library:remove', async (_event, name) => {
@@ -1422,6 +1464,8 @@ function statusSnapshot() {
       // moment playback pauses and cannot name the source of loaded lines.
       // This can, and is guarded so a stale flag never leaks out.
       fromLibrary: lyricState.status === 'found' && lyricState.fromLibrary,
+      libraryManaged:
+        lyricState.status === 'found' && lyricState.fromLibrary && lyricState.libraryManaged,
       merged: lyricState.merged,
       transcribing: transcriber?.busyWith === session.state?.videoId,
       captionsAvailable: Boolean(state?.caption),

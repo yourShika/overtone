@@ -439,4 +439,10 @@ module.exports = {
   'msg.libraryRegenerate': 'Transcribing again on request: {file}',
   'msg.playerRestarting':
     'The player keeps restarting “{title}” — that is what a wedged YouTube looks like. Reloading the tab usually clears it; if it comes back, try switching your browser shields off for youtube.com.',
+  'preview.srcStored': 'Saved copy · {count} lines',
+  'msg.trHeldHalted':
+    'Transcription is stopped after repeated failures — “{track}” keeps its place until it starts again.',
+  'lib.saveError': 'Not saved: the file could not be written. The log says why.',
+  'lib.noMatch': 'No file matches this filter.',
+  'lib.regenGone': 'That file is no longer in the folder.',
 };

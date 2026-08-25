@@ -419,4 +419,11 @@ module.exports = {
   'msg.libraryRegenerate': 'Transcribiendo de nuevo a petición: {file}',
   'msg.playerRestarting':
     'El reproductor no deja de reiniciar «{title}» — así se ve un YouTube atascado. Recargar la pestaña suele bastar; si vuelve, prueba a desactivar los escudos del navegador para youtube.com.',
+  'preview.srcStored': 'Copia guardada · {count} líneas',
+  'msg.trHeldHalted':
+    'La transcripción está detenida tras varios fallos seguidos — «{track}» conserva su sitio hasta que vuelva a arrancar.',
+  'lib.saveError':
+    'No se ha guardado: el archivo no se ha podido escribir. El registro dice por qué.',
+  'lib.noMatch': 'Ningún archivo coincide con este filtro.',
+  'lib.regenGone': 'Ese archivo ya no está en la carpeta.',
 };

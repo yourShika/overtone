@@ -219,14 +219,16 @@ class LyricsLibrary {
    * correction that was just made. That is a one-way door, and the window says
    * so before the button is pressed.
    *
-   * @returns {Promise<boolean>} whether anything was written
+   * @returns {Promise<'saved'|'invalid'|'noCues'|'error'>} which of the two
+   *   refusals it was, so the window does not blame the timestamps for a disk
+   *   that would not take the file
    */
   async write(name, text) {
     const file = this.resolve(name);
-    if (!file || typeof text !== 'string') return false;
+    if (!file || typeof text !== 'string') return 'invalid';
     // A file with no cue is one find() would skip and warn about anyway, so
     // refusing here turns a silent dud into an answer the window can give.
-    if (!parseLrc(text).length) return false;
+    if (!parseLrc(text).length) return 'noCues';
 
     const body = text
       .split(/\r?\n/)
@@ -236,10 +238,12 @@ class LyricsLibrary {
     try {
       await this.ensureDirectory();
       await fs.writeFile(file, body.endsWith('\n') ? body : `${body}\n`, 'utf8');
-      return true;
+      return 'saved';
     } catch (err) {
       this.logger.warn?.(t('msg.lyricsNotSaved', { error: err.message }));
-      return false;
+      // Told apart from a rejected text: blaming the timestamps for a disk that
+      // is full sends someone hunting through a file that was never the problem.
+      return 'error';
     }
   }
 

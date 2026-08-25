@@ -177,7 +177,10 @@ test('saving an edit drops the marker, so nothing may overwrite it again', async
     const edited = await library.read('abc123.lrc');
     assert.equal(edited.managed, true);
 
-    assert.equal(await library.write('abc123.lrc', `${edited.text}[02:00.00]Korrektur\n`), true);
+    assert.equal(
+      await library.write('abc123.lrc', `${edited.text}[02:00.00]Korrektur\n`),
+      'saved',
+    );
 
     const raw = await fs.readFile(path.join(dir, 'abc123.lrc'), 'utf8');
     assert.equal(raw.includes(MANAGED_MARKER), false, 'Marke muss weg sein');
@@ -190,7 +193,10 @@ test('saving an edit drops the marker, so nothing may overwrite it again', async
 test('write refuses text no player could use', async () => {
   await withLibrary(async (library) => {
     await library.store({ videoId: 'abc123', track: 'A', lines: LINES });
-    assert.equal(await library.write('abc123.lrc', 'nur Text, keine Zeitmarken'), false);
+    // Told apart from a disk that would not take the file, so the window can
+    // name the cause rather than blaming the timestamps for everything.
+    assert.equal(await library.write('abc123.lrc', 'nur Text, keine Zeitmarken'), 'noCues');
+    assert.equal(await library.write('../escape.lrc', '[00:01.00]x'), 'invalid');
     assert.equal((await library.read('abc123.lrc')).text.includes('[00:00.00]'), true);
   });
 });

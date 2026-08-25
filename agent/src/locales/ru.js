@@ -416,4 +416,6 @@ module.exports = {
   'msg.libraryDeleted': 'Файл с текстом удалён: {file}',
   'msg.libraryDeleteFailed': 'Не удалось удалить файл с текстом: {error}',
   'msg.libraryRegenerate': 'Повторная транскрипция по запросу: {file}',
+  'msg.playerRestarting':
+    'Плеер снова и снова перезапускает «{title}» — так выглядит зависший YouTube. Обычно помогает перезагрузка вкладки; если повторяется, попробуйте отключить защиту браузера для youtube.com.',
 };

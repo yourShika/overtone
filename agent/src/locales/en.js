@@ -437,4 +437,6 @@ module.exports = {
   'msg.libraryDeleted': 'Lyrics file deleted: {file}',
   'msg.libraryDeleteFailed': 'Lyrics file could not be deleted: {error}',
   'msg.libraryRegenerate': 'Transcribing again on request: {file}',
+  'msg.playerRestarting':
+    'The player keeps restarting “{title}” — that is what a wedged YouTube looks like. Reloading the tab usually clears it; if it comes back, try switching your browser shields off for youtube.com.',
 };

@@ -26,6 +26,7 @@ const { t, setLocale, getLocale, detect, dictionary, LANGUAGES } = require('./i1
 const { Logger } = require('./log');
 const { Bridge } = require('./bridge');
 const { Session } = require('./session');
+const { RestartWatch } = require('./restart-watch');
 const { DiscordIPC } = require('./discord/ipc');
 const { PresenceController } = require('./discord/presence');
 const { buildActivity } = require('./discord/activity');
@@ -73,6 +74,9 @@ let transcriber;
 let thumbnails;
 
 const session = new Session();
+
+/** Notices a player that keeps restarting the same video — see restart-watch.js. */
+const restartWatch = new RestartWatch();
 let tickTimer = null;
 
 /** Lyrics state for the currently playing track. */
@@ -286,6 +290,7 @@ async function setupBridge() {
       // the log announced "… (Official Video)" while the presence, the tray and
       // the settings preview all showed the cleaned title.
       logger.info(t('msg.nowPlaying', { title: trackLabel() }));
+      restartWatch.settled(session.raw?.videoId);
       resetLyrics();
 
       // Warn once per track rather than once per report, so the log stays
@@ -297,6 +302,12 @@ async function setupBridge() {
       // Invisible at the default level, but with --verbose it turns "why is this
       // song announced four times" into one line that says what happened.
       logger.debug(t('msg.trackResumed', { title: trackLabel() }));
+
+      // Three times over is no longer a flaky connection. Say what it means
+      // rather than leaving the pattern for someone to count by eye.
+      if (restartWatch.resumed(session.raw?.videoId)) {
+        logger.warn(t('msg.playerRestarting', { title: trackLabel() }));
+      }
     }
     // These must not sit behind a lyric-boundary deferral: showing the previous
     // song for a few extra seconds is far worse than a slightly early lyric.

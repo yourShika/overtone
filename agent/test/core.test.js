@@ -1223,3 +1223,83 @@ test('submit defers while the transcriber is halted, so the track survives', () 
 
   assert.equal(transcriber.submit({ videoId: 'later' }), 'deferred');
 });
+
+// --------------------------------------------------------------- restart loop
+
+const { RestartWatch } = require('../src/restart-watch');
+
+/** A watch on a clock we control, so the window can be crossed deliberately. */
+function watchAt(start = 1_000_000) {
+  let clock = start;
+  const watch = new RestartWatch({ now: () => clock });
+  return { watch, tick: (ms) => (clock += ms) };
+}
+
+test('a player restarting the same video is called out, once', () => {
+  const { watch, tick } = watchAt();
+
+  // One reconnect is a dropped socket; two is a worker eviction on a long song.
+  assert.equal(watch.resumed('abc'), false);
+  tick(4000);
+  assert.equal(watch.resumed('abc'), false);
+
+  tick(4000);
+  assert.equal(watch.resumed('abc'), true, 'die dritte Wiederholung ist die Diagnose');
+
+  // Saying it again for every further resumption would be the very noise this
+  // exists to explain.
+  tick(4000);
+  assert.equal(watch.resumed('abc'), false);
+  tick(4000);
+  assert.equal(watch.resumed('abc'), false);
+});
+
+test('resumptions spread over hours are not a restart loop', () => {
+  const { watch, tick } = watchAt();
+
+  for (let i = 0; i < 5; i++) {
+    assert.equal(watch.resumed('abc'), false, `Durchlauf ${i}`);
+    tick(6 * 60 * 1000); // beyond the five-minute window every time
+  }
+});
+
+test('a genuine track change ends the run', () => {
+  const { watch, tick } = watchAt();
+
+  watch.resumed('abc');
+  tick(2000);
+  watch.resumed('abc');
+  watch.settled('abc');
+
+  // Back on the same video later: counting starts again rather than tripping
+  // on the third resumption of two different sittings.
+  tick(2000);
+  assert.equal(watch.resumed('abc'), false);
+  tick(2000);
+  assert.equal(watch.resumed('abc'), false);
+  tick(2000);
+  assert.equal(watch.resumed('abc'), true);
+});
+
+test('two tracks flapping at once are counted apart', () => {
+  const { watch, tick } = watchAt();
+
+  for (let i = 0; i < 2; i++) {
+    watch.resumed('abc');
+    watch.resumed('xyz');
+    tick(1000);
+  }
+
+  assert.equal(watch.countFor('abc'), 2);
+  assert.equal(watch.countFor('xyz'), 2);
+  assert.equal(watch.resumed('abc'), true);
+  assert.equal(watch.resumed('xyz'), true);
+});
+
+test('a report with no video id is ignored rather than counted', () => {
+  const { watch } = watchAt();
+
+  for (let i = 0; i < 5; i++) assert.equal(watch.resumed(''), false);
+  assert.equal(watch.resumed(undefined), false);
+  assert.equal(watch.countFor(''), 0);
+});

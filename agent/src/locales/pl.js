@@ -415,4 +415,6 @@ module.exports = {
   'msg.libraryDeleted': 'Plik z tekstem usunięty: {file}',
   'msg.libraryDeleteFailed': 'Nie udało się usunąć pliku z tekstem: {error}',
   'msg.libraryRegenerate': 'Ponowna transkrypcja na życzenie: {file}',
+  'msg.playerRestarting':
+    'Odtwarzacz wciąż uruchamia „{title}” od nowa — tak wygląda zacięty YouTube. Zwykle pomaga przeładowanie karty; jeśli wraca, spróbuj wyłączyć osłony przeglądarki dla youtube.com.',
 };

@@ -418,4 +418,6 @@ module.exports = {
   'msg.libraryDeleted': 'Lyrics-Datei gelöscht: {file}',
   'msg.libraryDeleteFailed': 'Lyrics-Datei ließ sich nicht löschen: {error}',
   'msg.libraryRegenerate': 'Wird auf Wunsch neu transkribiert: {file}',
+  'msg.playerRestarting':
+    'Der Player startet „{title}“ immer wieder neu — so sieht ein festhängendes YouTube aus. Den Tab neu zu laden hilft meist; kommt es wieder, teste die Shields deines Browsers für youtube.com abzuschalten.',
 };

@@ -417,4 +417,6 @@ module.exports = {
   'msg.libraryDeleted': 'Archivo de letra eliminado: {file}',
   'msg.libraryDeleteFailed': 'No se ha podido eliminar el archivo de letra: {error}',
   'msg.libraryRegenerate': 'Transcribiendo de nuevo a petición: {file}',
+  'msg.playerRestarting':
+    'El reproductor no deja de reiniciar «{title}» — así se ve un YouTube atascado. Recargar la pestaña suele bastar; si vuelve, prueba a desactivar los escudos del navegador para youtube.com.',
 };

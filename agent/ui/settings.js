@@ -155,6 +155,7 @@ function render() {
 
   markLanguage();
   markBrowser();
+  markCookiesFile();
 
   const badge = $('nav-badge-tr');
   badge.textContent = T.t(config.transcribeEnabled ? 'app.on' : 'app.off');
@@ -413,6 +414,20 @@ function fillBrowsers() {
   markBrowser();
 }
 
+/** Show which cookies.txt is in use, if any, without the whole path shouting. */
+function markCookiesFile() {
+  const file = config.cookiesFile || '';
+  // Both separators: the path comes from a Windows dialog and arrives with
+  // backslashes, but the setting is editable in config.json by hand too.
+  const name = file ? file.split(/[\\/]/).filter(Boolean).pop() : T.t('tr.cookiesNone');
+  const chip = $('cookies-file-name');
+  chip.textContent = name;
+  chip.className = file ? 'chip good' : 'chip';
+  // The full path is worth having, just not worth the width.
+  chip.title = file;
+  $('btn-clear-cookies').classList.toggle('hidden', !file);
+}
+
 function markBrowser() {
   const current = config.cookiesFromBrowser || '';
   for (const pill of all('#cookiesFromBrowser .pill')) {
@@ -507,6 +522,15 @@ function bindActions() {
     if (outcome === 'missing') await loadLibrary();
   });
   $('btn-open-logs').addEventListener('click', () => api.actions.openLogFolder());
+
+  $('btn-pick-cookies').addEventListener('click', async () => {
+    const file = await api.actions.pickCookiesFile();
+    // Null means the dialog was dismissed, which must not clear a working
+    // setting — that is what the button next to it is for.
+    if (file) save({ cookiesFile: file });
+  });
+
+  $('btn-clear-cookies').addEventListener('click', () => save({ cookiesFile: '' }));
 
   $('btn-copy-log').addEventListener('click', () => {
     const text = visibleLog()

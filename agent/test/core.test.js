@@ -1434,3 +1434,43 @@ test('the browser session is only passed when one was chosen', async () => {
     await fsp.rm(dir, { recursive: true, force: true });
   }
 });
+
+test('a cookies.txt beats the browser, and a missing one is named before yt-dlp runs', async () => {
+  const os = require('node:os');
+  const fsp = require('node:fs/promises');
+
+  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'overtone-ck-'));
+  try {
+    let seen = [];
+    const transcriber = new Transcriber({
+      workDir: dir,
+      libraryDir: dir,
+      script: 'x.py',
+      logger: { info() {}, warn() {}, error() {}, debug() {} },
+    });
+    transcriber._spawn = async (_cmd, args) => {
+      seen = args;
+      throw new Error('stop here');
+    };
+
+    const cookies = path.join(dir, 'cookies.txt');
+    await fsp.writeFile(cookies, '# Netscape HTTP Cookie File\n');
+
+    // Someone who exported a file did so because reading the browser failed,
+    // so the file has to win rather than be shadowed by a leftover setting.
+    await assert.rejects(() =>
+      transcriber._download('abc', '', { cookiesFile: cookies, cookiesFromBrowser: 'brave' }),
+    );
+    assert.equal(seen[seen.indexOf('--cookies') + 1], cookies);
+    assert.equal(seen.includes('--cookies-from-browser'), false);
+
+    // Gone: caught here, because yt-dlp answers a missing file with a Python
+    // traceback that says nothing about the setting that caused it.
+    await assert.rejects(
+      () => transcriber._download('abc', '', { cookiesFile: path.join(dir, 'nope.txt') }),
+      (err) => classifyDownloadError(err.message) === 'cookieFileGone',
+    );
+  } finally {
+    await fsp.rm(dir, { recursive: true, force: true });
+  }
+});

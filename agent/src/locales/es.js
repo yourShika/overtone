@@ -434,9 +434,17 @@ module.exports = {
     'El vídeo en sí no se puede obtener: es privado, se ha eliminado o es solo para miembros. Eso no se puede cambiar desde aquí.',
   'msg.trWhy.drm': 'Este vídeo está protegido con DRM. Overtone no va a intentar sortearlo.',
   'msg.trWhy.noCookies':
-    'No se han podido leer las cookies del navegador. Cerrar ese navegador una vez suele liberar el archivo, o elige otro en Transcripción.',
+    'No se han podido leer las cookies del navegador. En Windows, un navegador basado en Chrome (Brave, Chrome, Edge) mantiene ese archivo bloqueado mientras se ejecuta — y se está ejecutando, porque es en el que ves YouTube. Exporta una vez un cookies.txt desde él y elige ese archivo en Transcripción; Firefox es el único que puede leerse abierto.',
   'tr.cookies': 'Iniciar sesión como',
   'tr.cookiesHelp':
     'Las canciones con restricción de edad se rechazan mientras no haya una sesión iniciada. Al elegir un navegador, yt-dlp toma prestada su sesión de YouTube y pregunta como tú. Se lee en el momento y no se copia a ningún sitio; déjalo apagado si prefieres que nada toque tus cookies.',
   'tr.cookiesOff': 'Desactivado',
+  'msg.trWhy.cookieFileGone':
+    'El cookies.txt elegido en Transcripción ya no está ahí. Vuelve a elegirlo, o quítalo para leer de nuevo directamente de un navegador.',
+  'tr.cookiesFile': 'o un cookies.txt',
+  'tr.cookiesFileHelp':
+    'La vía que funciona con el navegador abierto. Exporta el archivo una vez desde tu navegador — lo hace una extensión «cookies.txt» — y elígelo aquí; tiene preferencia sobre el navegador de arriba. Envejece con la sesión, así que habrá que renovarlo de vez en cuando.',
+  'tr.cookiesPick': 'Elegir archivo …',
+  'tr.cookiesClear': 'Quitar',
+  'tr.cookiesNone': 'ninguno elegido',
 };

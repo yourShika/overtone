@@ -23,6 +23,7 @@
  */
 
 const { spawn } = require('node:child_process');
+const { existsSync } = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
@@ -83,6 +84,11 @@ function classifyDownloadError(message) {
   }
 
   if (text.includes('drm')) return 'drm';
+
+  // Raised by cookieArgs() before yt-dlp is even started.
+  if (text.includes('cookies.txt') || text.includes('cookie-datei') || text.includes('cookie file')) {
+    return 'cookieFileGone';
+  }
 
   if (
     text.includes('video unavailable') ||
@@ -379,9 +385,9 @@ class Transcriber extends EventEmitter {
       ...(config.ytdlpJsRuntime ? ['--js-runtimes', config.ytdlpJsRuntime] : []),
       // Asks as the user rather than as a stranger. The only thing that gets
       // past an age check, and it does so by satisfying it, not by dodging it.
-      ...(config.cookiesFromBrowser
-        ? ['--cookies-from-browser', config.cookiesFromBrowser]
-        : []),
+      // The file wins when both are set: someone who exported one did so
+      // because reading the browser did not work.
+      ...cookieArgs(config),
       // Fall back to a combined stream: Whisper reads it through ffmpeg either
       // way, so a video track is wasteful rather than fatal.
       '-f',
@@ -466,6 +472,25 @@ class Transcriber extends EventEmitter {
       /* directory not created yet */
     }
   }
+}
+
+/**
+ * How to prove who is asking, if at all.
+ *
+ * Checked here rather than left to yt-dlp: a missing file makes it die with a
+ * Python traceback and a PyInstaller banner, which tells the reader nothing
+ * about the setting that caused it.
+ */
+function cookieArgs(config) {
+  const file = String(config.cookiesFile || '').trim();
+  if (file) {
+    if (!existsSync(file)) throw new Error(t('msg.trWhy.cookieFileGone'));
+    return ['--cookies', file];
+  }
+  if (config.cookiesFromBrowser) {
+    return ['--cookies-from-browser', config.cookiesFromBrowser];
+  }
+  return [];
 }
 
 function lastLine(text) {

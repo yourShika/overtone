@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('overtone', {
     openLyricsFolder: () => ipcRenderer.invoke('app:openLyricsFolder'),
     openLogFolder: () => ipcRenderer.invoke('app:openLogFolder'),
     extensionPath: () => ipcRenderer.invoke('app:extensionPath'),
+    pickCookiesFile: () => ipcRenderer.invoke('app:pickCookiesFile'),
     showExtensionFolder: () => ipcRenderer.invoke('app:showExtensionFolder'),
   },
   i18n: {

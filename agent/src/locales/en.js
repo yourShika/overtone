@@ -452,9 +452,17 @@ module.exports = {
     'The video itself cannot be fetched — private, removed, or members-only. Nothing here can change that.',
   'msg.trWhy.drm': 'This video is DRM protected. Overtone will not attempt to get around that.',
   'msg.trWhy.noCookies':
-    'The browser cookies could not be read. Closing that browser once usually frees the file, or pick a different browser under Transcription.',
+    'The browser’s cookies could not be read. On Windows a Chrome-style browser (Brave, Chrome, Edge) holds that file locked while it runs — and it is running, because it is the one you watch YouTube in. Export a cookies.txt from it once and pick that file under Transcription instead; Firefox is the one browser that can be read while open.',
   'tr.cookies': 'Sign in as',
   'tr.cookiesHelp':
     'Age-restricted songs are refused unless the viewer is signed in. With a browser picked here, yt-dlp borrows that browser’s YouTube session so it asks as you. It is read on the spot and never copied anywhere; leave it off if you would rather it not touch your cookies.',
   'tr.cookiesOff': 'Off',
+  'msg.trWhy.cookieFileGone':
+    'The cookies.txt picked under Transcription is not there any more. Choose it again, or clear it to go back to reading a browser directly.',
+  'tr.cookiesFile': 'or a cookies.txt',
+  'tr.cookiesFileHelp':
+    'The way that works while the browser is open. Export the file once from your browser — a “cookies.txt” extension does it — and pick it here; it is used in preference to the browser above. It ages as the session does, so expect to refresh it now and then.',
+  'tr.cookiesPick': 'Choose file …',
+  'tr.cookiesClear': 'Clear',
+  'tr.cookiesNone': 'none chosen',
 };

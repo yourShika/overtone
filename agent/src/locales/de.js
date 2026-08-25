@@ -434,9 +434,17 @@ module.exports = {
     'Das Video selbst ist nicht abrufbar — privat, entfernt oder nur für Mitglieder. Daran lässt sich hier nichts ändern.',
   'msg.trWhy.drm': 'Dieses Video ist DRM-geschützt. Overtone versucht nicht, das zu umgehen.',
   'msg.trWhy.noCookies':
-    'Die Browser-Cookies ließen sich nicht lesen. Diesen Browser einmal zu schließen gibt die Datei meist frei, oder wähle unter Transkription einen anderen.',
+    'Die Cookies des Browsers ließen sich nicht lesen. Unter Windows hält ein Chrome-artiger Browser (Brave, Chrome, Edge) diese Datei gesperrt, solange er läuft — und er läuft, denn es ist der, in dem du YouTube schaust. Exportiere dort einmal eine cookies.txt und wähle unter Transkription diese Datei; Firefox ist der einzige Browser, der sich im laufenden Betrieb lesen lässt.',
   'tr.cookies': 'Anmelden als',
   'tr.cookiesHelp':
     'Altersbeschränkte Songs werden abgewiesen, solange niemand angemeldet ist. Mit einem Browser hier leiht sich yt-dlp dessen YouTube-Sitzung und fragt als du. Sie wird an Ort und Stelle gelesen und nirgendwohin kopiert; lass es aus, wenn dir lieber ist, dass nichts an deine Cookies geht.',
   'tr.cookiesOff': 'Aus',
+  'msg.trWhy.cookieFileGone':
+    'Die unter Transkription gewählte cookies.txt liegt nicht mehr dort. Wähle sie erneut oder entferne sie, um wieder direkt aus einem Browser zu lesen.',
+  'tr.cookiesFile': 'oder eine cookies.txt',
+  'tr.cookiesFileHelp':
+    'Der Weg, der bei offenem Browser funktioniert. Exportiere die Datei einmal aus deinem Browser — eine „cookies.txt“-Erweiterung macht das — und wähle sie hier; sie hat Vorrang vor dem Browser oben. Sie altert mit der Sitzung, du wirst sie also gelegentlich erneuern müssen.',
+  'tr.cookiesPick': 'Datei wählen …',
+  'tr.cookiesClear': 'Entfernen',
+  'tr.cookiesNone': 'keine gewählt',
 };

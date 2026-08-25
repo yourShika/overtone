@@ -226,6 +226,17 @@ const DEFAULTS = {
    */
   cookiesFromBrowser: '',
   /**
+   * Path to a Netscape cookies.txt, used in preference to the browser above.
+   *
+   * Exists because reading a browser directly does not work on Windows while
+   * that browser is running: Chromium opens its cookie database with no sharing
+   * at all, so even a read fails — and the browser you watch YouTube in is
+   * running by definition. A file exported once has no such problem. It ages,
+   * which is the trade, but it is the only route that works without closing the
+   * thing you are watching in.
+   */
+  cookiesFile: '',
+  /**
    * JavaScript runtime yt-dlp uses to solve YouTube's challenge.
    *
    * Required, not cosmetic: without one the embedded player client offers no
@@ -394,6 +405,10 @@ function sanitise(input) {
   // the window keeps showing "waiting for …", which reads like a hang.
   // Straight onto a command line, so it is a choice from a list rather than
   // free text. An unknown name would become an argument yt-dlp cannot read.
+  if (out.cookiesFile !== undefined) {
+    out.cookiesFile = typeof out.cookiesFile === 'string' ? out.cookiesFile.trim() : '';
+  }
+
   if (out.cookiesFromBrowser !== undefined) {
     out.cookiesFromBrowser = BROWSERS.includes(out.cookiesFromBrowser)
       ? out.cookiesFromBrowser

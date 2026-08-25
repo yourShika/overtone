@@ -430,9 +430,17 @@ module.exports = {
     'Samego filmu nie da się pobrać — jest prywatny, usunięty albo tylko dla członków. Tego nic tu nie zmieni.',
   'msg.trWhy.drm': 'Ten film jest chroniony DRM. Overtone nie będzie próbował tego obchodzić.',
   'msg.trWhy.noCookies':
-    'Nie udało się odczytać ciasteczek przeglądarki. Zwykle pomaga jednorazowe zamknięcie tej przeglądarki albo wybór innej w sekcji Transkrypcja.',
+    'Nie udało się odczytać ciasteczek przeglądarki. W Windows przeglądarka oparta na Chrome (Brave, Chrome, Edge) blokuje ten plik, dopóki działa — a działa, bo to w niej oglądasz YouTube. Wyeksportuj z niej raz plik cookies.txt i wskaż go w sekcji Transkrypcja; Firefox jako jedyny daje się odczytać podczas pracy.',
   'tr.cookies': 'Zaloguj jako',
   'tr.cookiesHelp':
     'Utwory z ograniczeniem wiekowym są odrzucane, dopóki nikt nie jest zalogowany. Po wskazaniu przeglądarki yt-dlp pożycza jej sesję YouTube i pyta jako ty. Jest czytana na miejscu i nigdzie nie kopiowana; zostaw wyłączone, jeśli wolisz, by nic nie sięgało do twoich ciasteczek.',
   'tr.cookiesOff': 'Wyłączone',
+  'msg.trWhy.cookieFileGone':
+    'Wybranego w sekcji Transkrypcja pliku cookies.txt już tam nie ma. Wskaż go ponownie albo usuń, by wrócić do czytania wprost z przeglądarki.',
+  'tr.cookiesFile': 'albo plik cookies.txt',
+  'tr.cookiesFileHelp':
+    'Sposób, który działa przy otwartej przeglądarce. Wyeksportuj plik raz ze swojej przeglądarki — robi to rozszerzenie „cookies.txt” — i wskaż go tutaj; ma pierwszeństwo przed przeglądarką powyżej. Starzeje się razem z sesją, więc od czasu do czasu trzeba go odświeżyć.',
+  'tr.cookiesPick': 'Wybierz plik …',
+  'tr.cookiesClear': 'Usuń',
+  'tr.cookiesNone': 'nie wybrano',
 };

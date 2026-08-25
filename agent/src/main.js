@@ -1338,6 +1338,15 @@ function registerIpc() {
     dictionary: dictionary(),
   }));
 
+  ipcMain.handle('app:pickCookiesFile', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(settingsWindow ?? undefined, {
+      title: t('tr.cookiesPick'),
+      properties: ['openFile'],
+      filters: [{ name: 'cookies.txt', extensions: ['txt'] }],
+    });
+    return canceled ? null : filePaths[0];
+  });
+
   ipcMain.handle('app:extensionPath', () =>
     app.isPackaged
       ? path.join(process.resourcesPath, 'extension')

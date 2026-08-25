@@ -1,7 +1,7 @@
 {
   "name": "overtone-agent",
   "productName": "Overtone",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "description": "Discord Rich Presence agent for YouTube and YouTube Music, with synced lyrics.",
   "main": "src/main.js",
   "private": true,

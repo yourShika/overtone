@@ -256,6 +256,22 @@ nichts zu planen. Dort bleibt es beim „sobald erlaubt".
    12 Sekunden, wird `null` zurückgegeben. Sonst bliebe während eines
    Instrumental-Teils eine tote Zeile am Profil stehen, was kaputt aussieht.
 
+4. **`library.js`** ist die Ablage: eine `.lrc` je Song unter
+   `%APPDATA%/Overtone/lyrics`. Die eine Regel, die alles andere bestimmt:
+   automatisch geschriebene Dateien tragen die Kopfzeile `[re:overtone]`, und
+   nur die werden je wieder überschrieben. Fehlt sie, stammt die Datei vom
+   Benutzer — dann rührt weder eine LRCLIB-Abfrage noch der Whisper-Worker sie
+   an, und sie schlägt bei der Suche jede andere Quelle.
+
+   Das Fenster listet den Ordner unter *Lyrics*: ansehen, bearbeiten, löschen,
+   neu transkribieren. Beim Speichern einer bearbeiteten Datei entfernt
+   `write()` die Kopfzeile, denn ab dann gehört sie dem Benutzer — eine
+   Einbahnstraße, auf die der Hinweis über dem Feld hinweist, bevor gespeichert
+   wird. Jeder Zugriff aus dem Renderer läuft über `resolve()`, das Trenner,
+   NUL, alles ohne `.lrc`-Endung und jeden Pfad außerhalb des Ordners abweist;
+   `preload.js` zählt die Kanäle einzeln auf, statt einen allgemeinen
+   Durchreicher anzubieten.
+
 ### Untertitel als zweite Quelle
 
 LRCLIBs Abdeckung endet schnell, sobald man den internationalen Mainstream

@@ -444,4 +444,6 @@ module.exports = {
   'tr.cookiesPick': 'Выбрать файл …',
   'tr.cookiesClear': 'Сбросить',
   'tr.cookiesNone': 'не выбран',
+  'tray.ready': 'готов',
+  'tray.waitingDiscord': 'ждёт Discord',
 };

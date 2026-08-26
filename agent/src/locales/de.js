@@ -447,4 +447,6 @@ module.exports = {
   'tr.cookiesPick': 'Datei wählen …',
   'tr.cookiesClear': 'Entfernen',
   'tr.cookiesNone': 'keine gewählt',
+  'tray.ready': 'bereit',
+  'tray.waitingDiscord': 'wartet auf Discord',
 };

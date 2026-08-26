@@ -1506,8 +1506,13 @@ function refreshUi() {
     tray.setImage(trayIcon());
 
     const state = session.state;
+    // The same cleaning every other surface applies, and the two idle states
+    // named from the dictionary — this tooltip was the last thing in the app
+    // still speaking one fixed language, and it is what a hover reads out.
     tray.setToolTip(
-      state ? `Overtone — ${truncate(state.title, 60)}` : `Overtone — ${discord?.connected ? 'bereit' : 'wartet auf Discord'}`,
+      state
+        ? `Overtone — ${truncate(trackLabel(), 60)}`
+        : `Overtone — ${t(discord?.connected ? 'tray.ready' : 'tray.waitingDiscord')}`,
     );
   }
 

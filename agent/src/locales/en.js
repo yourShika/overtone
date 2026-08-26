@@ -465,4 +465,6 @@ module.exports = {
   'tr.cookiesPick': 'Choose file …',
   'tr.cookiesClear': 'Clear',
   'tr.cookiesNone': 'none chosen',
+  'tray.ready': 'ready',
+  'tray.waitingDiscord': 'waiting for Discord',
 };

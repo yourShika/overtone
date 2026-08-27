@@ -33,14 +33,70 @@ const TYPES = {
   note: '.hint',
 };
 
+/** What each type stores, so a default can be checked against its own field. */
+const HOLDS = {
+  switch: 'boolean',
+  text: 'string',
+  number: 'number',
+  range: 'number',
+  choice: 'string',
+  colour: 'string',
+};
+
 /**
  * Identity on disk and in plugins.json, so it has to survive being a folder
  * name, a JSON key and part of a URL path without escaping.
  */
 const ID = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
+/**
+ * A setting key.
+ *
+ * It becomes a property name in `out[field.key] = …` and a key in plugins.json.
+ * The rule that earns its place is the leading letter: without it "__proto__"
+ * is a legal key and that assignment writes *through* the object instead of
+ * into it, so every plugin loaded afterwards inherits whatever was put there.
+ *
+ * camelCase is allowed on purpose. Plugin authors write JavaScript and would
+ * spell it that way; forbidding it buys nothing and would be a rule people trip
+ * over for no reason they can see.
+ */
+const KEY = /^[a-zA-Z][a-zA-Z0-9_]{0,39}$/;
+
+/**
+ * Names that pass the pattern but should not be settings.
+ *
+ * None of these reaches the prototype the way "__proto__" does — they would be
+ * ordinary own properties — but a plugin whose config has a `constructor` field
+ * is going to confuse something downstream eventually, and the cost of saying
+ * no here is one line.
+ */
+const RESERVED = new Set(['constructor', 'prototype', 'hasOwnProperty', 'toString', 'valueOf']);
+
 /** A plugin may not declare more than this; a thousand fields is not a setting. */
 const MAX_FIELDS = 40;
+/** Beyond this a choice is a list, and a list wants a different control. */
+const MAX_OPTIONS = 24;
+/** Room for a sentence, not for an essay that pushes the layout apart. */
+const MAX_LABEL = 80;
+const MAX_HELP = 200;
+/** The caller checks this before reading; a manifest is a small text file. */
+const MAX_BYTES = 65536;
+
+/**
+ * Characters that change how text around them is rendered rather than adding
+ * any of their own.
+ *
+ * A plugin's name and labels are drawn in the app's own window next to the
+ * app's own words. A right-to-left override in a plugin name can visually
+ * rewrite the sentence it sits in, which is a cheap way to make a card claim
+ * something Overtone never said.
+ */
+const INVISIBLE =
+  // C0 controls, DEL and C1, the bidi marks, the embedding overrides, the
+  // isolates. Written as escapes on purpose: as literals this line is a row
+  // of characters nobody can see, review or type back.
+  /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 
 /**
  * Read a manifest, or say what is wrong with it in one line.
@@ -77,8 +133,8 @@ function parseManifest(raw, { id }) {
   // Either a surface (static files served to a browser) or logic (code), and a
   // plugin may be both. One of them has to be true or there is nothing to run.
   const hasMain = typeof json.main === 'string' && json.main.length > 0;
-  const hasPublic = json.surface === true;
-  if (!hasMain && !hasPublic) return { problem: 'neither main nor surface' };
+  const hasSurface = json.surface === true;
+  if (!hasMain && !hasSurface) return { problem: 'neither main nor surface' };
   if (hasMain && (json.main.includes('..') || /[\\/]/.test(json.main))) {
     return { problem: 'main must be a file name in the plugin folder' };
   }
@@ -86,31 +142,118 @@ function parseManifest(raw, { id }) {
   const settings = Array.isArray(json.settings) ? json.settings : [];
   if (settings.length > MAX_FIELDS) return { problem: `${settings.length} fields, max ${MAX_FIELDS}` };
 
-  const seen = new Set();
+  const keys = new Set();
   for (const field of settings) {
-    if (!field || typeof field !== 'object') return { problem: 'a field is not an object' };
-    if (!Object.prototype.hasOwnProperty.call(TYPES, field.type)) {
-      return { problem: `type "${field.type}"` };
-    }
-    // A note displays and holds nothing, so it needs no key and no default.
-    if (field.type === 'note') continue;
+    const problem = checkField(field, keys);
+    if (problem) return { problem };
+  }
 
-    if (typeof field.key !== 'string' || !field.key) return { problem: 'a field has no key' };
-    if (seen.has(field.key)) return { problem: `two fields called "${field.key}"` };
-    seen.add(field.key);
-
-    if (!Object.prototype.hasOwnProperty.call(field, 'default')) {
-      return { problem: `"${field.key}" has no default` };
-    }
-    if (field.type === 'range' && !(Number.isFinite(field.min) && Number.isFinite(field.max))) {
-      return { problem: `"${field.key}" is a range without min and max` };
-    }
-    if (field.type === 'choice' && (!Array.isArray(field.options) || !field.options.length)) {
-      return { problem: `"${field.key}" is a choice without options` };
-    }
+  // Checked in a second pass: a field may point at one declared after it.
+  for (const field of settings) {
+    if (!field.showIf) continue;
+    const problem = checkShowIf(field, settings);
+    if (problem) return { problem };
   }
 
   return { manifest: { ...json, settings } };
+}
+
+/** @returns {string|null} what is wrong with one field, or null */
+function checkField(field, keys) {
+  if (!field || typeof field !== 'object') return 'a field is not an object';
+  if (!Object.prototype.hasOwnProperty.call(TYPES, field.type)) return `type "${field.type}"`;
+
+  if (tooLong(field.label, MAX_LABEL)) return `a ${field.type} label is over ${MAX_LABEL} characters`;
+  if (tooLong(field.help, MAX_HELP)) return `a ${field.type} help text is over ${MAX_HELP} characters`;
+
+  // A note displays and holds nothing, so it needs no key and no default.
+  if (field.type === 'note') {
+    return tooLong(field.text, MAX_HELP) ? `a note is over ${MAX_HELP} characters` : null;
+  }
+
+  if (typeof field.key !== 'string' || !KEY.test(field.key) || RESERVED.has(field.key)) {
+    return `key "${field.key}" — must start with a letter, then letters, digits or _`;
+  }
+  if (keys.has(field.key)) return `two fields called "${field.key}"`;
+  keys.add(field.key);
+
+  if (!Object.prototype.hasOwnProperty.call(field, 'default')) {
+    return `"${field.key}" has no default`;
+  }
+
+  // Bounds first, because the default is then checked against them. A number
+  // without them is a text box that happens to hold digits, and nothing
+  // downstream could clamp it.
+  if (field.type === 'number' || field.type === 'range') {
+    if (!Number.isFinite(field.min) || !Number.isFinite(field.max)) {
+      return `"${field.key}" is a ${field.type} without min and max`;
+    }
+    if (field.min >= field.max) return `"${field.key}": min is not below max`;
+  }
+
+  if (field.type === 'choice') {
+    if (!Array.isArray(field.options) || !field.options.length) {
+      return `"${field.key}" is a choice without options`;
+    }
+    if (field.options.length > MAX_OPTIONS) {
+      return `"${field.key}" has ${field.options.length} options, max ${MAX_OPTIONS}`;
+    }
+  }
+
+  // The default is the permanent fallback: coerce() returns it whenever a
+  // stored value is unusable. One that is itself invalid would be handed back
+  // for ever, so it is checked against its own field rather than trusted.
+  return checkDefault(field);
+}
+
+/** @returns {string|null} */
+function checkDefault(field) {
+  const value = field.default;
+  const wanted = HOLDS[field.type];
+
+  if (wanted === 'boolean' && typeof value !== 'boolean') {
+    return `"${field.key}": default is not true or false`;
+  }
+  if (wanted === 'number') {
+    if (!Number.isFinite(value)) return `"${field.key}": default is not a number`;
+    if (value < field.min || value > field.max) return `"${field.key}": default is outside min and max`;
+  }
+  if (wanted === 'string') {
+    if (typeof value !== 'string') return `"${field.key}": default is not text`;
+    if (field.type === 'choice' && !optionValues(field).includes(value)) {
+      return `"${field.key}": default is not one of the options`;
+    }
+  }
+  return null;
+}
+
+/** @returns {string|null} */
+function checkShowIf(field, settings) {
+  const rule = field.showIf;
+  if (!rule || typeof rule !== 'object' || typeof rule.key !== 'string') {
+    return `"${field.key}": showIf needs a key`;
+  }
+  if (rule.key === field.key) return `"${field.key}": showIf points at itself`;
+
+  const target = settings.find((other) => other.key === rule.key);
+  if (!target) return `"${field.key}": showIf names "${rule.key}", which is not a field`;
+  // One level only. Chained conditions are a rendering problem the window has
+  // no shape for, and a cycle would hang it.
+  if (target.showIf) return `"${field.key}": showIf points at a field that is itself conditional`;
+  return null;
+}
+
+/** Option values, whether written bare or as { value, label }. */
+function optionValues(field) {
+  return (field.options || []).map((option) =>
+    option && typeof option === 'object' ? option.value : option,
+  );
+}
+
+function tooLong(value, max) {
+  if (typeof value === 'string') return value.length > max;
+  if (!value || typeof value !== 'object') return false;
+  return Object.values(value).some((text) => typeof text === 'string' && text.length > max);
 }
 
 /**
@@ -122,12 +265,18 @@ function parseManifest(raw, { id }) {
  * have, then nothing.
  */
 function pick(value, locale) {
-  if (typeof value === 'string') return value;
-  if (!value || typeof value !== 'object') return '';
-  if (typeof value[locale] === 'string') return value[locale];
-  if (typeof value.en === 'string') return value.en;
-  const first = Object.values(value).find((v) => typeof v === 'string');
-  return first || '';
+  let text = '';
+  if (typeof value === 'string') text = value;
+  else if (value && typeof value === 'object') {
+    text =
+      (typeof value[locale] === 'string' && value[locale]) ||
+      (typeof value.en === 'string' && value.en) ||
+      Object.values(value).find((v) => typeof v === 'string') ||
+      '';
+  }
+  // Drawn in the app's own window beside the app's own words, so anything that
+  // rewrites the text around it comes out here.
+  return text.replace(INVISIBLE, '');
 }
 
 /** Every declared default, as a plain object. */
@@ -162,37 +311,55 @@ function coerce(schema, input) {
       ? given[field.key]
       : fallback;
 
-    if (typeof fallback === 'boolean') {
-      out[field.key] = Boolean(raw);
-      continue;
+    // Switched on the DECLARED type, never on `typeof fallback`. Reading the
+    // type off the default makes the default the authority on its own
+    // validity: a choice whose default is a number would take the number path
+    // and skip the membership check entirely.
+    switch (field.type) {
+      case 'switch':
+        out[field.key] = Boolean(raw);
+        break;
+
+      case 'number':
+      case 'range': {
+        let value = Number(raw);
+        if (!Number.isFinite(value)) value = fallback;
+        value = Math.min(field.max, Math.max(field.min, value));
+        if (field.step === 1) value = Math.round(value);
+        out[field.key] = value;
+        break;
+      }
+
+      case 'choice': {
+        const value = typeof raw === 'string' ? raw.trim() : '';
+        out[field.key] = optionValues(field).includes(value) ? value : fallback;
+        break;
+      }
+
+      default: {
+        let value = typeof raw === 'string' ? raw.trim() : String(fallback ?? '');
+        if (Number.isFinite(field.maxLength)) value = value.slice(0, field.maxLength);
+        out[field.key] = value;
+      }
     }
-
-    if (typeof fallback === 'number') {
-      let value = Number(raw);
-      if (!Number.isFinite(value)) value = fallback;
-      if (Number.isFinite(field.min)) value = Math.max(field.min, value);
-      if (Number.isFinite(field.max)) value = Math.min(field.max, value);
-      if (field.step === 1) value = Math.round(value);
-      out[field.key] = value;
-      continue;
-    }
-
-    let value = typeof raw === 'string' ? raw.trim() : String(fallback ?? '');
-    if (field.maxLength > 0) value = value.slice(0, field.maxLength);
-
-    // A choice may only ever hold one of its options; anything else is a
-    // hand-edited file or a stale value from a manifest that changed.
-    if (field.type === 'choice') {
-      const allowed = field.options.map((option) =>
-        option && typeof option === 'object' ? option.value : option,
-      );
-      if (!allowed.includes(value)) value = fallback;
-    }
-
-    out[field.key] = value;
   }
 
   return out;
 }
 
-module.exports = { parseManifest, pick, defaults, coerce, ENGINE, TYPES, ID, MAX_FIELDS };
+module.exports = {
+  parseManifest,
+  pick,
+  defaults,
+  coerce,
+  optionValues,
+  ENGINE,
+  TYPES,
+  ID,
+  KEY,
+  MAX_FIELDS,
+  MAX_OPTIONS,
+  MAX_LABEL,
+  MAX_HELP,
+  MAX_BYTES,
+};

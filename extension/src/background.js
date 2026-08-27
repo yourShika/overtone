@@ -253,9 +253,25 @@ function connect() {
     }
     if (message?.type === 'status') {
       agentStatus = message.payload;
+      applyAutoReload(message.payload?.extension?.autoReload);
       updateBadge(activeSnapshot());
     }
   });
+
+  /**
+   * Mirror the agent's watchdog setting into storage.
+   *
+   * The switch for this lives in the settings window, but the code that acts
+   * on it is the content script, which can only read chrome.storage — so the
+   * value travels agent → status → here → storage, and the content script's
+   * existing onChanged listener picks it up without a reload. Written only
+   * when it differs, because every write wakes that listener in every tab.
+   */
+  async function applyAutoReload(wanted) {
+    if (typeof wanted !== 'boolean') return;
+    const { autoReload } = await chrome.storage.local.get({ autoReload: true });
+    if (autoReload !== wanted) await chrome.storage.local.set({ autoReload: wanted });
+  }
 
   socket.addEventListener('close', () => {
     socket = null;

@@ -1442,6 +1442,9 @@ function statusSnapshot() {
     extension: {
       version: extension.version,
       features: extension.features,
+      // Sent so the extension can mirror it into chrome.storage, which is the
+      // only place its content script can read a setting from.
+      autoReload: config.get('watchdogEnabled') !== false,
       appVersion: app.getVersion(),
       outdated: Boolean(extension.version) && extension.version !== app.getVersion(),
       /**

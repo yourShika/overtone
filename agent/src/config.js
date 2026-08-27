@@ -87,6 +87,15 @@ const DEFAULTS = {
    * the profile indefinitely.
    */
   showWhenBrowsing: true,
+  /**
+   * Let the extension reload a YouTube tab whose player has wedged.
+   *
+   * Lives here rather than only in the browser because the switch belongs next
+   * to the other behaviour switches, and the agent is the only thing that can
+   * put it there. It reaches the extension through the status broadcast, which
+   * writes it into chrome.storage, where the content script has always read it.
+   */
+  watchdogEnabled: true,
   /** Suppress titles/artwork but keep "is watching something" visible. */
   privacyMode: false,
 

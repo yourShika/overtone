@@ -108,7 +108,7 @@ class Bridge extends EventEmitter {
     for (const socket of this.clients) {
       if (socket.readyState === socket.OPEN) {
         socket.send(message, (err) => {
-          if (err) this.logger.debug?.(`[bridge] Senden fehlgeschlagen: ${err.message}`);
+          if (err) this.logger.debug?.(t('msg.bridgeError', { error: err.message }));
         });
       }
     }

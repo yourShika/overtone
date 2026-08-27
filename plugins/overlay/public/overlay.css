@@ -23,13 +23,21 @@
   --shadow: 0 2px 10px rgba(0, 0, 0, 0.75), 0 0 2px rgba(0, 0, 0, 0.9);
   --pad: 18px;
   --radius: 16px;
-  /* Every transition reads this, so one switch turns the lot off. */
-  --ease: 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  /*
+   * Every transition reads this, so one switch turns the lot off.
+   *
+   * Long and heavily eased on purpose: a lyric is read, not watched, and a
+   * quick snap draws the eye to the movement instead of to the words. The
+   * curve is nearly flat at the end, so a line settles rather than stopping.
+   */
+  --ease: 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-slow: 900ms cubic-bezier(0.16, 1, 0.3, 1);
   --font: Inter, "Segoe UI", system-ui, sans-serif;
 }
 
 body[data-smooth="off"] {
   --ease: 0ms linear;
+  --ease-slow: 0ms linear;
 }
 
 /* Whatever the machine has. A bundled font would sit wrong beside the rest of
@@ -217,7 +225,12 @@ body[data-lyrics="off"] .lyrics {
     opacity var(--ease),
     color var(--ease),
     transform var(--ease),
+    filter var(--ease),
     font-size var(--ease);
+  /* Each line a little behind the one above it, so the block moves as a body
+     rather than as four things that happened to change at the same instant. */
+  transition-delay: calc(var(--row, 0) * 45ms);
+  will-change: transform, opacity;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -279,15 +292,75 @@ body[data-lyric="slideRight"] .line.now-line {
 
 body[data-lyric="slideUp"] .line.entering {
   opacity: 0;
-  transform: translateY(0.7em);
+  transform: translateY(0.85em);
+  filter: blur(3px);
 }
 body[data-lyric="slideLeft"] .line.entering {
   opacity: 0;
-  transform: translateX(1.2em);
+  transform: translateX(1.4em);
+  filter: blur(3px);
 }
 body[data-lyric="slideRight"] .line.entering {
   opacity: 0;
-  transform: translateX(-1.2em);
+  transform: translateX(-1.4em);
+  filter: blur(3px);
+}
+body[data-lyric="fade"] .line.entering,
+body[data-lyric="spotify"] .line.entering {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+/*
+ * The wait between two sung lines.
+ *
+ * One custom property carries how far through the gap we are, and each dot
+ * works out its own share of that with calc() — so the whole thing is a single
+ * style write per frame rather than three, and the easing is the browser's.
+ */
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  height: 1.35em;
+  transition: opacity var(--ease);
+}
+.dots[hidden] {
+  display: none;
+}
+body[data-align="center"] .dots {
+  justify-content: center;
+}
+body[data-align="right"] .dots {
+  justify-content: flex-end;
+}
+
+.dots i {
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  /*
+   * Opacity and scale are written from JS on every frame.
+   *
+   * They were a clamp() around a calc() over a live custom property, which is
+   * legal and did not work: the container's --gap climbed from 0.03 to 0.44
+   * while every dot stayed at the floor, because the substituted value never
+   * made it back through the calc. Three style writes a frame cost nothing and
+   * are the animation, so there is no transition here either — a transition
+   * chasing a target that moves every frame only adds lag.
+   */
+  opacity: 0.22;
+  transform: scale(0.62);
+}
+
+body[data-style="lyrics"] .dots {
+  height: 1.9em;
+}
+body[data-style="lyrics"] .dots i {
+  width: 0.5em;
+  height: 0.5em;
 }
 
 .idle {
@@ -462,7 +535,9 @@ body[data-style="ticker"] .title {
 @media (prefers-reduced-motion: reduce) {
   .wrap,
   .line,
-  .cover {
+  .cover,
+  .dots,
+  .dots i {
     transition: none;
   }
   body[data-style="ticker"] .title {

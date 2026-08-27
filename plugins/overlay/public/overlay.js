@@ -33,6 +33,7 @@
     total: $('total'),
     fill: $('fill'),
     lyrics: $('lyrics'),
+    dots: $('dots'),
     idle: $('idle'),
   };
 
@@ -53,6 +54,24 @@
 
   /** How long a silent agent may be gone before the overlay fades. */
   const GONE_AFTER_MS = 10_000;
+
+  /**
+   * A quiet stretch long enough to be worth marking, in seconds.
+   *
+   * Below this the next line is already on its way and dots would flash for an
+   * instant, which is worse than nothing. Above it the overlay would otherwise
+   * sit on a line that finished ten seconds ago and look broken.
+   */
+  const GAP_MIN = 4;
+
+  /** How long a sung line keeps the stage after its cue, before the dots take over. */
+  const LINE_HOLD = 2.5;
+
+  /** The most of an intro worth counting down; before that, nothing. */
+  const GAP_MAX = 12;
+
+  /** Where each dot starts to light, as a share of the wait. */
+  const DOT_STARTS = [0, 0.3, 0.6];
   /** Long enough to read as a change of subject, short enough not to miss a line. */
   const SWAP_MS = 260;
 
@@ -253,6 +272,7 @@
 
     const index = currentCue(at);
     if (index !== lastRenderedLine) renderLyrics(index);
+    showGap(gapAt(at));
 
     // The agent went quiet mid-song: hold what is on screen for a moment, then
     // fade. Freezing on a song that ended minutes ago is worse than nothing.
@@ -293,12 +313,49 @@
    * moment ago must not animate in again, or every change would ripple through
    * all of them at once.
    */
+  /**
+   * The wait before the next line, if there is one worth showing.
+   *
+   * Three cases, all read off the cue list rather than announced by the agent:
+   * the intro before the first line, an explicitly empty cue, and a long
+   * stretch after a line has had its moment. Returns how far through that wait
+   * we are, from 0 to 1, or null when a line should simply be on screen.
+   */
+  function gapAt(at) {
+    if (!state || state.mode !== 'timed' || !state.cues?.length) return null;
+
+    const index = currentCue(at);
+
+    // Before the first line. Only the tail of a long intro is counted down —
+    // a two-minute instrumental opening should not show dots for two minutes.
+    if (index < 0) {
+      const first = state.cues[0].t;
+      const from = Math.max(0, first - GAP_MAX);
+      return first - at > GAP_MIN ? progress(at, from, first) : null;
+    }
+
+    const cue = state.cues[index];
+    const next = state.cues[index + 1];
+    if (!next) return null;
+
+    // An empty cue is the file saying "nothing here" outright.
+    const from = cue.text.trim() ? cue.t + LINE_HOLD : cue.t;
+    return next.t - from > GAP_MIN ? progress(at, from, next.t) : null;
+  }
+
+  /** Where the clock sits between two times, clamped, or null before it starts. */
+  function progress(at, from, to) {
+    if (at < from) return null;
+    return Math.max(0, Math.min(1, (at - from) / (to - from)));
+  }
+
   function renderLyrics(index) {
     lastRenderedLine = index;
     els.lyrics.textContent = '';
 
     if (!state || state.privacy) {
       onScreen = [];
+      showGap(null);
       return;
     }
 
@@ -338,10 +395,37 @@
    * displaced state has to be painted once before the transition to the settled
    * one means anything.
    */
+  /**
+   * Fill the dots, or put them away.
+   *
+   * One custom property per frame; each dot works out its own share in CSS.
+   * The current line is dimmed rather than hidden while the dots are up, so the
+   * last thing sung stays readable — which is what a player does, and what
+   * somebody glancing at a stream actually wants.
+   */
+  function showGap(amount) {
+    const showing = amount !== null && body.dataset.lyrics !== 'off' && !state?.privacy;
+
+    els.dots.hidden = !showing;
+    body.dataset.gap = showing ? 'yes' : 'no';
+    if (!showing) return;
+
+    // Each dot owns a third of the wait, and the one currently filling swells a
+    // little past the others so the eye has somewhere to rest.
+    for (let i = 0; i < DOT_STARTS.length; i++) {
+      const dot = els.dots.children[i];
+      if (!dot) continue;
+      const share = amount - DOT_STARTS[i];
+      dot.style.opacity = String(clamp(share * 3.2, 0.22, 1));
+      dot.style.transform = `scale(${clamp(0.62 + share * 1.6, 0.62, 1.18)})`;
+    }
+  }
+
   function line(text, current, arriving) {
     const div = document.createElement('div');
     div.className = current ? 'line now-line' : 'line';
     div.textContent = text;
+    div.style.setProperty('--row', String(els.lyrics.childElementCount));
 
     if (arriving && body.dataset.smooth !== 'off') {
       div.classList.add('entering');
@@ -360,6 +444,10 @@
   function idleText() {
     if (body.dataset.hideIdle !== 'no') return '';
     return body.dataset.idleText || '';
+  }
+
+  function clamp(value, low, high) {
+    return Math.max(low, Math.min(high, value));
   }
 
   function clock(seconds) {

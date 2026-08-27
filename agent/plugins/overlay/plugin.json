@@ -1,0 +1,203 @@
+{
+  "engine": 1,
+  "id": "overlay",
+  "surface": true,
+  "version": "1.0.0",
+  "name": {
+    "en": "Stream overlay",
+    "de": "Stream-Overlay",
+    "pl": "Nakładka na stream",
+    "ru": "Оверлей для стрима",
+    "es": "Superposición para el directo"
+  },
+  "author": "Overtone",
+  "description": {
+    "en": "A page for OBS showing the song, the time and the lyric line.",
+    "de": "Eine Seite für OBS mit Song, Zeit und mitlaufender Songzeile.",
+    "pl": "Strona do OBS pokazująca utwór, czas i wers tekstu.",
+    "ru": "Страница для OBS с треком, временем и строкой текста.",
+    "es": "Una página para OBS con la canción, el tiempo y la letra."
+  },
+  "settings": [
+    {
+      "type": "choice",
+      "key": "style",
+      "default": "card",
+      "options": [
+        { "value": "card", "label": { "en": "Card", "de": "Karte", "pl": "Karta", "ru": "Карточка", "es": "Tarjeta" } },
+        { "value": "bar", "label": { "en": "Bar", "de": "Leiste", "pl": "Pasek", "ru": "Полоса", "es": "Barra" } },
+        { "value": "lyrics", "label": { "en": "Lyrics", "de": "Songtext", "pl": "Tekst", "ru": "Текст", "es": "Letra" } },
+        { "value": "ticker", "label": { "en": "Ticker", "de": "Laufband", "pl": "Pasek przewijany", "ru": "Бегущая строка", "es": "Cinta" } }
+      ],
+      "label": {
+        "en": "Style",
+        "de": "Stil",
+        "pl": "Styl",
+        "ru": "Стиль",
+        "es": "Estilo"
+      },
+      "help": {
+        "en": "One scene can run a bar and another the lyrics — add ?style=bar to the address.",
+        "de": "Eine Szene kann die Leiste zeigen und eine andere den Songtext — hänge ?style=bar an die Adresse.",
+        "pl": "Jedna scena może mieć pasek, a druga tekst — dodaj ?style=bar do adresu.",
+        "ru": "Одна сцена может показывать полосу, другая — текст: добавьте ?style=bar к адресу.",
+        "es": "Una escena puede llevar la barra y otra la letra — añade ?style=bar a la dirección."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "background",
+      "default": "none",
+      "options": [
+        { "value": "none", "label": { "en": "Transparent", "de": "Durchsichtig", "pl": "Przezroczyste", "ru": "Прозрачный", "es": "Transparente" } },
+        { "value": "soft", "label": { "en": "Soft", "de": "Weich", "pl": "Miękkie", "ru": "Мягкий", "es": "Suave" } },
+        { "value": "solid", "label": { "en": "Solid", "de": "Deckend", "pl": "Pełne", "ru": "Плотный", "es": "Sólido" } }
+      ],
+      "label": {
+        "en": "Background",
+        "de": "Hintergrund",
+        "pl": "Tło",
+        "ru": "Фон",
+        "es": "Fondo"
+      }
+    },
+    {
+      "type": "colour",
+      "key": "accent",
+      "default": "#7d6cf6",
+      "label": {
+        "en": "Accent colour",
+        "de": "Akzentfarbe",
+        "pl": "Kolor akcentu",
+        "ru": "Цвет акцента",
+        "es": "Color de acento"
+      }
+    },
+    {
+      "type": "range",
+      "key": "scale",
+      "default": 100,
+      "min": 60,
+      "max": 200,
+      "step": 5,
+      "label": {
+        "en": "Size",
+        "de": "Größe",
+        "pl": "Rozmiar",
+        "ru": "Размер",
+        "es": "Tamaño"
+      },
+      "help": {
+        "en": "Per cent. Easier than resizing the Browser Source, which only crops it.",
+        "de": "Prozent. Einfacher als die Browser-Quelle zu ziehen, die nur beschneidet.",
+        "pl": "W procentach. Prościej niż skalować źródło, które tylko przycina.",
+        "ru": "В процентах. Проще, чем менять размер источника, который лишь обрезает.",
+        "es": "En por ciento. Más fácil que redimensionar la fuente, que solo recorta."
+      }
+    },
+    {
+      "type": "switch",
+      "key": "showCover",
+      "default": true,
+      "label": {
+        "en": "Cover art",
+        "de": "Cover anzeigen",
+        "pl": "Okładka",
+        "ru": "Обложка",
+        "es": "Portada"
+      }
+    },
+    {
+      "type": "switch",
+      "key": "showTimes",
+      "default": true,
+      "label": {
+        "en": "Progress and time",
+        "de": "Fortschritt und Zeit",
+        "pl": "Postęp i czas",
+        "ru": "Прогресс и время",
+        "es": "Progreso y tiempo"
+      }
+    },
+    {
+      "type": "switch",
+      "key": "showLyrics",
+      "default": true,
+      "label": {
+        "en": "The lyric line",
+        "de": "Die Songzeile",
+        "pl": "Wers tekstu",
+        "ru": "Строка текста",
+        "es": "La línea de la letra"
+      },
+      "help": {
+        "en": "Off unless lyrics are switched on in Overtone as well.",
+        "de": "Wirkt nur, wenn Lyrics auch in Overtone eingeschaltet sind.",
+        "pl": "Działa tylko, gdy tekst jest włączony także w Overtone.",
+        "ru": "Работает, только если текст включён и в самом Overtone.",
+        "es": "Solo si la letra está activada también en Overtone."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "lyricLines",
+      "default": "3",
+      "options": [
+        { "value": "1", "label": { "en": "One line", "de": "Eine Zeile", "pl": "Jeden wers", "ru": "Одна строка", "es": "Una línea" } },
+        { "value": "3", "label": { "en": "Three", "de": "Drei", "pl": "Trzy", "ru": "Три", "es": "Tres" } },
+        { "value": "5", "label": { "en": "Five", "de": "Fünf", "pl": "Pięć", "ru": "Пять", "es": "Cinco" } }
+      ],
+      "showIf": { "key": "showLyrics", "equals": true },
+      "label": {
+        "en": "Lines at once",
+        "de": "Zeilen auf einmal",
+        "pl": "Wersów naraz",
+        "ru": "Строк сразу",
+        "es": "Líneas a la vez"
+      },
+      "help": {
+        "en": "More than one only works with lyrics from a file — subtitles arrive one at a time.",
+        "de": "Mehr als eine geht nur mit Lyrics aus einer Datei — Untertitel kommen einzeln.",
+        "pl": "Więcej niż jeden działa tylko z tekstem z pliku — napisy przychodzą pojedynczo.",
+        "ru": "Больше одной — только с текстом из файла: субтитры приходят по одной.",
+        "es": "Más de una solo con letra de un archivo — los subtítulos llegan de una en una."
+      }
+    },
+    {
+      "type": "switch",
+      "key": "hideIdle",
+      "default": true,
+      "label": {
+        "en": "Disappear when nothing plays",
+        "de": "Verschwinden, wenn nichts läuft",
+        "pl": "Znikaj, gdy nic nie gra",
+        "ru": "Исчезать, когда ничего не играет",
+        "es": "Desaparecer cuando no suena nada"
+      }
+    },
+    {
+      "type": "text",
+      "key": "idleText",
+      "default": "",
+      "maxLength": 60,
+      "showIf": { "key": "hideIdle", "equals": false },
+      "label": {
+        "en": "Show instead",
+        "de": "Stattdessen zeigen",
+        "pl": "Pokaż zamiast",
+        "ru": "Показывать вместо",
+        "es": "Mostrar en su lugar"
+      }
+    },
+    {
+      "type": "note",
+      "text": {
+        "en": "Add a Browser Source in OBS and paste the address above. 900 × 200 suits the card and the bar; 900 × 320 the lyrics.",
+        "de": "Füge in OBS eine Browser-Quelle hinzu und setze die Adresse oben ein. 900 × 200 passt für Karte und Leiste, 900 × 320 für den Songtext.",
+        "pl": "Dodaj w OBS źródło przeglądarki i wklej adres powyżej. 900 × 200 pasuje do karty i paska, 900 × 320 do tekstu.",
+        "ru": "Добавьте в OBS «Браузер» и вставьте адрес выше. 900 × 200 подходит для карточки и полосы, 900 × 320 — для текста.",
+        "es": "Añade una fuente de navegador en OBS y pega la dirección de arriba. 900 × 200 va bien para la tarjeta y la barra; 900 × 320 para la letra."
+      }
+    }
+  ]
+}

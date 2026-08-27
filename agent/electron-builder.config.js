@@ -36,6 +36,9 @@ module.exports = {
     // The wizard tells people to load this folder, so it has to exist beside
     // the installed app rather than only in a checkout.
     { from: '../extension', to: 'extension' },
+    // Not in `files`: a surface's pages are served to a browser and the folder
+    // is what the panel opens, so it has to be readable rather than in the asar.
+    { from: 'plugins', to: 'plugins' },
     { from: '../LICENSE', to: 'LICENSE' },
     { from: '../THIRD-PARTY-NOTICES.md', to: 'THIRD-PARTY-NOTICES.md' },
   ],

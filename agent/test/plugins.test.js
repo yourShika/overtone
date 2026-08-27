@@ -766,3 +766,43 @@ test('a method other than GET or HEAD is refused', async () => {
     assert.equal((await ask(`/s/${server.token}/demo/`, { method: 'HEAD' })).status, 200);
   });
 });
+
+test('no plugin manifest hides inside the app source', () => {
+  // The bundled plugins live in agent/plugins, outside every root the i18n
+  // sweep walks. Moving one under agent/src would break two of those guarantees
+  // at once — and quietly, in a suite that is about translations. This turns
+  // that into a red test with a name that says what happened.
+  for (const root of ['src', 'ui', nodePath.join('..', 'extension', 'src')]) {
+    const found = [];
+    const walk = (dir) => {
+      for (const entry of require('node:fs').readdirSync(dir, { withFileTypes: true })) {
+        const full = nodePath.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name === 'plugin.json') found.push(full);
+      }
+    };
+    walk(nodePath.join(__dirname, '..', root));
+    assert.deepEqual(found, [], `${root} enthält ein Plugin-Manifest`);
+  }
+});
+
+test('the bundled overlay is a manifest this app would accept from anyone', () => {
+  // It ships with Overtone but goes through the same door as a folder somebody
+  // dropped in — if it needed an exception, the door would be the wrong shape.
+  const raw = require('node:fs').readFileSync(
+    nodePath.join(__dirname, '..', 'plugins', 'overlay', 'plugin.json'),
+    'utf8',
+  );
+  const result = parseManifest(raw, { id: 'overlay' });
+
+  assert.equal(result.problem, undefined);
+  assert.equal(result.manifest.surface, true);
+  assert.equal(result.manifest.main, undefined, 'eine Oberfläche führt keinen Code im Agenten aus');
+
+  // Every label carries at least English, or the panel would draw a blank.
+  for (const field of result.manifest.settings) {
+    const text = field.type === 'note' ? field.text : field.label;
+    assert.equal(typeof pick(text, 'en'), 'string');
+    assert.notEqual(pick(text, 'en'), '', `${field.key || 'note'} ohne englischen Text`);
+  }
+});

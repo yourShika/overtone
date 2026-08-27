@@ -494,4 +494,23 @@ module.exports = {
   'msg.plugFound': 'Plugin loaded: {id}',
   'msg.plugBroken': 'Plugin {id} was refused: {reason}',
   'msg.plugIdTaken': 'Plugin {id} was ignored: a plugin of that name ships with Overtone',
+  'plug.address': 'Address',
+  'plug.addressHelp':
+    'Add a Browser Source in OBS and paste this. 900 × 200 suits the card and the bar, 900 × 320 the lyrics.',
+  'plug.addressLocal':
+    'It only works on this computer. Overtone turns away anything that did not ask for 127.0.0.1 by name.',
+  'plug.copy': 'Copy',
+  'plug.copied': 'Copied',
+  'plug.rotate': 'New address',
+  'plug.rotateHelp':
+    'Treat the address like a password: anyone who has it can see what you are playing. A new one retires the old, so every Browser Source needs pasting again.',
+  'plug.serverOff': 'No surface is switched on, so nothing is listening.',
+  'plug.serverFailed': 'Nothing could be opened on port {port}: {error}',
+  'plug.port': 'Port',
+  'plug.portHelp':
+    'Only worth changing if something else on this computer already uses the number.',
+  'msg.plugServerUp': 'Surfaces are available on port {port}',
+  'msg.plugServerDown': 'The surface server stopped, because nothing needs it',
+  'msg.plugServerFailed': 'The surface server could not start on port {port}: {error}',
+  'msg.plugRejected': 'A request to the surface server was turned away: {reason}',
 };

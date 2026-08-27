@@ -24,6 +24,7 @@ const INPUTS = {
   transcribeLanguage: 'text',
   transcribeMaxMinutes: 'number',
   transcribeAfterSeconds: 'number',
+  pluginSurfacePort: 'number',
   lyricsOffset: 'number',
 };
 
@@ -44,6 +45,8 @@ let libSelected = null;
 let libEditing = false;
 /** The plugin folder, as last read. Refreshed when the panel is opened. */
 let plugEntries = [];
+/** Whether anything is listening, and on what address. */
+let plugSurface = { running: false, port: 0, error: null, addresses: {} };
 
 /** Which panel is showing, so re-selecting the same one is not a fresh open. */
 let currentPanel = 'conn';
@@ -453,6 +456,7 @@ function markLanguage() {
 
 async function loadPlugins() {
   plugEntries = await api.plugins.list();
+  plugSurface = await api.plugins.surface();
   renderPlugins();
 }
 
@@ -543,6 +547,8 @@ function pluginCard(plugin) {
     renderPlugins();
   });
   card.appendChild(row);
+
+  if (plugin.surface && plugin.enabled) card.appendChild(addressBlock(plugin));
 
   if (!plugin.settings.length) {
     card.appendChild(hint(T.t('plug.noSettings')));
@@ -671,6 +677,73 @@ function pluginField(plugin, field) {
 
   if (field.help) wrap.appendChild(hint(field.help));
   return wrap;
+}
+
+/**
+ * What to paste into OBS, and what that address is.
+ *
+ * Shown only while something is actually listening: an address that answers
+ * nothing is worse than none, because it looks like the thing to try when the
+ * overlay stays blank.
+ */
+function addressBlock(plugin) {
+  const box = document.createElement('div');
+  box.className = 'field';
+
+  const head = document.createElement('span');
+  head.className = 'field-head';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = T.t('plug.address');
+  head.appendChild(label);
+  box.appendChild(head);
+
+  if (!plugSurface.running) {
+    box.appendChild(
+      hint(
+        plugSurface.error
+          ? T.t('plug.serverFailed', { port: config.pluginSurfacePort, error: plugSurface.error })
+          : T.t('plug.serverOff'),
+      ),
+    );
+    return box;
+  }
+
+  const url = plugSurface.addresses[plugin.id] || '';
+  const path = document.createElement('p');
+  path.className = 'path';
+  path.textContent = url;
+  box.appendChild(path);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+
+  const copy = document.createElement('button');
+  copy.className = 'btn';
+  copy.type = 'button';
+  copy.textContent = T.t('plug.copy');
+  copy.addEventListener('click', () => {
+    navigator.clipboard?.writeText(url).catch(() => {});
+    copy.textContent = T.t('plug.copied');
+    setTimeout(() => (copy.textContent = T.t('plug.copy')), 1500);
+  });
+  row.appendChild(copy);
+
+  const rotate = document.createElement('button');
+  rotate.className = 'btn ghost';
+  rotate.type = 'button';
+  rotate.textContent = T.t('plug.rotate');
+  rotate.addEventListener('click', async () => {
+    await api.plugins.newAddress();
+    await loadPlugins();
+  });
+  row.appendChild(rotate);
+  box.appendChild(row);
+
+  box.appendChild(hint(T.t('plug.addressHelp')));
+  box.appendChild(hint(T.t('plug.addressLocal')));
+  box.appendChild(hint(T.t('plug.rotateHelp')));
+  return box;
 }
 
 function chip(text, className) {

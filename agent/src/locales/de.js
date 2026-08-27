@@ -477,4 +477,23 @@ module.exports = {
   'msg.plugFound': 'Plugin geladen: {id}',
   'msg.plugBroken': 'Plugin {id} wurde abgewiesen: {reason}',
   'msg.plugIdTaken': 'Plugin {id} übergangen: ein Plugin dieses Namens liegt Overtone bei',
+  'plug.address': 'Adresse',
+  'plug.addressHelp':
+    'Füge in OBS eine Browser-Quelle hinzu und setze das hier ein. 900 × 200 passt für Karte und Leiste, 900 × 320 für den Songtext.',
+  'plug.addressLocal':
+    'Sie funktioniert nur auf diesem Rechner. Overtone weist alles ab, das nicht ausdrücklich nach 127.0.0.1 gefragt hat.',
+  'plug.copy': 'Kopieren',
+  'plug.copied': 'Kopiert',
+  'plug.rotate': 'Neue Adresse',
+  'plug.rotateHelp':
+    'Behandle die Adresse wie ein Passwort: wer sie hat, sieht was bei dir läuft. Eine neue setzt die alte außer Kraft, danach muss jede Browser-Quelle neu eingesetzt werden.',
+  'plug.serverOff': 'Keine Oberfläche ist eingeschaltet, also hört auch nichts zu.',
+  'plug.serverFailed': 'Auf Port {port} ließ sich nichts öffnen: {error}',
+  'plug.port': 'Port',
+  'plug.portHelp':
+    'Nur zu ändern, wenn auf diesem Rechner schon etwas anderes diese Nummer benutzt.',
+  'msg.plugServerUp': 'Oberflächen sind auf Port {port} erreichbar',
+  'msg.plugServerDown': 'Der Oberflächen-Server wurde beendet, weil ihn nichts mehr braucht',
+  'msg.plugServerFailed': 'Der Oberflächen-Server konnte auf Port {port} nicht starten: {error}',
+  'msg.plugRejected': 'Eine Anfrage an den Oberflächen-Server wurde abgewiesen: {reason}',
 };

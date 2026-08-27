@@ -1378,7 +1378,7 @@ function registerIpc() {
     port: surface.port,
     error: surface.error,
     addresses: Object.fromEntries(
-      plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id)]),
+      plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id, p.values)]),
     ),
   }));
 

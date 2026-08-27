@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Overtone overlay</title>
+    <link rel="stylesheet" href="overlay.css" />
+  </head>
+  <body data-style="card" data-background="none" data-state="waiting">
+    <!--
+      One DOM, four stylesheets. The class names below are the contract: a style
+      rearranges and hides, it never expects a different structure, so a fifth
+      style is a block of CSS and nothing else.
+
+      Every text node here is empty. Everything is written with textContent from
+      the feed, which is somebody's song title and has to be treated as text.
+    -->
+    <div class="wrap" id="wrap">
+      <div class="now">
+        <img class="cover" id="cover" alt="" />
+
+        <div class="text">
+          <div class="title" id="title"></div>
+          <div class="artist" id="artist"></div>
+
+          <div class="times" id="times">
+            <span class="elapsed" id="elapsed">0:00</span>
+            <span class="bar"><i class="fill" id="fill"></i></span>
+            <span class="total" id="total">0:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lyrics" id="lyrics"></div>
+
+      <div class="idle" id="idle"></div>
+    </div>
+
+    <script src="overlay.js"></script>
+  </body>
+</html>

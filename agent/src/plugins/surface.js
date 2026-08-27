@@ -64,9 +64,30 @@ class SurfaceServer {
     return this.server !== null;
   }
 
-  /** The address to paste into OBS, or '' when nothing is listening. */
-  addressFor(id) {
-    return this.running ? `http://127.0.0.1:${this.port}/s/${this.token}/${id}/` : '';
+  /**
+   * The address to paste into OBS, or '' when nothing is listening.
+   *
+   * The plugin's settings ride along as a query string rather than travelling
+   * over the feed. That way the panel produces one line somebody can paste, and
+   * a second scene can run a different style by editing the copy it pasted —
+   * without a per-source setting existing anywhere in Overtone.
+   */
+  addressFor(id, values) {
+    if (!this.running) return '';
+
+    const base = `http://127.0.0.1:${this.port}/s/${this.token}/${id}/`;
+    if (!values || typeof values !== 'object') return base;
+
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(values)) {
+      // An empty string is "not set", not a value worth putting in a URL that
+      // somebody has to read and paste.
+      if (value === '' || value === null || value === undefined) continue;
+      query.set(key, String(value));
+    }
+
+    const tail = query.toString();
+    return tail ? `${base}?${tail}` : base;
   }
 
   /**

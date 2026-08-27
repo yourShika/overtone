@@ -477,4 +477,23 @@ module.exports = {
   'msg.plugFound': 'Complemento cargado: {id}',
   'msg.plugBroken': 'Complemento {id} rechazado: {reason}',
   'msg.plugIdTaken': 'Complemento {id} ignorado: ya viene uno con ese nombre',
+  'plug.address': 'Dirección',
+  'plug.addressHelp':
+    'Añade una fuente de navegador en OBS y pega esto. 900 × 200 va bien para la tarjeta y la barra, 900 × 320 para la letra.',
+  'plug.addressLocal':
+    'Solo funciona en este ordenador. Overtone rechaza todo lo que no haya pedido 127.0.0.1 por su nombre.',
+  'plug.copy': 'Copiar',
+  'plug.copied': 'Copiado',
+  'plug.rotate': 'Dirección nueva',
+  'plug.rotateHelp':
+    'Trata la dirección como una contraseña: quien la tenga ve lo que suena. Una nueva anula la anterior, así que habrá que pegarla otra vez en cada fuente.',
+  'plug.serverOff': 'No hay ninguna superficie activa, así que no hay nada escuchando.',
+  'plug.serverFailed': 'No se ha podido abrir nada en el puerto {port}: {error}',
+  'plug.port': 'Puerto',
+  'plug.portHelp': 'Solo vale la pena cambiarlo si otra cosa de este ordenador ya usa ese número.',
+  'msg.plugServerUp': 'Las superficies están disponibles en el puerto {port}',
+  'msg.plugServerDown': 'El servidor de superficies se ha parado porque ya no hace falta',
+  'msg.plugServerFailed':
+    'El servidor de superficies no ha podido arrancar en el puerto {port}: {error}',
+  'msg.plugRejected': 'Se ha rechazado una petición al servidor de superficies: {reason}',
 };

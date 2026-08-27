@@ -472,4 +472,23 @@ module.exports = {
   'msg.plugFound': 'Wtyczka wczytana: {id}',
   'msg.plugBroken': 'Wtyczka {id} odrzucona: {reason}',
   'msg.plugIdTaken': 'Wtyczka {id} pominięta: wtyczka o tej nazwie jest dołączona do Overtone',
+  'plug.address': 'Adres',
+  'plug.addressHelp':
+    'Dodaj w OBS źródło przeglądarki i wklej to. 900 × 200 pasuje do karty i paska, 900 × 320 do tekstu.',
+  'plug.addressLocal':
+    'Działa tylko na tym komputerze. Overtone odrzuca wszystko, co nie zapytało wprost o 127.0.0.1.',
+  'plug.copy': 'Kopiuj',
+  'plug.copied': 'Skopiowano',
+  'plug.rotate': 'Nowy adres',
+  'plug.rotateHelp':
+    'Traktuj adres jak hasło: kto go ma, widzi co grasz. Nowy unieważnia stary, więc każde źródło przeglądarki trzeba wkleić od nowa.',
+  'plug.serverOff': 'Żadna powierzchnia nie jest włączona, więc nic nie nasłuchuje.',
+  'plug.serverFailed': 'Na porcie {port} nie udało się nic otworzyć: {error}',
+  'plug.port': 'Port',
+  'plug.portHelp':
+    'Warto zmienić tylko wtedy, gdy tego numeru używa już coś innego na tym komputerze.',
+  'msg.plugServerUp': 'Powierzchnie są dostępne na porcie {port}',
+  'msg.plugServerDown': 'Serwer powierzchni zatrzymany, bo nic go nie potrzebuje',
+  'msg.plugServerFailed': 'Serwer powierzchni nie wystartował na porcie {port}: {error}',
+  'msg.plugRejected': 'Żądanie do serwera powierzchni odrzucone: {reason}',
 };

@@ -9,6 +9,10 @@
  * rate. So a progress bar moves smoothly and a lyric lands on the beat while
  * the connection stays quiet for minutes at a time.
  *
+ * Every setting arrives in the query string, which is what lets one address
+ * serve several Browser Sources: paste it twice, change one value in the second,
+ * and the two show different things from the same feed.
+ *
  * Everything from the feed is written with textContent. It is a song title
  * somebody else chose, arriving over a socket, and this page has no business
  * treating it as anything but text.
@@ -19,6 +23,7 @@
 
   const body = document.body;
   const els = {
+    wrap: $('wrap'),
     cover: $('cover'),
     title: $('title'),
     artist: $('artist'),
@@ -29,20 +34,34 @@
     idle: $('idle'),
   };
 
-  /** Styles a query string may ask for. Anything else is ignored. */
-  const STYLES = ['card', 'bar', 'lyrics', 'ticker'];
-  const BACKGROUNDS = ['none', 'soft', 'solid'];
+  /**
+   * What a query string may ask for.
+   *
+   * Read from fixed lists rather than trusted: this is a URL anybody can edit,
+   * and every value below ends up in a data attribute the stylesheet keys off.
+   */
+  const ALLOWED = {
+    style: ['card', 'bar', 'lyrics', 'ticker'],
+    background: ['none', 'glow', 'soft', 'solid'],
+    font: ['sans', 'round', 'serif', 'mono', 'condensed'],
+    lyricStyle: ['spotify', 'fade', 'slideUp', 'slideLeft', 'slideRight', 'plain'],
+    align: ['left', 'center', 'right'],
+    anchor: ['top', 'middle', 'bottom'],
+  };
 
   /** How long a silent agent may be gone before the overlay fades. */
   const GONE_AFTER_MS = 10_000;
+  /** Long enough to read as a change of subject, short enough not to miss a line. */
+  const SWAP_MS = 260;
 
-  let feed = null;
-  /** The last payload, and when this page received it. */
   let state = null;
   let receivedAt = 0;
   /** Walks forward through the cue list; never searches backwards. */
   let cueIndex = 0;
   let lastRenderedLine = -1;
+  /** Cue text currently on screen, so only genuinely new lines animate in. */
+  let onScreen = [];
+  let swapTimer = null;
 
   start();
 
@@ -55,22 +74,14 @@
     document.addEventListener('visibilitychange', advance);
   }
 
-  /**
-   * Per-source overrides.
-   *
-   * The panel sets the defaults for everyone; the query string lets one scene
-   * run the bar while another runs the lyrics from the same address. Read from
-   * a fixed list rather than trusted — this is in a URL anyone can edit.
-   */
   function applyQuery() {
     const params = new URLSearchParams(location.search);
     const on = (key) => params.get(key) !== 'false';
 
-    const style = params.get('style');
-    if (STYLES.includes(style)) body.dataset.style = style;
-
-    const background = params.get('background');
-    if (BACKGROUNDS.includes(background)) body.dataset.background = background;
+    for (const [key, allowed] of Object.entries(ALLOWED)) {
+      const value = params.get(key);
+      if (allowed.includes(value)) body.dataset[attr(key)] = value;
+    }
 
     const scale = Number(params.get('scale'));
     if (Number.isFinite(scale) && scale >= 60 && scale <= 200) {
@@ -78,30 +89,33 @@
     }
 
     // #rrggbb only. A colour goes straight into a custom property, and a custom
-    // property is somewhere CSS will happily accept far more than a colour.
+    // property is somewhere CSS will accept far more than a colour.
     const accent = params.get('accent');
     if (accent && /^#[0-9a-fA-F]{6}$/.test(accent)) {
       document.documentElement.style.setProperty('--accent', accent);
     }
 
-    // The switches. Absent means on, because that is what the manifest
-    // defaults to and an absent parameter is one the panel chose not to send.
+    // Absent means on: an absent parameter is one the panel chose not to send,
+    // and every one of these defaults to true in the manifest.
     body.dataset.cover = on('showCover') ? 'on' : 'off';
     body.dataset.times = on('showTimes') ? 'on' : 'off';
     body.dataset.lyrics = on('showLyrics') ? 'on' : 'off';
+    body.dataset.smooth = on('smooth') ? 'on' : 'off';
 
     const lines = Number(params.get('lyricLines'));
     body.dataset.lines = String([1, 3, 5].includes(lines) ? lines : 3);
-
-    // hideIdle false means the user wants something on screen instead, which is
-    // only meaningful if they also wrote what.
     body.dataset.hideIdle = params.get('hideIdle') === 'false' ? 'no' : 'yes';
+  }
+
+  /** lyricStyle -> data-lyric, so the stylesheet reads a shorter name. */
+  function attr(key) {
+    return key === 'lyricStyle' ? 'lyric' : key;
   }
 
   function connect() {
     // Relative, so the token in our own path travels with it and never has to
     // be written down anywhere in this file.
-    feed = new EventSource('feed');
+    const feed = new EventSource('feed');
 
     feed.addEventListener('message', (event) => {
       let next;
@@ -127,11 +141,28 @@
     receivedAt = performance.now();
     delete body.dataset.stale;
 
-    if (newTrack) {
-      cueIndex = 0;
-      lastRenderedLine = -1;
+    if (!newTrack) {
+      paint();
+      return;
     }
-    paint();
+
+    cueIndex = 0;
+    lastRenderedLine = -1;
+    onScreen = [];
+
+    // A different song is a change of subject, so the block fades out, swaps,
+    // and fades back rather than rewriting itself word by word under the eye.
+    if (body.dataset.smooth === 'off') {
+      paint();
+      return;
+    }
+
+    els.wrap.classList.add('changing');
+    clearTimeout(swapTimer);
+    swapTimer = setTimeout(() => {
+      paint();
+      els.wrap.classList.remove('changing');
+    }, SWAP_MS);
   }
 
   /** Everything that only changes when a message arrives. */
@@ -225,44 +256,78 @@
     return state.cues[cueIndex] && state.cues[cueIndex].t <= at ? cueIndex : -1;
   }
 
+  /**
+   * Draw the visible window of lines.
+   *
+   * Rebuilt each time rather than diffed, because the set shifts by one and the
+   * cheapest correct thing is to start over. What is not thrown away is the
+   * knowledge of which texts were already up: a line that was on screen a
+   * moment ago must not animate in again, or every change would ripple through
+   * all of them at once.
+   */
   function renderLyrics(index) {
     lastRenderedLine = index;
     els.lyrics.textContent = '';
 
-    if (!state || state.privacy) return;
+    if (!state || state.privacy) {
+      onScreen = [];
+      return;
+    }
 
     // Subtitles arrive one at a time, so there is nothing to read ahead and the
     // page must not pretend otherwise.
     if (state.mode === 'caption') {
-      if (state.line) els.lyrics.appendChild(line(state.line, true));
+      const texts = state.line ? [state.line] : [];
+      if (texts.length) els.lyrics.appendChild(line(state.line, true, !onScreen.includes(state.line)));
+      onScreen = texts;
       return;
     }
 
-    if (state.mode !== 'timed' || index < 0) return;
+    if (state.mode !== 'timed' || index < 0) {
+      onScreen = [];
+      return;
+    }
 
     const count = Number(body.dataset.lines) || 3;
+    // With one line there is nothing to lead with; with more, keep one behind
+    // so the reader can see what was just sung.
     const before = count > 1 ? 1 : 0;
 
+    const texts = [];
     for (let i = index - before; i < index - before + count; i++) {
       const cue = state.cues[i];
       if (!cue) continue;
-      els.lyrics.appendChild(line(cue.text, i === index));
+      texts.push(cue.text);
+      els.lyrics.appendChild(line(cue.text, i === index, !onScreen.includes(cue.text)));
     }
+    onScreen = texts;
   }
 
-  function line(text, current) {
+  /**
+   * One line, optionally arriving.
+   *
+   * `entering` is removed on the next frame rather than immediately: the
+   * displaced state has to be painted once before the transition to the settled
+   * one means anything.
+   */
+  function line(text, current, arriving) {
     const div = document.createElement('div');
     div.className = current ? 'line now-line' : 'line';
     div.textContent = text;
+
+    if (arriving && body.dataset.smooth !== 'off') {
+      div.classList.add('entering');
+      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('entering')));
+    }
     return div;
   }
 
   /**
    * What to show with nothing playing.
    *
-   * Three cases, kept apart. Before the first message ever arrives the page
-   * shows nothing at all — a banner burned into a stream because the agent had
-   * not started yet would be the worst of them.
+   * Before the first message ever arrives the page shows nothing at all — a
+   * banner burned into a stream because the agent had not started yet would be
+   * the worst of the three idle cases.
    */
   function idleText() {
     if (body.dataset.hideIdle !== 'no') return '';

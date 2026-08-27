@@ -160,6 +160,7 @@ Still stuck? [Open an issue](../../issues) with what you expected and what happe
 
 | | |
 |---|---|
+| [Plugins](plugins/) | The overlay, how to add it, and how to write your own |
 | [Settings reference](docs/CONFIGURATION.md) | Every option, and what it does |
 | [Architecture](docs/ARCHITECTURE.md) | How the parts fit together |
 | [Bridge protocol](docs/PROTOCOL.md) | What the extension sends the agent |

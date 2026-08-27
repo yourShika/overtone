@@ -781,7 +781,7 @@ test('the example overlay is a manifest this app would accept from anyone', () =
   // exactly the door a folder somebody dropped in goes through. If it needed an
   // exception, the door would be the wrong shape.
   const raw = require('node:fs').readFileSync(
-    nodePath.join(__dirname, '..', 'examples', 'overlay', 'plugin.json'),
+    nodePath.join(__dirname, '..', '..', 'plugins', 'overlay', 'plugin.json'),
     'utf8',
   );
   const result = parseManifest(raw, { id: 'overlay' });

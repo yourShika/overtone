@@ -1,0 +1,471 @@
+/*
+ * Four layouts and five ways for a lyric to change, over one DOM.
+ *
+ * A Browser Source is a transparent page on top of a scene, so the background
+ * is nothing unless somebody asks for one, and every colour assumes it is
+ * sitting on top of something unpredictable — hence the shadows, which are what
+ * keeps white text readable over a white game.
+ *
+ * Nothing load-bearing uses backdrop-filter: it depends on OBS's hardware
+ * acceleration and quietly does nothing on some machines. The soft background
+ * is a plain translucent fill that happens to be improved by it.
+ *
+ * Class names are the contract between this file and overlay.js. A new layout
+ * is a block of CSS here and an entry in the STYLES list there; nothing else.
+ */
+
+:root {
+  --accent: #7d6cf6;
+  --scale: 1;
+  --ink: #ffffff;
+  --dim: rgba(255, 255, 255, 0.72);
+  --ghost: rgba(255, 255, 255, 0.4);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.75), 0 0 2px rgba(0, 0, 0, 0.9);
+  --pad: 18px;
+  --radius: 16px;
+  /* Every transition reads this, so one switch turns the lot off. */
+  --ease: 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  --font: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+body[data-smooth="off"] {
+  --ease: 0ms linear;
+}
+
+/* Whatever the machine has. A bundled font would sit wrong beside the rest of
+   somebody's scene, and downloading one is a request we do not get to make. */
+body[data-font="round"] {
+  --font: "Nunito", "Varela Round", "Segoe UI Variable", system-ui, sans-serif;
+}
+body[data-font="serif"] {
+  --font: "Iowan Old Style", Georgia, "Times New Roman", serif;
+}
+body[data-font="mono"] {
+  --font: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+body[data-font="condensed"] {
+  --font: "Roboto Condensed", "Archivo Narrow", "Segoe UI Semibold", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--ink);
+  /* OBS renders at whatever size the source is; this is the user's own zoom. */
+  font-size: calc(16px * var(--scale));
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  padding: var(--pad);
+  height: 100%;
+  opacity: 1;
+  transition: opacity var(--ease);
+}
+
+/* Where the content sits inside a source that is bigger than it needs. */
+body[data-anchor="top"] .wrap {
+  justify-content: flex-start;
+}
+body[data-anchor="middle"] .wrap {
+  justify-content: center;
+}
+body[data-anchor="bottom"] .wrap {
+  justify-content: flex-end;
+}
+
+body[data-align="center"] .wrap {
+  align-items: center;
+  text-align: center;
+}
+body[data-align="right"] .wrap {
+  align-items: flex-end;
+  text-align: right;
+}
+body[data-align="center"] .now,
+body[data-align="right"] .now {
+  /* The row itself stays as wide as its content so the alignment shows. */
+  width: auto;
+  max-width: 100%;
+}
+
+/* Three idle cases, kept apart — see overlay.js. */
+body[data-state="waiting"] .wrap,
+body[data-state="gone"] .wrap {
+  opacity: 0;
+}
+body[data-state="idle"] .now,
+body[data-state="idle"] .lyrics {
+  display: none;
+}
+body[data-state="playing"] .idle {
+  display: none;
+}
+
+/* A song changing is a change of subject, so the whole block breathes rather
+   than swapping its words in place. */
+.wrap.changing {
+  opacity: 0;
+}
+
+.now {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  min-width: 0;
+}
+
+.cover {
+  flex: none;
+  width: 4.5em;
+  height: 4.5em;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.35);
+  transition: opacity var(--ease);
+}
+.cover:not([src]),
+body[data-cover="off"] .cover {
+  display: none;
+}
+
+.text {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 1.4em;
+  line-height: 1.2;
+  text-shadow: var(--shadow);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artist {
+  margin-top: 0.15em;
+  font-size: 1em;
+  color: var(--dim);
+  text-shadow: var(--shadow);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.times {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin-top: 0.6em;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8em;
+  color: var(--dim);
+  text-shadow: var(--shadow);
+}
+body[data-times="off"] .times {
+  display: none;
+}
+
+.bar {
+  flex: 1;
+  min-width: 4em;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+/* --- lyrics ------------------------------------------------------------ */
+
+.lyrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  min-height: 0;
+}
+body[data-lyrics="off"] .lyrics {
+  display: none;
+}
+
+.line {
+  font-size: 1.15em;
+  line-height: 1.35;
+  text-shadow: var(--shadow);
+  color: var(--ghost);
+  transition:
+    opacity var(--ease),
+    color var(--ease),
+    transform var(--ease),
+    font-size var(--ease);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform-origin: left center;
+}
+body[data-align="center"] .line {
+  transform-origin: center;
+}
+body[data-align="right"] .line {
+  transform-origin: right center;
+}
+
+.line.now-line {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The one a player uses: the sung line grows and brightens, the rest recede. */
+body[data-lyric="spotify"] .line {
+  opacity: 0.45;
+  transform: scale(0.94);
+}
+body[data-lyric="spotify"] .line.now-line {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+/* Only the current line is lit; the neighbours are there for context. */
+body[data-lyric="fade"] .line {
+  opacity: 0.28;
+}
+body[data-lyric="fade"] .line.now-line {
+  opacity: 1;
+}
+
+body[data-lyric="plain"] .line {
+  opacity: 0.6;
+  transition: none;
+}
+body[data-lyric="plain"] .line.now-line {
+  opacity: 1;
+}
+
+/*
+ * The three that move. `entering` is set for one frame on a line that was not
+ * there before, so it starts displaced and settles — which is the difference
+ * between a line arriving and the whole block jumping.
+ */
+body[data-lyric="slideUp"] .line,
+body[data-lyric="slideLeft"] .line,
+body[data-lyric="slideRight"] .line {
+  opacity: 0.4;
+}
+body[data-lyric="slideUp"] .line.now-line,
+body[data-lyric="slideLeft"] .line.now-line,
+body[data-lyric="slideRight"] .line.now-line {
+  opacity: 1;
+}
+
+body[data-lyric="slideUp"] .line.entering {
+  opacity: 0;
+  transform: translateY(0.7em);
+}
+body[data-lyric="slideLeft"] .line.entering {
+  opacity: 0;
+  transform: translateX(1.2em);
+}
+body[data-lyric="slideRight"] .line.entering {
+  opacity: 0;
+  transform: translateX(-1.2em);
+}
+
+.idle {
+  font-size: 1.1em;
+  color: var(--dim);
+  text-shadow: var(--shadow);
+}
+
+/* --- background -------------------------------------------------------- */
+
+body[data-background="soft"] .wrap {
+  border-radius: var(--radius);
+  background: rgba(12, 12, 18, 0.55);
+}
+
+body[data-background="solid"] .wrap {
+  border-radius: var(--radius);
+  background: #0c0c12;
+}
+
+/*
+ * Glow: a wash of the accent behind the text with no edge anywhere.
+ *
+ * A radial gradient fading to nothing, rather than a box with a blur — a box
+ * has a rectangle in it however soft, and a rectangle on a stream is the thing
+ * that says "this is an overlay".
+ */
+body[data-background="glow"] .wrap {
+  position: relative;
+}
+
+/* The glow follows the text, so its centre moves with the alignment. One
+   property rather than three copies of the gradient. */
+body[data-background="glow"] .wrap::before {
+  --glow-x: 22%;
+}
+body[data-align="center"][data-background="glow"] .wrap::before {
+  --glow-x: 50%;
+}
+body[data-align="right"][data-background="glow"] .wrap::before {
+  --glow-x: 78%;
+}
+
+/*
+ * The fallback comes first and the better version overrides it.
+ *
+ * color-mix() is Chrome 111 and up, and OBS carries whatever CEF its build
+ * shipped with — often older. Without this the whole declaration would be
+ * invalid there and the glow would simply not exist, which is a worse failure
+ * than a slightly different one. The pseudo-element's own opacity does the
+ * fading instead, at the cost of dimming the dark wash with it.
+ */
+body[data-background="glow"] .wrap::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(60% 70% at var(--glow-x) 50%, var(--accent), transparent 70%),
+    radial-gradient(80% 100% at 50% 50%, rgba(0, 0, 0, 0.8), transparent 72%);
+}
+
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  body[data-background="glow"] .wrap::before {
+    opacity: 1;
+    background:
+      radial-gradient(
+        60% 70% at var(--glow-x) 50%,
+        color-mix(in srgb, var(--accent) 45%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(80% 100% at 50% 50%, rgba(0, 0, 0, 0.55), transparent 72%);
+  }
+}
+
+/* --- card: the default, everything stacked ----------------------------- */
+
+body[data-style="card"] .lyrics {
+  margin-top: 0.2em;
+}
+
+/* --- bar: one row along an edge of the scene ---------------------------- */
+
+body[data-style="bar"] .wrap {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.9em;
+  height: 100%;
+}
+body[data-style="bar"] .now {
+  flex: 1;
+}
+body[data-style="bar"] .cover {
+  width: 3em;
+  height: 3em;
+}
+body[data-style="bar"] .title {
+  font-size: 1.1em;
+}
+body[data-style="bar"] .artist {
+  display: inline;
+  margin-left: 0.5em;
+  font-size: 0.9em;
+}
+body[data-style="bar"] .times {
+  margin-top: 0.3em;
+}
+body[data-style="bar"] .lyrics {
+  display: none;
+}
+
+/* --- lyrics only: the song is the point -------------------------------- */
+
+body[data-style="lyrics"] .cover,
+body[data-style="lyrics"] .artist,
+body[data-style="lyrics"] .times {
+  display: none;
+}
+body[data-style="lyrics"] .title {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--dim);
+}
+body[data-style="lyrics"] .now {
+  order: 2;
+  margin-top: 0.6em;
+}
+body[data-style="lyrics"] .lyrics {
+  order: 1;
+}
+body[data-style="lyrics"] .line {
+  font-size: 1.7em;
+  white-space: normal;
+}
+
+/* --- ticker: one scrolling line, nothing else --------------------------- */
+
+body[data-style="ticker"] .wrap {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4em 0.8em;
+  overflow: hidden;
+}
+body[data-style="ticker"] .cover,
+body[data-style="ticker"] .times,
+body[data-style="ticker"] .artist,
+body[data-style="ticker"] .lyrics {
+  display: none;
+}
+body[data-style="ticker"] .now {
+  width: 100%;
+}
+body[data-style="ticker"] .title {
+  font-size: 1.2em;
+  white-space: nowrap;
+  animation: slide var(--ticker-seconds, 18s) linear infinite;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Someone streaming at 60 fps does not need our transitions fighting theirs. */
+@media (prefers-reduced-motion: reduce) {
+  .wrap,
+  .line,
+  .cover {
+    transition: none;
+  }
+  body[data-style="ticker"] .title {
+    animation: none;
+  }
+}

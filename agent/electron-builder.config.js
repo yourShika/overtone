@@ -39,7 +39,7 @@ module.exports = {
     // Not in `files`: a surface's pages are served to a browser, so they have
     // to be readable rather than sealed in the asar. Nothing here is loaded
     // until somebody copies it into their own plugins folder.
-    { from: 'examples', to: 'examples' },
+    { from: '../plugins', to: 'examples' },
     { from: '../LICENSE', to: 'LICENSE' },
     { from: '../THIRD-PARTY-NOTICES.md', to: 'THIRD-PARTY-NOTICES.md' },
   ],

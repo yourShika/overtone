@@ -133,7 +133,7 @@ const extension = { version: null, features: [] };
 function examplesPath() {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'examples')
-    : path.join(__dirname, '..', 'examples');
+    : path.join(__dirname, '..', '..', 'plugins');
 }
 
 function transcribeScriptPath() {

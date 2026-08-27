@@ -1,0 +1,233 @@
+{
+  "engine": 1,
+  "id": "overlay",
+  "surface": true,
+  "version": "1.1.0",
+  "name": {
+    "en": "Stream overlay",
+    "de": "Stream-Overlay",
+    "pl": "Nakładka na stream",
+    "ru": "Оверлей для стрима",
+    "es": "Superposición para el directo"
+  },
+  "author": "Overtone",
+  "description": {
+    "en": "A page for OBS showing the song, the time and the lyric line.",
+    "de": "Eine Seite für OBS mit Song, Zeit und mitlaufender Songzeile.",
+    "pl": "Strona do OBS pokazująca utwór, czas i wers tekstu.",
+    "ru": "Страница для OBS с треком, временем и строкой текста.",
+    "es": "Una página para OBS con la canción, el tiempo y la letra."
+  },
+  "settings": [
+    {
+      "type": "choice",
+      "key": "style",
+      "default": "card",
+      "options": [
+        { "value": "card", "label": { "en": "Card", "de": "Karte", "pl": "Karta", "ru": "Карточка", "es": "Tarjeta" } },
+        { "value": "bar", "label": { "en": "Bar", "de": "Leiste", "pl": "Pasek", "ru": "Полоса", "es": "Barra" } },
+        { "value": "lyrics", "label": { "en": "Lyrics only", "de": "Nur Songtext", "pl": "Sam tekst", "ru": "Только текст", "es": "Solo la letra" } },
+        { "value": "ticker", "label": { "en": "Ticker", "de": "Laufband", "pl": "Pasek przewijany", "ru": "Бегущая строка", "es": "Cinta" } }
+      ],
+      "label": { "en": "Layout", "de": "Aufbau", "pl": "Układ", "ru": "Компоновка", "es": "Diseño" },
+      "help": {
+        "en": "Every setting here also works as ?name=value on the address, so a second Browser Source can show something else entirely.",
+        "de": "Jede Einstellung hier geht auch als ?name=wert in der Adresse — so zeigt eine zweite Browser-Quelle etwas ganz anderes.",
+        "pl": "Każde ustawienie działa też jako ?nazwa=wartość w adresie, więc drugie źródło może pokazywać coś zupełnie innego.",
+        "ru": "Любая настройка работает и как ?имя=значение в адресе, так что второй источник может показывать совсем другое.",
+        "es": "Cada ajuste vale también como ?nombre=valor en la dirección, así que una segunda fuente puede mostrar otra cosa."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "background",
+      "default": "none",
+      "options": [
+        { "value": "none", "label": { "en": "Transparent", "de": "Durchsichtig", "pl": "Przezroczyste", "ru": "Прозрачный", "es": "Transparente" } },
+        { "value": "glow", "label": { "en": "Glow", "de": "Schimmer", "pl": "Poświata", "ru": "Свечение", "es": "Resplandor" } },
+        { "value": "soft", "label": { "en": "Soft", "de": "Weich", "pl": "Miękkie", "ru": "Мягкий", "es": "Suave" } },
+        { "value": "solid", "label": { "en": "Solid", "de": "Deckend", "pl": "Pełne", "ru": "Плотный", "es": "Sólido" } }
+      ],
+      "label": { "en": "Background", "de": "Hintergrund", "pl": "Tło", "ru": "Фон", "es": "Fondo" },
+      "help": {
+        "en": "Glow is a soft wash of the accent colour behind the text, with no hard edge to give the source away.",
+        "de": "Schimmer ist ein weicher Hauch der Akzentfarbe hinter dem Text, ohne harte Kante, die die Quelle verrät.",
+        "pl": "Poświata to miękka mgiełka koloru akcentu za tekstem, bez twardej krawędzi zdradzającej źródło.",
+        "ru": "Свечение — мягкая дымка акцентного цвета за текстом, без резкой границы, выдающей источник.",
+        "es": "El resplandor es un velo suave del color de acento tras el texto, sin borde duro que delate la fuente."
+      }
+    },
+    {
+      "type": "colour",
+      "key": "accent",
+      "default": "#7d6cf6",
+      "label": { "en": "Accent colour", "de": "Akzentfarbe", "pl": "Kolor akcentu", "ru": "Цвет акцента", "es": "Color de acento" },
+      "help": {
+        "en": "The progress bar, and the glow if you picked it.",
+        "de": "Der Fortschrittsbalken — und der Schimmer, falls gewählt.",
+        "pl": "Pasek postępu i poświata, jeśli ją wybrałeś.",
+        "ru": "Полоса прогресса и свечение, если оно выбрано.",
+        "es": "La barra de progreso y el resplandor, si lo has elegido."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "font",
+      "default": "sans",
+      "options": [
+        { "value": "sans", "label": { "en": "Clean", "de": "Klar", "pl": "Czysta", "ru": "Чистый", "es": "Limpia" } },
+        { "value": "round", "label": { "en": "Rounded", "de": "Rund", "pl": "Zaokrąglona", "ru": "Округлый", "es": "Redondeada" } },
+        { "value": "serif", "label": { "en": "Serif", "de": "Serifen", "pl": "Szeryfowa", "ru": "С засечками", "es": "Con serifa" } },
+        { "value": "mono", "label": { "en": "Monospace", "de": "Feste Breite", "pl": "Stała szerokość", "ru": "Моноширинный", "es": "Monoespaciada" } },
+        { "value": "condensed", "label": { "en": "Narrow", "de": "Schmal", "pl": "Wąska", "ru": "Узкий", "es": "Estrecha" } }
+      ],
+      "label": { "en": "Font", "de": "Schrift", "pl": "Czcionka", "ru": "Шрифт", "es": "Fuente" },
+      "help": {
+        "en": "Whatever your machine has for each of these. A font Overtone shipped would look wrong beside the rest of your scene anyway.",
+        "de": "Was dein Rechner dafür hat. Eine mitgelieferte Schrift säße neben dem Rest deiner Szene ohnehin falsch.",
+        "pl": "To, co ma twój komputer. Czcionka dostarczona z programem i tak nie pasowałaby do reszty sceny.",
+        "ru": "То, что есть на вашем компьютере. Шрифт из комплекта всё равно выбивался бы из остальной сцены.",
+        "es": "Lo que tenga tu equipo. Una fuente incluida desentonaría con el resto de tu escena."
+      }
+    },
+    {
+      "type": "range",
+      "key": "scale",
+      "default": 100,
+      "min": 60,
+      "max": 200,
+      "step": 5,
+      "label": { "en": "Size", "de": "Größe", "pl": "Rozmiar", "ru": "Размер", "es": "Tamaño" },
+      "help": {
+        "en": "Per cent. Easier than resizing the Browser Source, which only crops it.",
+        "de": "Prozent. Einfacher als die Browser-Quelle zu ziehen, die nur beschneidet.",
+        "pl": "W procentach. Prościej niż skalować źródło, które tylko przycina.",
+        "ru": "В процентах. Проще, чем менять размер источника, который лишь обрезает.",
+        "es": "En por ciento. Más fácil que redimensionar la fuente, que solo recorta."
+      }
+    },
+    {
+      "type": "switch",
+      "key": "smooth",
+      "default": true,
+      "label": {
+        "en": "Ease things in and out",
+        "de": "Sanft ein- und ausblenden",
+        "pl": "Płynne pojawianie i znikanie",
+        "ru": "Плавные появления и исчезновения",
+        "es": "Entradas y salidas suaves"
+      },
+      "help": {
+        "en": "Off makes every change instant, which is what you want if the scene is already busy.",
+        "de": "Aus heißt: jeder Wechsel springt. Sinnvoll, wenn in der Szene ohnehin viel los ist.",
+        "pl": "Wyłączone oznacza natychmiastowe zmiany — przydatne, gdy scena i tak jest ruchliwa.",
+        "ru": "Выключено — все изменения мгновенны, что удобно на и без того насыщенной сцене.",
+        "es": "Apagado hace cada cambio instantáneo, que es lo que quieres si la escena ya está cargada."
+      }
+    },
+    { "type": "switch", "key": "showCover", "default": true, "label": { "en": "Cover art", "de": "Cover anzeigen", "pl": "Okładka", "ru": "Обложка", "es": "Portada" } },
+    { "type": "switch", "key": "showTimes", "default": true, "label": { "en": "Progress and time", "de": "Fortschritt und Zeit", "pl": "Postęp i czas", "ru": "Прогресс и время", "es": "Progreso y tiempo" } },
+    {
+      "type": "switch",
+      "key": "showLyrics",
+      "default": true,
+      "label": { "en": "The lyric line", "de": "Die Songzeile", "pl": "Wers tekstu", "ru": "Строка текста", "es": "La línea de la letra" },
+      "help": {
+        "en": "Off unless lyrics are switched on in Overtone as well.",
+        "de": "Wirkt nur, wenn Lyrics auch in Overtone eingeschaltet sind.",
+        "pl": "Działa tylko, gdy tekst jest włączony także w Overtone.",
+        "ru": "Работает, только если текст включён и в самом Overtone.",
+        "es": "Solo si la letra está activada también en Overtone."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "lyricStyle",
+      "default": "spotify",
+      "options": [
+        { "value": "spotify", "label": { "en": "Lifted", "de": "Hervorgehoben", "pl": "Wyróżniony", "ru": "С выделением", "es": "Destacada" } },
+        { "value": "fade", "label": { "en": "Fade", "de": "Überblenden", "pl": "Przenikanie", "ru": "Затухание", "es": "Fundido" } },
+        { "value": "slideUp", "label": { "en": "Slide up", "de": "Nach oben", "pl": "W górę", "ru": "Вверх", "es": "Hacia arriba" } },
+        { "value": "slideLeft", "label": { "en": "In from the right", "de": "Von rechts herein", "pl": "Z prawej", "ru": "Справа", "es": "Desde la derecha" } },
+        { "value": "slideRight", "label": { "en": "In from the left", "de": "Von links herein", "pl": "Z lewej", "ru": "Слева", "es": "Desde la izquierda" } },
+        { "value": "plain", "label": { "en": "No movement", "de": "Ohne Bewegung", "pl": "Bez ruchu", "ru": "Без движения", "es": "Sin movimiento" } }
+      ],
+      "showIf": { "key": "showLyrics", "equals": true },
+      "label": { "en": "How lines change", "de": "Wie Zeilen wechseln", "pl": "Jak zmieniają się wersy", "ru": "Как меняются строки", "es": "Cómo cambian las líneas" },
+      "help": {
+        "en": "Lifted grows the line being sung and dims the rest, the way a music player does.",
+        "de": "Hervorgehoben vergrößert die gesungene Zeile und dimmt den Rest, wie ein Musikplayer.",
+        "pl": "Wyróżniony powiększa śpiewany wers i przygasza resztę, jak w odtwarzaczu.",
+        "ru": "«С выделением» увеличивает поющуюся строку и приглушает остальные, как в плеере.",
+        "es": "Destacada agranda la línea que suena y atenúa el resto, como un reproductor."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "lyricLines",
+      "default": "3",
+      "options": [
+        { "value": "1", "label": { "en": "One line", "de": "Eine Zeile", "pl": "Jeden wers", "ru": "Одна строка", "es": "Una línea" } },
+        { "value": "3", "label": { "en": "Three", "de": "Drei", "pl": "Trzy", "ru": "Три", "es": "Tres" } },
+        { "value": "5", "label": { "en": "Five", "de": "Fünf", "pl": "Pięć", "ru": "Пять", "es": "Cinco" } }
+      ],
+      "showIf": { "key": "showLyrics", "equals": true },
+      "label": { "en": "Lines at once", "de": "Zeilen auf einmal", "pl": "Wersów naraz", "ru": "Строк сразу", "es": "Líneas a la vez" },
+      "help": {
+        "en": "More than one only works with lyrics from a file — subtitles arrive one at a time.",
+        "de": "Mehr als eine geht nur mit Lyrics aus einer Datei — Untertitel kommen einzeln.",
+        "pl": "Więcej niż jeden działa tylko z tekstem z pliku — napisy przychodzą pojedynczo.",
+        "ru": "Больше одной — только с текстом из файла: субтитры приходят по одной.",
+        "es": "Más de una solo con letra de un archivo — los subtítulos llegan de una en una."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "align",
+      "default": "left",
+      "options": [
+        { "value": "left", "label": { "en": "Left", "de": "Links", "pl": "Do lewej", "ru": "Слева", "es": "Izquierda" } },
+        { "value": "center", "label": { "en": "Centre", "de": "Mittig", "pl": "Do środka", "ru": "По центру", "es": "Centro" } },
+        { "value": "right", "label": { "en": "Right", "de": "Rechts", "pl": "Do prawej", "ru": "Справа", "es": "Derecha" } }
+      ],
+      "label": { "en": "Alignment", "de": "Ausrichtung", "pl": "Wyrównanie", "ru": "Выравнивание", "es": "Alineación" }
+    },
+    {
+      "type": "choice",
+      "key": "anchor",
+      "default": "top",
+      "options": [
+        { "value": "top", "label": { "en": "Top", "de": "Oben", "pl": "U góry", "ru": "Сверху", "es": "Arriba" } },
+        { "value": "middle", "label": { "en": "Middle", "de": "Mitte", "pl": "Na środku", "ru": "По центру", "es": "En medio" } },
+        { "value": "bottom", "label": { "en": "Bottom", "de": "Unten", "pl": "Na dole", "ru": "Снизу", "es": "Abajo" } }
+      ],
+      "label": { "en": "Sits at the", "de": "Sitzt am", "pl": "Umieszczone", "ru": "Расположение", "es": "Se coloca" },
+      "help": {
+        "en": "Where everything sits inside the Browser Source, so you can size the source generously and place the content instead.",
+        "de": "Wo alles innerhalb der Browser-Quelle sitzt — mach die Quelle ruhig groß und platziere stattdessen den Inhalt.",
+        "pl": "Gdzie wszystko siedzi wewnątrz źródła — daj źródłu zapas i ustaw zamiast tego treść.",
+        "ru": "Где всё располагается внутри источника — задайте источнику запас и двигайте содержимое.",
+        "es": "Dónde se coloca todo dentro de la fuente — hazla generosa y coloca el contenido en su lugar."
+      }
+    },
+    { "type": "switch", "key": "hideIdle", "default": true, "label": { "en": "Disappear when nothing plays", "de": "Verschwinden, wenn nichts läuft", "pl": "Znikaj, gdy nic nie gra", "ru": "Исчезать, когда ничего не играет", "es": "Desaparecer cuando no suena nada" } },
+    {
+      "type": "text",
+      "key": "idleText",
+      "default": "",
+      "maxLength": 60,
+      "showIf": { "key": "hideIdle", "equals": false },
+      "label": { "en": "Show instead", "de": "Stattdessen zeigen", "pl": "Pokaż zamiast", "ru": "Показывать вместо", "es": "Mostrar en su lugar" }
+    },
+    {
+      "type": "note",
+      "text": {
+        "en": "Add a Browser Source in OBS and paste the address above. For a second source showing something else, paste the same address and change one value in it.",
+        "de": "Füge in OBS eine Browser-Quelle hinzu und setze die Adresse oben ein. Für eine zweite Quelle mit anderer Ansicht dieselbe Adresse einsetzen und einen Wert darin ändern.",
+        "pl": "Dodaj w OBS źródło przeglądarki i wklej adres powyżej. Dla drugiego źródła wklej ten sam adres i zmień w nim jedną wartość.",
+        "ru": "Добавьте в OBS «Браузер» и вставьте адрес выше. Для второго источника вставьте тот же адрес и измените в нём одно значение.",
+        "es": "Añade una fuente de navegador en OBS y pega la dirección de arriba. Para una segunda fuente distinta, pega la misma dirección y cambia un valor."
+      }
+    }
+  ]
+}

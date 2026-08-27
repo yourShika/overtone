@@ -83,6 +83,8 @@
   let onScreen = [];
   /** Whether a dots line is currently part of the block. */
   let gapShown = false;
+  /** The dots row the song is currently inside, so the frame loop can fill it. */
+  let activeDots = null;
   let swapTimer = null;
 
   start();
@@ -280,7 +282,7 @@
     if (index !== lastRenderedLine || (gap !== null) !== gapShown) {
       renderLyrics(index, gap);
     } else if (gap !== null) {
-      fillDots(els.lyrics.querySelector('.dots-line'), gap);
+      fillDots(activeDots, gap);
     }
 
     // The agent went quiet mid-song: hold what is on screen for a moment, then
@@ -330,29 +332,41 @@
    * stretch after a line has had its moment. Returns how far through that wait
    * we are, from 0 to 1, or null when a line should simply be on screen.
    */
-  function gapAt(at) {
+  /**
+   * The stretch of silence after cue i, if it is long enough to be worth
+   * showing. Pass -1 to ask about the intro, before the first line.
+   *
+   * This is a fact about the song, not about where the playhead is: the wait
+   * between two lines is there whether or not it is happening right now. That
+   * is what lets it be a row of the lyrics rather than something conjured up
+   * for the duration of the silence and thrown away afterwards.
+   */
+  function waitWindow(i) {
     if (!state || state.mode !== 'timed' || !state.cues?.length) return null;
 
-    const index = currentCue(at);
-
-    // Before the first line. Only the tail of a long intro is counted down —
-    // a two-minute instrumental opening should not show dots for two minutes.
-    if (index < 0) {
+    // Only the tail of a long intro is counted down — a two-minute instrumental
+    // opening should not show dots for two minutes.
+    if (i < 0) {
       const first = state.cues[0].t;
       const from = Math.max(0, first - GAP_MAX);
       // Whether the intro is long enough to be worth a countdown — not how much
       // of it is left. Measuring what remains made the dots quit four seconds
       // before the first line instead of handing over to it.
-      return first - from > GAP_MIN ? progress(at, from, first) : null;
+      return first - from > GAP_MIN ? { from, to: first } : null;
     }
 
-    const cue = state.cues[index];
-    const next = state.cues[index + 1];
-    if (!next) return null;
+    const cue = state.cues[i];
+    const next = state.cues[i + 1];
+    if (!cue || !next) return null;
 
     // An empty cue is the file saying "nothing here" outright.
     const from = cue.text.trim() ? cue.t + LINE_HOLD : cue.t;
-    return next.t - from > GAP_MIN ? progress(at, from, next.t) : null;
+    return next.t - from > GAP_MIN ? { from, to: next.t } : null;
+  }
+
+  function gapAt(at) {
+    const wait = waitWindow(currentCue(at));
+    return wait ? progress(at, wait.from, wait.to) : null;
   }
 
   /** Where the clock sits between two times, clamped, or null before it starts. */
@@ -371,8 +385,17 @@
    *     · · ·
    *     the line coming next
    */
-  /** What a row of dots is called when we are tracking what is on screen. */
+  /**
+   * What a row of dots is called when we are tracking what is on screen.
+   *
+   * One name per wait, because a song has several and they have to be told
+   * apart: two rows sharing a name would look to the animation like the same
+   * row staying put. The prefix cannot collide with a lyric — no lyrics file
+   * contains a null byte.
+   */
   const DOTS = '\u0000dots';
+  const dotsKey = (i) => DOTS + i;
+  const isDots = (row) => typeof row === 'string' && row.startsWith(DOTS);
 
   /**
    * Draw the visible rows.
@@ -403,7 +426,7 @@
     // empty one is a wait of unknown length — dots, but breathing rather than
     // filling, because there is nothing honest to fill towards.
     if (state.mode === 'caption') {
-      draw(state.line ? [state.line] : [DOTS], 0, null);
+      draw(state.line ? [state.line] : [dotsKey(-1)], 0, null);
       gapShown = !state.line;
       return;
     }
@@ -422,18 +445,32 @@
     let active = -1;
     let lastSung = -1;
 
+    // The wait before the first line is a row of the song like any other.
+    if (waitWindow(-1)) {
+      if (index < 0 && gapShown) active = 0;
+      rows.push(dotsKey(-1));
+    }
+
     for (let i = 0; i < state.cues.length; i++) {
       const cue = state.cues[i];
       // An empty cue is the file marking a pause, not a line to draw — the dots
-      // below stand where it would have been.
+      // for that wait stand where it would have been.
       if (cue.text.trim()) {
         if (i === index && !gapShown) active = rows.length;
         rows.push(cue.text);
         if (i <= index) lastSung = rows.length - 1;
       }
-      if (i === index && gapShown) {
-        active = rows.length;
-        rows.push(DOTS);
+
+      // Every long wait gets its row, not just the one being waited out. That
+      // is the whole point: the row is already there before the silence starts
+      // and stays afterwards, so it travels up through the window with the
+      // words instead of appearing and vanishing in place.
+      if (waitWindow(i)) {
+        if (i === index && gapShown) active = rows.length;
+        rows.push(dotsKey(i));
+        // A wait already lived through is behind us; the one after the current
+        // line has not begun, even when the line itself has been sung.
+        if (i < index) lastSung = rows.length - 1;
       }
     }
 
@@ -444,20 +481,15 @@
     // first lines of the song.
     if (active < 0) active = lastSung;
 
-    // Before the first line the wait is the only row there is.
-    if (index < 0) {
-      if (gapShown) draw([DOTS], 0, gap);
-      else {
-        els.lyrics.textContent = '';
-        onScreen = [];
-      }
-      return;
-    }
-
     const count = Number(body.dataset.lines) || 3;
-    // With one row there is nothing to lead with; with more, keep one behind so
-    // the reader can see what was just sung.
-    const before = count > 1 ? 1 : 0;
+    // Keep what is being sung in the middle: with three rows that is one above
+    // and one below, as before; with five it is two and two, rather than the
+    // line sitting second from the top with three rows trailing under it.
+    //
+    // Always at least one row above, though, or a finished wait would have
+    // nowhere to move to and would blink out where it stood — which is the
+    // thing being fixed here.
+    const before = count > 1 ? Math.max(1, Math.floor((count - 1) / 2)) : 0;
     // Keep the window full even at the end, where there is nothing left to
     // lead with: slide it back rather than let the block shrink, which under a
     // centred anchor would drag every line upward on the last verse.
@@ -476,12 +508,23 @@
   /** Put a window of rows on screen, animating in whatever is new. */
   function draw(rows, activeAt, gap) {
     els.lyrics.textContent = '';
+    activeDots = null;
 
     for (let i = 0; i < rows.length; i++) {
       const arriving = !onScreen.includes(rows[i]);
-      els.lyrics.appendChild(
-        rows[i] === DOTS ? dotsLine(gap, i === activeAt, arriving) : line(rows[i], i === activeAt, arriving),
-      );
+
+      if (!isDots(rows[i])) {
+        els.lyrics.appendChild(line(rows[i], i === activeAt, arriving));
+        continue;
+      }
+
+      // A wait that has been lived through shows full, one still ahead shows at
+      // rest, and the one happening now fills. So the dots carry their own
+      // history up the block instead of resetting as they move.
+      const amount = i === activeAt ? gap : i < activeAt ? 1 : 0;
+      const div = dotsLine(amount, i === activeAt, arriving);
+      if (i === activeAt) activeDots = div;
+      els.lyrics.appendChild(div);
     }
     onScreen = rows;
   }

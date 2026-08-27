@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.3.2",
+  "version": "1.3.3",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",

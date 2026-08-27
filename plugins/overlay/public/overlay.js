@@ -9,9 +9,11 @@
  * rate. So a progress bar moves smoothly and a lyric lands on the beat while
  * the connection stays quiet for minutes at a time.
  *
- * Every setting arrives in the query string, which is what lets one address
- * serve several Browser Sources: paste it twice, change one value in the second,
- * and the two show different things from the same feed.
+ * Settings arrive in two layers. The panel's values travel with the song, so a
+ * slider moved in Overtone reaches a Browser Source that is already open and
+ * the address is pasted once and never again. Anything named in the address
+ * itself wins over that, which is how one feed drives a card on one scene and
+ * the lyrics alone on another.
  *
  * Everything from the feed is written with textContent. It is a song title
  * somebody else chose, arriving over a socket, and this page has no business
@@ -66,7 +68,7 @@
   start();
 
   function start() {
-    applyQuery();
+    applySettings(null);
     connect();
     requestAnimationFrame(tick);
     setInterval(advance, 1000);
@@ -74,37 +76,59 @@
     document.addEventListener('visibilitychange', advance);
   }
 
-  function applyQuery() {
+  /**
+   * Apply the settings, from the panel and then from the address.
+   *
+   * Two layers, and the order is the point. The panel's values arrive with the
+   * song, so moving a slider reaches a Browser Source that is already open and
+   * the address never has to be pasted again. Anything named in the address
+   * wins, which is how a second source shows something else entirely from the
+   * same feed.
+   *
+   * Both layers are read from fixed lists rather than trusted. The address is a
+   * URL anybody can edit; the panel's values arrive over a socket. Neither is
+   * ours until it has been checked.
+   */
+  function applySettings(fromPanel) {
     const params = new URLSearchParams(location.search);
-    const on = (key) => params.get(key) !== 'false';
+    const panel = fromPanel && typeof fromPanel === 'object' ? fromPanel : {};
+
+    /** The address, then the panel, then nothing. */
+    const pick = (key) => (params.has(key) ? params.get(key) : panel[key]);
+    const on = (key) => {
+      const value = pick(key);
+      return value === undefined || (value !== 'false' && value !== false);
+    };
 
     for (const [key, allowed] of Object.entries(ALLOWED)) {
-      const value = params.get(key);
+      const value = pick(key);
       if (allowed.includes(value)) body.dataset[attr(key)] = value;
     }
 
-    const scale = Number(params.get('scale'));
+    const scale = Number(pick('scale'));
     if (Number.isFinite(scale) && scale >= 60 && scale <= 200) {
       document.documentElement.style.setProperty('--scale', String(scale / 100));
     }
 
     // #rrggbb only. A colour goes straight into a custom property, and a custom
     // property is somewhere CSS will accept far more than a colour.
-    const accent = params.get('accent');
-    if (accent && /^#[0-9a-fA-F]{6}$/.test(accent)) {
+    const accent = pick('accent');
+    if (typeof accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(accent)) {
       document.documentElement.style.setProperty('--accent', accent);
     }
 
-    // Absent means on: an absent parameter is one the panel chose not to send,
-    // and every one of these defaults to true in the manifest.
+    // Absent means on: every one of these defaults to true in the manifest.
     body.dataset.cover = on('showCover') ? 'on' : 'off';
     body.dataset.times = on('showTimes') ? 'on' : 'off';
     body.dataset.lyrics = on('showLyrics') ? 'on' : 'off';
     body.dataset.smooth = on('smooth') ? 'on' : 'off';
 
-    const lines = Number(params.get('lyricLines'));
+    const lines = Number(pick('lyricLines'));
     body.dataset.lines = String([1, 3, 5].includes(lines) ? lines : 3);
-    body.dataset.hideIdle = params.get('hideIdle') === 'false' ? 'no' : 'yes';
+    body.dataset.hideIdle = on('hideIdle') ? 'yes' : 'no';
+
+    const idle = pick('idleText');
+    body.dataset.idleText = typeof idle === 'string' ? idle.slice(0, 60) : '';
   }
 
   /** lyricStyle -> data-lyric, so the stylesheet reads a shorter name. */
@@ -136,6 +160,10 @@
 
   function receive(next) {
     const newTrack = !state || next.title !== state.title || next.mode !== state.mode;
+
+    // Cheap and idempotent, so it simply runs on every message rather than
+    // needing to work out whether a setting moved.
+    applySettings(next.settings);
 
     state = next;
     receivedAt = performance.now();
@@ -331,7 +359,7 @@
    */
   function idleText() {
     if (body.dataset.hideIdle !== 'no') return '';
-    return new URLSearchParams(location.search).get('idleText') || '';
+    return body.dataset.idleText || '';
   }
 
   function clock(seconds) {

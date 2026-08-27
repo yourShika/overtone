@@ -43,9 +43,12 @@ bar; 900 × 320 the lyrics.
 
 ### Several sources at once
 
-Every setting is a value in the address, so one feed can drive as many sources
-as you like. Paste the same address into a second Browser Source and change one
-value in it:
+The address is bare and stays the same — paste it once, and it keeps working
+after Overtone restarts. What the panel sets travels with the song, so moving a
+slider there reaches a source that is already open.
+
+A source that should differ from the rest names its own values on the end. Those
+win over whatever the panel says:
 
 ```
 …/overlay/?style=card&lyricStyle=spotify        the song, on one scene
@@ -53,8 +56,9 @@ value in it:
 …/overlay/?style=bar&showLyrics=false           a thin strip along an edge
 ```
 
-What the panel sets is the default; the address is what a given source actually
-uses.
+So one Browser Source follows the panel, and another stays exactly as you left
+it — from the same address, the same feed, and no second set of settings
+anywhere in Overtone.
 
 ### What you can change
 

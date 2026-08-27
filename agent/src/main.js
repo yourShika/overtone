@@ -130,6 +130,20 @@ const extension = { version: null, features: [] };
  * are served to a browser, and reading them out of an archive on every request
  * would be pointless work.
  */
+/**
+ * Open the surface server on the address it had last time.
+ *
+ * The token is minted once and then kept, because an address pasted into an OBS
+ * scene has to survive quitting the app — a new one every morning is a broken
+ * source with no visible cause.
+ */
+async function startSurface() {
+  await surface.sync(config.get('pluginSurfacePort'), config.get('surfaceToken'));
+  if (surface.running && surface.token !== config.get('surfaceToken')) {
+    config.set({ surfaceToken: surface.token });
+  }
+}
+
 function examplesPath() {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'examples')
@@ -203,16 +217,21 @@ app.whenReady().then(async () => {
 
   surface = new SurfaceServer({
     registry: plugins,
-    payload: () =>
-      overlayPayload({
+    payload: (id) => ({
+      ...overlayPayload({
         snapshot: statusSnapshot(),
         config: config.all(),
         lines: lyricState.lines,
         now: Date.now(),
       }),
+      // The plugin's own settings ride with the song rather than in the URL, so
+      // one pasted address keeps working and moving a slider reaches a running
+      // Browser Source instead of waiting to be pasted again.
+      settings: plugins.describe('en').find((p) => p.id === id)?.values || {},
+    }),
     logger,
   });
-  await surface.sync(config.get('pluginSurfacePort'));
+  await startSurface();
 
   lyrics = new LyricsProvider({
     cacheDir: path.join(userData, 'lyrics-cache'),
@@ -1370,7 +1389,7 @@ function registerIpc() {
   ipcMain.handle('plugins:setEnabled', async (_event, id, on) => {
     if (!plugins.manifestFor(id)) return false;
     pluginStore.setEnabled(id, on);
-    await surface.sync(config.get('pluginSurfacePort'));
+    await startSurface();
     refreshUi();
     return true;
   });
@@ -1379,20 +1398,22 @@ function registerIpc() {
     running: surface.running,
     port: surface.port,
     error: surface.error,
-    addresses: Object.fromEntries(
-      plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id, p.values)]),
-    ),
+    addresses: Object.fromEntries(plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id)])),
   }));
 
   ipcMain.handle('plugins:newAddress', async () => {
-    // Retires the current token by starting over with a fresh one.
+    // Forgetting it is what retires it: startSurface() mints another and writes
+    // that one down instead.
+    config.set({ surfaceToken: '' });
     await surface.stop();
-    await surface.sync(config.get('pluginSurfacePort'));
+    await startSurface();
     refreshUi();
     return surface.running;
   });
 
   ipcMain.handle('plugins:setSetting', (_event, id, key, value) => {
+    // Falls through to refreshUi() below, which pushes to every open page —
+    // that is how a slider in the panel reaches a Browser Source already open.
     // Checked against the manifest rather than trusted: this arrives from the
     // renderer, and a field the plugin never declared has no business being
     // stored under its name.
@@ -1728,7 +1749,7 @@ function onConfigChanged(changed) {
     });
   }
   if (changed.includes('pluginSurfacePort')) {
-    surface?.sync(config.get('pluginSurfacePort')).then(refreshUi);
+    startSurface().then(refreshUi);
   }
   if (changed.includes('autoStart')) applyAutoStart();
   if (changed.includes('lyricsEnabled')) resetLyrics();

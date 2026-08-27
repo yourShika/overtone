@@ -797,3 +797,75 @@ test('the example overlay is a manifest this app would accept from anyone', () =
     assert.notEqual(pick(text, 'en'), '', `${field.key || 'note'} ohne englischen Text`);
   }
 });
+
+test('the address survives a restart, and only a deliberate act changes it', async () => {
+  // The complaint that produced this: a token minted on every start meant every
+  // Browser Source in OBS pointed at a dead URL the next morning.
+  await withServer(async ({ server }) => {
+    const keep = server.token;
+    await server.stop();
+
+    await server.start(0, keep);
+    assert.equal(server.token, keep, 'dieselbe Marke nach dem Neustart');
+
+    // Passing nothing is what the New address button does: forget it, and the
+    // next start mints another.
+    await server.stop();
+    await server.start(0);
+    assert.notEqual(server.token, keep);
+
+    // And the address itself carries no settings, so it never changes when one
+    // of them does.
+    assert.equal(server.addressFor('demo').includes('?'), false);
+    assert.equal(server.registry.surfaces().length, 1);
+  });
+});
+
+test('sync leaves a running server alone unless the port or the address changed', async () => {
+  await withServer(async ({ server }) => {
+    const { token, port } = server;
+
+    await server.sync(port, token);
+    assert.equal(server.token, token, 'kein Neustart, keine neue Marke');
+
+    // A different token is a rotation and does mean a restart.
+    await server.sync(port, 'a-deliberately-different-token');
+    assert.equal(server.token, 'a-deliberately-different-token');
+  });
+});
+
+test('a setting changed in the panel reaches a page that is already open', async () => {
+  // The other half of a stable address: if the URL no longer carries the
+  // settings, they have to arrive some other way or moving a slider would do
+  // nothing until the source was pasted again.
+  await withServer(async ({ server }) => {
+    let style = 'card';
+    server.payload = () => ({ playing: true, title: 'A song', at: 1, settings: { style } });
+
+    const frames = [];
+    const res = await new Promise((resolve) => {
+      require('node:http')
+        .get(
+          {
+            host: '127.0.0.1',
+            port: server.port,
+            path: `/s/${server.token}/demo/feed`,
+            headers: { host: `127.0.0.1:${server.port}` },
+          },
+          resolve,
+        )
+        .end();
+    });
+    res.on('data', (chunk) => frames.push(chunk.toString()));
+    await new Promise((r) => setTimeout(r, 60));
+
+    assert.match(frames.join(''), /"style":"card"/);
+
+    style = 'bar';
+    server.publish();
+    await new Promise((r) => setTimeout(r, 60));
+    assert.match(frames.at(-1), /"style":"bar"/);
+
+    res.destroy();
+  });
+});

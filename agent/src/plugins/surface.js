@@ -54,9 +54,9 @@ class SurfaceServer {
     this.server = null;
     this.port = 0;
     this.token = '';
-    /** @type {Set<import('node:http').ServerResponse>} */
-    this.clients = new Set();
-    this.last = null;
+    /** @type {Map<import('node:http').ServerResponse, string>} response -> plugin id */
+    this.clients = new Map();
+    this.last = new Map();
     this.error = null;
   }
 
@@ -67,27 +67,17 @@ class SurfaceServer {
   /**
    * The address to paste into OBS, or '' when nothing is listening.
    *
-   * The plugin's settings ride along as a query string rather than travelling
-   * over the feed. That way the panel produces one line somebody can paste, and
-   * a second scene can run a different style by editing the copy it pasted —
-   * without a per-source setting existing anywhere in Overtone.
+   * Deliberately bare. The settings used to ride along as a query string, which
+   * meant the address changed every time somebody moved a slider and every
+   * Browser Source had to be pasted again — and, worse, that a source already
+   * pasted kept the settings it was given for ever. They travel over the feed
+   * now, so this line is pasted once and never again.
+   *
+   * A source that wants to differ from the rest still appends its own
+   * ?name=value; anything named there wins over what the panel sends.
    */
-  addressFor(id, values) {
-    if (!this.running) return '';
-
-    const base = `http://127.0.0.1:${this.port}/s/${this.token}/${id}/`;
-    if (!values || typeof values !== 'object') return base;
-
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(values)) {
-      // An empty string is "not set", not a value worth putting in a URL that
-      // somebody has to read and paste.
-      if (value === '' || value === null || value === undefined) continue;
-      query.set(key, String(value));
-    }
-
-    const tail = query.toString();
-    return tail ? `${base}?${tail}` : base;
+  addressFor(id) {
+    return this.running ? `http://127.0.0.1:${this.port}/s/${this.token}/${id}/` : '';
   }
 
   /**
@@ -97,22 +87,28 @@ class SurfaceServer {
    * first surface starts it, disabling the last stops it, and a port change is
    * a stop followed by a start.
    */
-  async sync(port) {
+  async sync(port, token) {
     const wanted = this.registry.surfaces().length > 0;
 
     if (!wanted) {
       await this.stop();
       return;
     }
-    if (this.running && this.port === port) return;
+    if (this.running && this.port === port && this.token === token) return;
 
     await this.stop();
-    await this.start(port);
+    await this.start(port, token);
   }
 
-  async start(port) {
-    // New every time it opens. Whoever had the old address does not keep it.
-    this.token = crypto.randomBytes(24).toString('base64url');
+  /**
+   * @param {number} port
+   * @param {string} [token] kept across restarts by the caller; a fresh one is
+   *   minted only when there is none, so an address pasted into OBS survives
+   *   quitting the app. Rotating it is a deliberate act, not a side effect of
+   *   starting up.
+   */
+  async start(port, token) {
+    this.token = token || crypto.randomBytes(24).toString('base64url');
     this.error = null;
 
     const server = http.createServer((req, res) => this._handle(req, res));
@@ -147,12 +143,12 @@ class SurfaceServer {
   async stop() {
     if (!this.server) return;
 
-    for (const res of this.clients) res.end();
+    for (const res of this.clients.keys()) res.end();
     this.clients.clear();
 
     const server = this.server;
     this.server = null;
-    this.last = null;
+    this.last = new Map();
 
     // close() waits for open sockets, and a feed is a socket that is meant to
     // stay open — without this, quitting the app would hang for as long as OBS
@@ -171,15 +167,25 @@ class SurfaceServer {
   publish() {
     if (!this.clients.size) return;
 
-    const next = this.payload();
-    if (!next) return;
-
     const { changed } = require('./feed');
-    if (!changed(this.last, next)) return;
-    this.last = next;
+    // One payload per plugin rather than per reader: two sources of the same
+    // overlay get the identical object, and building it twice would only cost.
+    const frames = new Map();
 
-    const frame = `data: ${JSON.stringify(next)}\n\n`;
-    for (const res of this.clients) {
+    for (const [res, id] of this.clients) {
+      if (!frames.has(id)) {
+        const next = this.payload(id);
+        frames.set(id, next ? `data: ${JSON.stringify(next)}\n\n` : null);
+
+        // The suppression is per plugin too, because their settings differ.
+        const seen = this.last.get(id);
+        if (next && !changed(seen, next)) frames.set(id, null);
+        else if (next) this.last.set(id, next);
+      }
+
+      const frame = frames.get(id);
+      if (!frame) continue;
+
       // A reader that stopped reading must not become a growing buffer.
       if (res.writableLength > MAX_BUFFERED) {
         this.clients.delete(res);
@@ -235,7 +241,7 @@ class SurfaceServer {
     if (!plugin) return refuse(res, 404, 'not an enabled surface');
 
     const rest = parts.slice(3);
-    if (rest[0] === 'feed') return this._feed(req, res);
+    if (rest[0] === 'feed') return this._feed(req, res, id);
 
     return this._file(req, res, id, rest);
   }
@@ -254,7 +260,7 @@ class SurfaceServer {
     return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
 
-  _feed(req, res) {
+  _feed(req, res, id) {
     if (this.clients.size >= MAX_CLIENTS) return refuse(res, 503, 'too many pages');
 
     res.writeHead(200, {
@@ -264,10 +270,10 @@ class SurfaceServer {
     });
     // A first frame straight away, so a page that opens mid-song is not blank
     // until the next change.
-    const current = this.payload();
+    const current = this.payload(id);
     if (current) res.write(`data: ${JSON.stringify(current)}\n\n`);
 
-    this.clients.add(res);
+    this.clients.set(res, id);
     req.on('close', () => this.clients.delete(res));
   }
 

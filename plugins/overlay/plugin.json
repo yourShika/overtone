@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",
@@ -31,11 +31,11 @@
       ],
       "label": { "en": "Layout", "de": "Aufbau", "pl": "Układ", "ru": "Компоновка", "es": "Diseño" },
       "help": {
-        "en": "Every setting here also works as ?name=value on the address, so a second Browser Source can show something else entirely.",
-        "de": "Jede Einstellung hier geht auch als ?name=wert in der Adresse — so zeigt eine zweite Browser-Quelle etwas ganz anderes.",
-        "pl": "Każde ustawienie działa też jako ?nazwa=wartość w adresie, więc drugie źródło może pokazywać coś zupełnie innego.",
-        "ru": "Любая настройка работает и как ?имя=значение в адресе, так что второй источник может показывать совсем другое.",
-        "es": "Cada ajuste vale también como ?nombre=valor en la dirección, así que una segunda fuente puede mostrar otra cosa."
+        "en": "Changes here reach a Browser Source that is already open. A source that should differ names its own ?name=value on the end of the address.",
+        "de": "Änderungen hier erreichen eine bereits offene Browser-Quelle. Eine Quelle, die abweichen soll, hängt ihr eigenes ?name=wert an die Adresse.",
+        "pl": "Zmiany tutaj docierają do już otwartego źródła. Źródło, które ma się różnić, dopisuje własne ?nazwa=wartość na końcu adresu.",
+        "ru": "Изменения здесь доходят до уже открытого источника. Источник, который должен отличаться, дописывает своё ?имя=значение в конец адреса.",
+        "es": "Los cambios aquí llegan a una fuente ya abierta. Una fuente que deba diferir añade su propio ?nombre=valor al final de la dirección."
       }
     },
     {
@@ -222,11 +222,11 @@
     {
       "type": "note",
       "text": {
-        "en": "Add a Browser Source in OBS and paste the address above. For a second source showing something else, paste the same address and change one value in it.",
-        "de": "Füge in OBS eine Browser-Quelle hinzu und setze die Adresse oben ein. Für eine zweite Quelle mit anderer Ansicht dieselbe Adresse einsetzen und einen Wert darin ändern.",
-        "pl": "Dodaj w OBS źródło przeglądarki i wklej adres powyżej. Dla drugiego źródła wklej ten sam adres i zmień w nim jedną wartość.",
-        "ru": "Добавьте в OBS «Браузер» и вставьте адрес выше. Для второго источника вставьте тот же адрес и измените в нём одно значение.",
-        "es": "Añade una fuente de navegador en OBS y pega la dirección de arriba. Para una segunda fuente distinta, pega la misma dirección y cambia un valor."
+        "en": "Add a Browser Source in OBS and paste the address above. It stays the same across restarts, so it is pasted once.",
+        "de": "Füge in OBS eine Browser-Quelle hinzu und setze die Adresse oben ein. Sie bleibt über Neustarts hinweg gleich — einmal einsetzen genügt.",
+        "pl": "Dodaj w OBS źródło przeglądarki i wklej adres powyżej. Pozostaje ten sam po restarcie, więc wklejasz go raz.",
+        "ru": "Добавьте в OBS «Браузер» и вставьте адрес выше. Он не меняется при перезапуске, так что вставить его нужно один раз.",
+        "es": "Añade una fuente de navegador en OBS y pega la dirección de arriba. No cambia al reiniciar, así que se pega una sola vez."
       }
     }
   ]

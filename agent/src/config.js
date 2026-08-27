@@ -104,6 +104,16 @@ const DEFAULTS = {
    * running Browser Source for a reason that has nothing to do with it.
    */
   pluginSurfacePort: 8788,
+  /**
+   * The random part of a surface's address, kept so it survives a restart.
+   *
+   * Minted once and then left alone. It used to be new on every start, which
+   * meant every Browser Source in OBS pointed at a dead address the next
+   * morning — retiring it is something somebody chooses, not something that
+   * happens to them. Not shown in the window; the panel offers a button that
+   * clears it, and the next start mints another.
+   */
+  surfaceToken: '',
   /** Suppress titles/artwork but keep "is watching something" visible. */
   privacyMode: false,
 
@@ -422,6 +432,12 @@ function sanitise(input) {
   // the window keeps showing "waiting for …", which reads like a hang.
   // Straight onto a command line, so it is a choice from a list rather than
   // free text. An unknown name would become an argument yt-dlp cannot read.
+  if (out.surfaceToken !== undefined) {
+    // Its own alphabet, because it goes in a URL path: anything else is a
+    // hand-edited file and a fresh one is safer than a broken address.
+    out.surfaceToken = /^[A-Za-z0-9_-]{16,64}$/.test(out.surfaceToken) ? out.surfaceToken : '';
+  }
+
   if (out.pluginSurfacePort !== undefined) {
     out.pluginSurfacePort = Math.min(65535, Math.max(1024, Math.round(Number(out.pluginSurfacePort) || 8788)));
   }

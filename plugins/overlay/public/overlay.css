@@ -314,53 +314,81 @@ body[data-lyric="spotify"] .line.entering {
 /*
  * The wait between two sung lines.
  *
- * One custom property carries how far through the gap we are, and each dot
- * works out its own share of that with calc() — so the whole thing is a single
- * style write per frame rather than three, and the easing is the browser's.
+ * A line like any other as far as layout goes, standing in the slot the missing
+ * line will occupy — so when it finally lands it simply replaces the dots and
+ * nothing above or below shifts:
+ *
+ *     … the line just sung
+ *     · · ·
+ *     the line coming next
  */
-.dots {
+.dots-line {
   display: flex;
   align-items: center;
   gap: 0.45em;
+  /* Matches a line of text, so the block keeps its rhythm. */
   height: 1.35em;
-  transition: opacity var(--ease);
 }
-.dots[hidden] {
-  display: none;
-}
-body[data-align="center"] .dots {
+body[data-align="center"] .dots-line {
   justify-content: center;
 }
-body[data-align="right"] .dots {
+body[data-align="right"] .dots-line {
   justify-content: flex-end;
 }
 
-.dots i {
-  width: 0.42em;
-  height: 0.42em;
+.dots-line i {
+  width: 0.34em;
+  height: 0.34em;
   border-radius: 50%;
-  background: var(--ink);
+  background: currentColor;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
-  /*
-   * Opacity and scale are written from JS on every frame.
-   *
-   * They were a clamp() around a calc() over a live custom property, which is
-   * legal and did not work: the container's --gap climbed from 0.03 to 0.44
-   * while every dot stayed at the floor, because the substituted value never
-   * made it back through the calc. Three style writes a frame cost nothing and
-   * are the animation, so there is no transition here either — a transition
-   * chasing a target that moves every frame only adds lag.
-   */
+  /* Written from JS every frame; these are only the starting values. */
   opacity: 0.22;
   transform: scale(0.62);
 }
 
-body[data-style="lyrics"] .dots {
+/*
+ * A wait of unknown length — subtitles, where nothing says when the next line
+ * comes. Filling towards an end we cannot see would be a lie, so they breathe.
+ */
+.dots-line.waiting i {
+  animation: breathe 1.8s ease-in-out infinite;
+}
+.dots-line.waiting i:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.dots-line.waiting i:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.05);
+  }
+}
+
+/* Bigger where the lyric is the whole point. */
+body[data-style="lyrics"] .dots-line {
   height: 1.9em;
 }
-body[data-style="lyrics"] .dots i {
-  width: 0.5em;
-  height: 0.5em;
+body[data-style="lyrics"] .dots-line i {
+  width: 0.42em;
+  height: 0.42em;
+}
+
+/* The dots never scale with the lyric styles — they are already the animation. */
+body[data-lyric="spotify"] .dots-line,
+body[data-lyric="slideUp"] .dots-line.entering,
+body[data-lyric="slideLeft"] .dots-line.entering,
+body[data-lyric="slideRight"] .dots-line.entering {
+  transform: none;
+  filter: none;
 }
 
 .idle {
@@ -536,9 +564,9 @@ body[data-style="ticker"] .title {
   .wrap,
   .line,
   .cover,
-  .dots,
-  .dots i {
+  .dots-line i {
     transition: none;
+    animation: none;
   }
   body[data-style="ticker"] .title {
     animation: none;

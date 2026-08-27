@@ -33,7 +33,6 @@
     total: $('total'),
     fill: $('fill'),
     lyrics: $('lyrics'),
-    dots: $('dots'),
     idle: $('idle'),
   };
 
@@ -82,6 +81,8 @@
   let lastRenderedLine = -1;
   /** Cue text currently on screen, so only genuinely new lines animate in. */
   let onScreen = [];
+  /** Whether a dots line is currently part of the block. */
+  let gapShown = false;
   let swapTimer = null;
 
   start();
@@ -243,7 +244,8 @@
       document.documentElement.style.setProperty('--ticker-seconds', `${seconds}s`);
     }
 
-    renderLyrics(currentCue(position()));
+    const at = position();
+    renderLyrics(currentCue(at), gapAt(at));
   }
 
   /**
@@ -271,8 +273,15 @@
     els.elapsed.textContent = clock(at);
 
     const index = currentCue(at);
-    if (index !== lastRenderedLine) renderLyrics(index);
-    showGap(gapAt(at));
+    const gap = gapAt(at);
+
+    // The block is rebuilt when a line changes or when the dots come and go;
+    // in between, only the dots themselves move.
+    if (index !== lastRenderedLine || (gap !== null) !== gapShown) {
+      renderLyrics(index, gap);
+    } else if (gap !== null) {
+      fillDots(els.lyrics.querySelector('.dots-line'), gap);
+    }
 
     // The agent went quiet mid-song: hold what is on screen for a moment, then
     // fade. Freezing on a song that ended minutes ago is worse than nothing.
@@ -349,27 +358,46 @@
     return Math.max(0, Math.min(1, (at - from) / (to - from)));
   }
 
-  function renderLyrics(index) {
+  /**
+   * Draw the visible lines, and the dots when there is a wait.
+   *
+   * The dots go *in* the block, in the slot the missing line will occupy, so
+   * nothing shifts when the line finally lands — it simply replaces them:
+   *
+   *     … the line just sung
+   *     · · ·
+   *     the line coming next
+   */
+  function renderLyrics(index, gap) {
     lastRenderedLine = index;
+    gapShown = gap !== null && gap !== undefined;
     els.lyrics.textContent = '';
 
     if (!state || state.privacy) {
       onScreen = [];
-      showGap(null);
+      gapShown = false;
       return;
     }
 
-    // Subtitles arrive one at a time, so there is nothing to read ahead and the
-    // page must not pretend otherwise.
+    // Subtitles arrive one at a time, so there is nothing to read ahead. An
+    // empty one is a wait of unknown length — dots, but breathing rather than
+    // filling, because there is nothing honest to fill towards.
     if (state.mode === 'caption') {
-      const texts = state.line ? [state.line] : [];
-      if (texts.length) els.lyrics.appendChild(line(state.line, true, !onScreen.includes(state.line)));
-      onScreen = texts;
+      if (state.line) {
+        els.lyrics.appendChild(line(state.line, true, !onScreen.includes(state.line)));
+        onScreen = [state.line];
+        gapShown = false;
+      } else {
+        els.lyrics.appendChild(dotsLine(null));
+        onScreen = [];
+        gapShown = true;
+      }
       return;
     }
 
-    if (state.mode !== 'timed' || index < 0) {
+    if (state.mode !== 'timed') {
       onScreen = [];
+      gapShown = false;
       return;
     }
 
@@ -378,14 +406,66 @@
     // so the reader can see what was just sung.
     const before = count > 1 ? 1 : 0;
 
+    // Before the first line there is nothing to show but the wait.
+    if (index < 0) {
+      onScreen = [];
+      if (gapShown) els.lyrics.appendChild(dotsLine(gap));
+      return;
+    }
+
     const texts = [];
     for (let i = index - before; i < index - before + count; i++) {
       const cue = state.cues[i];
       if (!cue) continue;
+
+      // An empty cue is the file marking a pause, not a line to draw. Rendering
+      // it would leave a blank row beside the dots that already say the same
+      // thing — and the dots below still go where it would have been.
+      if (!cue.text.trim()) {
+        if (i === index && gapShown) els.lyrics.appendChild(dotsLine(gap));
+        continue;
+      }
+
       texts.push(cue.text);
-      els.lyrics.appendChild(line(cue.text, i === index, !onScreen.includes(cue.text)));
+      // While the dots are up, nothing is "now" — the current line has been
+      // sung and the next has not started.
+      els.lyrics.appendChild(line(cue.text, i === index && !gapShown, !onScreen.includes(cue.text)));
+
+      // The dots sit straight after the line that was just sung.
+      if (i === index && gapShown) els.lyrics.appendChild(dotsLine(gap));
     }
     onScreen = texts;
+  }
+
+  /** A line of three dots, which is a line like any other as far as layout goes. */
+  function dotsLine(amount) {
+    const div = document.createElement('div');
+    div.className = 'line now-line dots-line';
+    if (amount === null) div.classList.add('waiting');
+    for (let i = 0; i < DOT_STARTS.length; i++) div.appendChild(document.createElement('i'));
+    fillDots(div, amount);
+    return div;
+  }
+
+  /**
+   * How full each dot is.
+   *
+   * Written from JS rather than computed in CSS: it was a clamp() around a
+   * calc() over a live custom property, which is legal and did not work — the
+   * substituted number never made it back through the calc, so every dot sat at
+   * the floor while the value climbed. Three style writes a frame cost nothing.
+   */
+  function fillDots(div, amount) {
+    // An unknown wait cannot be filled honestly, so the CSS breathes instead.
+    if (amount === null) return;
+
+    for (let i = 0; i < DOT_STARTS.length; i++) {
+      const dot = div.children[i];
+      if (!dot) continue;
+      const share = amount - DOT_STARTS[i];
+      dot.style.opacity = String(clamp(share * 3.2, 0.22, 1));
+      dot.style.transform = `scale(${clamp(0.62 + share * 1.6, 0.62, 1.18)})`;
+    }
   }
 
   /**
@@ -395,32 +475,6 @@
    * displaced state has to be painted once before the transition to the settled
    * one means anything.
    */
-  /**
-   * Fill the dots, or put them away.
-   *
-   * One custom property per frame; each dot works out its own share in CSS.
-   * The current line is dimmed rather than hidden while the dots are up, so the
-   * last thing sung stays readable — which is what a player does, and what
-   * somebody glancing at a stream actually wants.
-   */
-  function showGap(amount) {
-    const showing = amount !== null && body.dataset.lyrics !== 'off' && !state?.privacy;
-
-    els.dots.hidden = !showing;
-    body.dataset.gap = showing ? 'yes' : 'no';
-    if (!showing) return;
-
-    // Each dot owns a third of the wait, and the one currently filling swells a
-    // little past the others so the eye has somewhere to rest.
-    for (let i = 0; i < DOT_STARTS.length; i++) {
-      const dot = els.dots.children[i];
-      if (!dot) continue;
-      const share = amount - DOT_STARTS[i];
-      dot.style.opacity = String(clamp(share * 3.2, 0.22, 1));
-      dot.style.transform = `scale(${clamp(0.62 + share * 1.6, 0.62, 1.18)})`;
-    }
-  }
-
   function line(text, current, arriving) {
     const div = document.createElement('div');
     div.className = current ? 'line now-line' : 'line';

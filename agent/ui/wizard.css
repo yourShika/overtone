@@ -217,17 +217,6 @@
   font: 650 13.5px var(--font);
 }
 
-.path {
-  margin: 8px 0;
-  padding: 10px 12px;
-  border: 1px dashed var(--bd2);
-  border-radius: 9px;
-  background: var(--inp);
-  font: 400 11px var(--mono);
-  color: var(--dim);
-  user-select: text;
-  word-break: break-all;
-}
 
 .status-line {
   display: flex;

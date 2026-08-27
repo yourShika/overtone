@@ -36,6 +36,8 @@ const { Transcriber } = require('./lyrics/transcriber');
 const { lyricWindow, buildBlocks, blockAt } = require('./lyrics/lrc');
 const { parseTrack } = require('./lyrics/trackparse');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
+const { PluginRegistry } = require('./plugins/registry');
+const { PluginStore } = require('./plugins/store');
 
 const TICK_MS = 1000;
 const ASSETS = path.join(__dirname, '..', 'assets');
@@ -72,6 +74,8 @@ let lyrics;
 let library;
 let transcriber;
 let thumbnails;
+let plugins;
+let pluginStore;
 
 const session = new Session();
 
@@ -112,6 +116,19 @@ const extension = { version: null, features: [] };
  * — so the script ships beside the archive as an extra resource instead. From
  * source it is simply the repo's tools directory.
  */
+/**
+ * Plugins that ship with the app.
+ *
+ * Same split as the transcription worker below: packaged, they sit beside the
+ * asar rather than inside it, because a surface's files are served to a browser
+ * and reading them out of an archive on every request would be pointless work.
+ */
+function bundledPluginsPath() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'plugins')
+    : path.join(__dirname, '..', 'plugins');
+}
+
 function transcribeScriptPath() {
   const name = 'transcribe-to-lrc.py';
   return app.isPackaged
@@ -164,6 +181,20 @@ app.whenReady().then(async () => {
     refreshUi();
   });
   transcriber.on('change', refreshUi);
+
+  pluginStore = new PluginStore(path.join(userData, 'plugins.json'), logger);
+  plugins = new PluginRegistry({
+    bundledDir: bundledPluginsPath(),
+    userDir: path.join(userData, 'plugins'),
+    store: pluginStore,
+    logger,
+  });
+  await plugins.scan();
+  for (const found of plugins.describe(getLocale())) {
+    if (found.shadowed) logger.warn(t('msg.plugIdTaken', { id: found.id }));
+    else if (found.problem) logger.warn(t('msg.plugBroken', { id: found.id, reason: found.problem }));
+    else logger.debug(t('msg.plugFound', { id: found.id }));
+  }
 
   lyrics = new LyricsProvider({
     cacheDir: path.join(userData, 'lyrics-cache'),
@@ -1293,6 +1324,41 @@ function registerIpc() {
       refreshUi();
     }
     return outcome;
+  });
+
+  ipcMain.handle('plugins:list', () => plugins.describe(getLocale()));
+
+  ipcMain.handle('plugins:reload', async () => {
+    await plugins.scan();
+    return plugins.describe(getLocale());
+  });
+
+  ipcMain.handle('plugins:setEnabled', (_event, id, on) => {
+    if (!plugins.manifestFor(id)) return false;
+    pluginStore.setEnabled(id, on);
+    refreshUi();
+    return true;
+  });
+
+  ipcMain.handle('plugins:setSetting', (_event, id, key, value) => {
+    // Checked against the manifest rather than trusted: this arrives from the
+    // renderer, and a field the plugin never declared has no business being
+    // stored under its name.
+    const manifest = plugins.manifestFor(id);
+    const field = manifest?.settings.find((f) => f.key === key && f.type !== 'note');
+    if (!field) return false;
+
+    pluginStore.setValue(id, key, value);
+    refreshUi();
+    return true;
+  });
+
+  ipcMain.handle('plugins:openFolder', () => shell.openPath(path.join(app.getPath('userData'), 'plugins')));
+
+  ipcMain.handle('plugins:reveal', (_event, id) => {
+    const dir = plugins.dirFor(id);
+    if (dir) shell.openPath(dir);
+    return Boolean(dir);
   });
 
   ipcMain.handle('library:regenerate', async (_event, name) => {

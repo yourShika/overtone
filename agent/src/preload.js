@@ -59,6 +59,14 @@ contextBridge.exposeInMainWorld('overtone', {
     reveal: (name) => ipcRenderer.invoke('library:reveal', name),
     regenerate: (name) => ipcRenderer.invoke('library:regenerate', name),
   },
+  plugins: {
+    list: () => ipcRenderer.invoke('plugins:list'),
+    reload: () => ipcRenderer.invoke('plugins:reload'),
+    setEnabled: (id, on) => ipcRenderer.invoke('plugins:setEnabled', id, on),
+    setSetting: (id, key, value) => ipcRenderer.invoke('plugins:setSetting', id, key, value),
+    openFolder: () => ipcRenderer.invoke('plugins:openFolder'),
+    reveal: (id) => ipcRenderer.invoke('plugins:reveal', id),
+  },
   wizard: {
     finish: () => ipcRenderer.invoke('wizard:finish'),
   },

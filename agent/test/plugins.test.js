@@ -286,3 +286,173 @@ test('text that would rewrite the words around it is stripped', () => {
   // Ordinary text, including scripts and punctuation, is untouched.
   assert.equal(pick('Overlay – Größe · 日本語', 'en'), 'Overlay – Größe · 日本語');
 });
+
+// ------------------------------------------------- finding them on disk
+
+const fsp = require('node:fs/promises');
+const os = require('node:os');
+const nodePath = require('node:path');
+
+const { PluginRegistry } = require('../src/plugins/registry');
+const { PluginStore } = require('../src/plugins/store');
+
+const QUIET = { info() {}, warn() {}, error() {}, debug() {} };
+
+/** Two plugin roots and a store, thrown away afterwards. */
+async function withRoots(run) {
+  const root = await fsp.mkdtemp(nodePath.join(os.tmpdir(), 'overtone-plug-'));
+  const bundledDir = nodePath.join(root, 'bundled');
+  const userDir = nodePath.join(root, 'user');
+  await fsp.mkdir(bundledDir, { recursive: true });
+
+  const store = new PluginStore(nodePath.join(root, 'plugins.json'), QUIET);
+  const registry = new PluginRegistry({ bundledDir, userDir, store, logger: QUIET });
+
+  /** Drop a plugin folder into one of the roots. */
+  const put = async (where, id, manifest) => {
+    const dir = nodePath.join(where === 'bundled' ? bundledDir : userDir, id);
+    await fsp.mkdir(dir, { recursive: true });
+    if (manifest !== null) {
+      await fsp.writeFile(
+        nodePath.join(dir, 'plugin.json'),
+        typeof manifest === 'string' ? manifest : JSON.stringify(manifest),
+      );
+    }
+    return dir;
+  };
+
+  try {
+    await run({ registry, store, put, root, bundledDir, userDir });
+  } finally {
+    await fsp.rm(root, { recursive: true, force: true });
+  }
+}
+
+const MANIFEST = (id, extra = {}) => ({
+  engine: 1,
+  id,
+  name: { en: id },
+  surface: true,
+  settings: [{ type: 'switch', key: 'showLyrics', default: true, label: { en: 'Lyrics' } }],
+  ...extra,
+});
+
+test('a plugin folder is found and described in the asked language', async () => {
+  await withRoots(async ({ registry, put }) => {
+    await put('user', 'my-overlay', {
+      ...MANIFEST('my-overlay'),
+      name: { en: 'My overlay', de: 'Mein Overlay' },
+      description: { en: 'Shows the song' },
+    });
+    await registry.scan();
+
+    const [plugin] = registry.describe('de');
+    assert.equal(plugin.name, 'Mein Overlay');
+    assert.equal(plugin.origin, 'user');
+    assert.equal(plugin.problem, null);
+    assert.equal(plugin.enabled, false, 'nichts läuft, weil es installiert wurde');
+    assert.deepEqual(plugin.values, { showLyrics: true });
+  });
+});
+
+test('a broken plugin is listed as broken rather than left out', async () => {
+  // Silently missing is the worst outcome: the author changes something, it
+  // vanishes from the panel, and nothing anywhere says why.
+  await withRoots(async ({ registry, put }) => {
+    await put('user', 'good-one', MANIFEST('good-one'));
+    await put('user', 'bad-json', '{ not json');
+    await put('user', 'no-manifest', null);
+    await registry.scan();
+
+    const byId = Object.fromEntries(registry.describe('en').map((p) => [p.id, p]));
+    assert.equal(byId['good-one'].problem, null);
+    assert.match(byId['bad-json'].problem, /JSON/);
+    assert.match(byId['no-manifest'].problem, /no plugin.json/);
+    assert.equal(Object.keys(byId).length, 3, 'alle drei tauchen auf');
+  });
+});
+
+test('a user folder cannot take the name of a bundled plugin', async () => {
+  // Otherwise dropping in a folder named after a bundled one would quietly
+  // replace it, stored settings and all.
+  await withRoots(async ({ registry, put }) => {
+    await put('bundled', 'overlay', { ...MANIFEST('overlay'), name: { en: 'The real one' } });
+    await put('user', 'overlay', { ...MANIFEST('overlay'), name: { en: 'The impostor' } });
+    await registry.scan();
+
+    const found = registry.describe('en');
+    assert.equal(found.length, 1);
+    assert.equal(found[0].name, 'The real one');
+    assert.equal(found[0].origin, 'bundled');
+    assert.equal(found[0].shadowed, true, 'gemeldet, nicht stillschweigend übergangen');
+  });
+});
+
+test('a manifest too large to be one is refused without reading it', async () => {
+  await withRoots(async ({ registry, put, userDir }) => {
+    await put('user', 'huge', MANIFEST('huge'));
+    await fsp.writeFile(nodePath.join(userDir, 'huge', 'plugin.json'), 'x'.repeat(70000));
+    await registry.scan();
+
+    assert.match(registry.describe('en')[0].problem, /max/);
+  });
+});
+
+test('a missing plugins folder is not an error', async () => {
+  await withRoots(async ({ registry }) => {
+    await registry.scan();
+    assert.deepEqual(registry.describe('en'), []);
+  });
+});
+
+test('stored values survive a manifest that changed underneath them', async () => {
+  await withRoots(async ({ registry, store, put }) => {
+    await put('user', 'shifty', {
+      ...MANIFEST('shifty'),
+      settings: [{ type: 'number', key: 'size', default: 20, min: 10, max: 40 }],
+    });
+    await registry.scan();
+    store.setValue('shifty', 'size', 35);
+
+    // The author tightens the bound in a later version.
+    await put('user', 'shifty', {
+      ...MANIFEST('shifty'),
+      settings: [{ type: 'number', key: 'size', default: 20, min: 10, max: 30 }],
+    });
+    await registry.scan();
+
+    assert.equal(registry.describe('en')[0].values.size, 30, 'auf die neue Grenze gezogen');
+  });
+});
+
+test('the store keeps plugins apart and survives a corrupted file', async () => {
+  const root = await fsp.mkdtemp(nodePath.join(os.tmpdir(), 'overtone-store-'));
+  try {
+    const file = nodePath.join(root, 'plugins.json');
+    const store = new PluginStore(file, QUIET);
+
+    store.setEnabled('a', true);
+    store.setValue('a', 'size', 12);
+    store.setValue('b', 'size', 99);
+
+    const reopened = new PluginStore(file, QUIET);
+    assert.equal(reopened.isEnabled('a'), true);
+    assert.equal(reopened.isEnabled('b'), false);
+    assert.equal(reopened.valuesFor('a').size, 12);
+    assert.equal(reopened.valuesFor('b').size, 99);
+
+    // A half-written file must cost settings, not the app.
+    await fsp.writeFile(file, '{ broken');
+    const broken = new PluginStore(file, QUIET);
+    assert.equal(broken.isEnabled('a'), false);
+    assert.deepEqual(broken.valuesFor('a'), {});
+  } finally {
+    await fsp.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('a plugin id that names something on the prototype is still its own entry', () => {
+  const store = new PluginStore(nodePath.join(os.tmpdir(), 'overtone-none.json'), QUIET);
+  assert.equal(store.isEnabled('constructor'), false);
+  assert.deepEqual(store.valuesFor('toString'), {});
+});

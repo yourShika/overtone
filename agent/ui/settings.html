@@ -44,6 +44,8 @@
             <button class="nav-item" role="tab" data-panel="lyr" aria-selected="false" type="button" data-i18n="nav.lyr"></button>
             <button class="nav-item" role="tab" data-panel="tr" aria-selected="false" type="button"><span data-i18n="nav.tr"></span><span class="nav-tail"><span class="chip" id="nav-badge-tr" data-i18n="app.off"></span></span>
             </button>
+            <button class="nav-item" role="tab" data-panel="plug" aria-selected="false" type="button"><span data-i18n="nav.plug"></span><span class="nav-tail"><span class="chip hidden" id="nav-badge-plug"></span></span>
+            </button>
             <button class="nav-item" role="tab" data-panel="sys" aria-selected="false" type="button" data-i18n="nav.sys"></button>
             <button class="nav-item" role="tab" data-panel="log" aria-selected="false" type="button" data-i18n="nav.log"></button>
           </div>
@@ -352,6 +354,33 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            <!-- Plugins -->
+            <section class="panel" id="panel-plug" hidden data-title="search.plug">
+              <h2 data-i18n="plug.title"></h2>
+              <p class="sub" data-i18n="plug.sub"></p>
+
+              <div class="notice">
+                <span data-i18n="plug.trust"></span>
+              </div>
+
+              <div class="card">
+                <div class="log-tools">
+                  <span class="chip" id="plug-count"></span>
+                  <button class="btn ghost" id="plug-reload" type="button" data-i18n="plug.reload"></button>
+                  <button class="btn ghost" id="plug-open" type="button" data-i18n="plug.openFolder"></button>
+                </div>
+                <span class="hint" data-i18n="plug.folderWarn"></span>
+              </div>
+
+              <div id="plug-list"></div>
+
+              <div class="card hidden" id="plug-empty">
+                <span class="field-head"><span class="label" data-i18n="plug.emptyTitle"></span></span>
+                <p class="hint" data-i18n="plug.empty"></p>
+                <p class="path" id="plug-path"></p>
               </div>
             </section>
 

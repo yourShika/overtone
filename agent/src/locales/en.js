@@ -467,4 +467,31 @@ module.exports = {
   'tr.cookiesNone': 'none chosen',
   'tray.ready': 'ready',
   'tray.waitingDiscord': 'waiting for Discord',
+  'nav.plug': 'Plugins',
+  'search.plug': 'Plugins overlay OBS surface add-ons folder',
+  'plug.title': 'Plugins',
+  'plug.sub': 'Things other people wrote, and things you write yourself.',
+  'plug.trust':
+    'A plugin here is a page, not a program. It runs in whatever browser opens it and is only ever sent the song, the time and the lyric — it cannot read your files or reach Discord.',
+  'plug.folderWarn':
+    'The folder lives in your app data, and uninstalling Overtone deletes it. Keep a copy of anything you wrote yourself.',
+  'plug.count': '{active} of {total} on',
+  'plug.reload': 'Read the folder again',
+  'plug.openFolder': 'Open folder',
+  'plug.emptyTitle': 'Nothing installed yet',
+  'plug.empty':
+    'Put a plugin folder here and press Read the folder again. Each one turns up below with whatever it asked to have set.',
+  'plug.enable': 'On',
+  'plug.noSettings': 'This plugin has nothing to set.',
+  'plug.by': 'by {author}',
+  'plug.authorText': 'The names and labels below come from the plugin, not from Overtone.',
+  'plug.brokenChip': 'Broken',
+  'plug.brokenTitle': 'This plugin could not be read',
+  'plug.brokenHelp':
+    'Overtone left it switched off. Fix the folder and press Read the folder again.',
+  'plug.idTaken': 'A plugin of that name already ships with Overtone, so this folder was ignored.',
+  'plug.reveal': 'Show files',
+  'msg.plugFound': 'Plugin loaded: {id}',
+  'msg.plugBroken': 'Plugin {id} was refused: {reason}',
+  'msg.plugIdTaken': 'Plugin {id} was ignored: a plugin of that name ships with Overtone',
 };

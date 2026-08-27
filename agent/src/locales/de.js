@@ -449,4 +449,32 @@ module.exports = {
   'tr.cookiesNone': 'keine gewählt',
   'tray.ready': 'bereit',
   'tray.waitingDiscord': 'wartet auf Discord',
+  'nav.plug': 'Plugins',
+  'search.plug': 'Plugins Overlay OBS Oberfläche Erweiterungen Ordner',
+  'plug.title': 'Plugins',
+  'plug.sub': 'Sachen, die andere geschrieben haben — und die du selbst schreibst.',
+  'plug.trust':
+    'Ein Plugin hier ist eine Seite, kein Programm. Es läuft in dem Browser, der es öffnet, und bekommt ausschließlich Song, Zeit und Songzeile — es kann weder deine Dateien lesen noch an Discord.',
+  'plug.folderWarn':
+    'Der Ordner liegt in deinen App-Daten, und beim Deinstallieren von Overtone verschwindet er. Bewahre eine Kopie von allem auf, was du selbst geschrieben hast.',
+  'plug.count': '{active} von {total} an',
+  'plug.reload': 'Ordner neu einlesen',
+  'plug.openFolder': 'Ordner öffnen',
+  'plug.emptyTitle': 'Noch nichts installiert',
+  'plug.empty':
+    'Lege einen Plugin-Ordner hier hinein und drücke „Ordner neu einlesen“. Jedes taucht dann unten auf, mit allem, was es einstellbar haben wollte.',
+  'plug.enable': 'An',
+  'plug.noSettings': 'Dieses Plugin hat nichts einzustellen.',
+  'plug.by': 'von {author}',
+  'plug.authorText': 'Die Namen und Beschriftungen unten stammen vom Plugin, nicht von Overtone.',
+  'plug.brokenChip': 'Kaputt',
+  'plug.brokenTitle': 'Dieses Plugin ließ sich nicht lesen',
+  'plug.brokenHelp':
+    'Overtone hat es ausgeschaltet gelassen. Bring den Ordner in Ordnung und drücke „Ordner neu einlesen“.',
+  'plug.idTaken':
+    'Ein Plugin dieses Namens liegt Overtone bereits bei, deshalb wurde dieser Ordner übergangen.',
+  'plug.reveal': 'Dateien zeigen',
+  'msg.plugFound': 'Plugin geladen: {id}',
+  'msg.plugBroken': 'Plugin {id} wurde abgewiesen: {reason}',
+  'msg.plugIdTaken': 'Plugin {id} übergangen: ein Plugin dieses Namens liegt Overtone bei',
 };

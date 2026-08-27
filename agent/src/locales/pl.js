@@ -445,4 +445,31 @@ module.exports = {
   'tr.cookiesNone': 'nie wybrano',
   'tray.ready': 'gotowy',
   'tray.waitingDiscord': 'czeka na Discorda',
+  'nav.plug': 'Wtyczki',
+  'search.plug': 'Wtyczki nakładka OBS powierzchnia dodatki folder',
+  'plug.title': 'Wtyczki',
+  'plug.sub': 'To, co napisali inni — i to, co napiszesz sam.',
+  'plug.trust':
+    'Wtyczka to strona, nie program. Działa w przeglądarce, która ją otworzy, i dostaje wyłącznie utwór, czas i wers — nie odczyta twoich plików ani nie sięgnie do Discorda.',
+  'plug.folderWarn':
+    'Folder leży w danych aplikacji i znika przy odinstalowaniu Overtone. Zachowaj kopię wszystkiego, co napisałeś sam.',
+  'plug.count': '{active} z {total} włączonych',
+  'plug.reload': 'Wczytaj folder ponownie',
+  'plug.openFolder': 'Otwórz folder',
+  'plug.emptyTitle': 'Nic jeszcze nie zainstalowano',
+  'plug.empty':
+    'Umieść tu folder wtyczki i naciśnij „Wczytaj folder ponownie”. Każda pojawi się poniżej wraz z tym, co chciała mieć do ustawienia.',
+  'plug.enable': 'Wł.',
+  'plug.noSettings': 'Ta wtyczka nie ma nic do ustawienia.',
+  'plug.by': 'autor: {author}',
+  'plug.authorText': 'Nazwy i etykiety poniżej pochodzą od wtyczki, nie od Overtone.',
+  'plug.brokenChip': 'Zepsuta',
+  'plug.brokenTitle': 'Tej wtyczki nie udało się odczytać',
+  'plug.brokenHelp':
+    'Overtone zostawił ją wyłączoną. Popraw folder i naciśnij „Wczytaj folder ponownie”.',
+  'plug.idTaken': 'Wtyczka o tej nazwie jest już dołączona do Overtone, więc ten folder pominięto.',
+  'plug.reveal': 'Pokaż pliki',
+  'msg.plugFound': 'Wtyczka wczytana: {id}',
+  'msg.plugBroken': 'Wtyczka {id} odrzucona: {reason}',
+  'msg.plugIdTaken': 'Wtyczka {id} pominięta: wtyczka o tej nazwie jest dołączona do Overtone',
 };

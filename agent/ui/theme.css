@@ -610,3 +610,38 @@ input.mid {
   border-radius: 4px;
   background: var(--stripe);
 }
+
+/* Moved here from wizard.css, because the plugins panel wants it too and both
+   windows already link this file. The wizard's copy is removed with it. */
+.path {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--bd2);
+  border-radius: 9px;
+  background: var(--inp);
+  font: 400 11px var(--mono);
+  color: var(--dim);
+  user-select: text;
+  word-break: break-all;
+}
+
+/* The one control a plugin can ask for that the app never needed itself. The
+   browser draws the swatch; this only makes the frame match everything else. */
+input[type='color'] {
+  width: 56px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: var(--inp);
+  cursor: pointer;
+}
+
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}

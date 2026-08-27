@@ -42,6 +42,9 @@ let libFilter = 'all';
 let libSearch = '';
 let libSelected = null;
 let libEditing = false;
+/** The plugin folder, as last read. Refreshed when the panel is opened. */
+let plugEntries = [];
+
 /** Which panel is showing, so re-selecting the same one is not a fresh open. */
 let currentPanel = 'conn';
 
@@ -67,6 +70,9 @@ async function init() {
     applyStatus(status);
     renderLog();
     renderLibrary();
+    // The plugin cards are built from a manifest, so nothing in them carries a
+    // data-i18n attribute for the sweep to find — they have to be rebuilt.
+    loadPlugins().catch(() => {});
     // Built in JS, so the generic [data-i18n] sweep cannot reach their labels:
     // the browser row carries a translated "Off" and the language row a
     // translated "System", and both stayed in the old language without this.
@@ -277,6 +283,7 @@ function selectPanel(name) {
   const entered = name !== currentPanel;
   currentPanel = name;
   if (name === 'lyr' && entered) loadLibrary().catch(() => {});
+  if (name === 'plug' && entered) loadPlugins().catch(() => {});
   if (!entered) clearNote();
 
   // Re-trigger the entry animation, which only runs on a fresh element.
@@ -442,6 +449,244 @@ function markLanguage() {
   }
 }
 
+// ------------------------------------------------------------------ plugins
+
+async function loadPlugins() {
+  plugEntries = await api.plugins.list();
+  renderPlugins();
+}
+
+/**
+ * Draw one card per plugin folder.
+ *
+ * Everything a plugin supplies goes in through textContent. The manifest is a
+ * file somebody else wrote, and this window runs under script-src 'self' with
+ * no innerHTML anywhere near it — the one exception is the switch knob below,
+ * which is our own literal markup and holds nothing from the plugin.
+ */
+function renderPlugins() {
+  const list = $('plug-list');
+  list.textContent = '';
+
+  const active = plugEntries.filter((p) => p.enabled && !p.problem).length;
+  $('plug-count').textContent = T.t('plug.count', { active, total: plugEntries.length });
+  $('plug-empty').classList.toggle('hidden', plugEntries.length > 0);
+
+  const badge = $('nav-badge-plug');
+  badge.textContent = String(active);
+  badge.className = active ? 'chip good' : 'chip hidden';
+
+  for (const plugin of plugEntries) list.appendChild(pluginCard(plugin));
+}
+
+function pluginCard(plugin) {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const head = document.createElement('span');
+  head.className = 'field-head';
+
+  const name = document.createElement('span');
+  name.className = 'label';
+  name.textContent = plugin.name;
+  head.appendChild(name);
+
+  if (plugin.version) head.appendChild(chip(plugin.version, 'chip mono'));
+  if (plugin.problem) head.appendChild(chip(T.t('plug.brokenChip'), 'chip bad'));
+  // Only where there is an author to name. A shadowed folder was never read,
+  // so it has none, and "by —" reads like the author is called that.
+  else if (plugin.origin === 'user' && !plugin.shadowed && plugin.author) {
+    head.appendChild(chip(T.t('plug.by', { author: plugin.author }), 'tag'));
+  }
+  card.appendChild(head);
+
+  if (plugin.shadowed) {
+    card.appendChild(hint(T.t('plug.idTaken')));
+    return card;
+  }
+
+  if (plugin.problem) {
+    const notice = document.createElement('div');
+    notice.className = 'notice bad';
+    const title = document.createElement('strong');
+    title.textContent = T.t('plug.brokenTitle');
+    // The reason comes from the manifest parser, not from the plugin.
+    const why = document.createElement('span');
+    why.textContent = ' ' + plugin.problem;
+    notice.append(title, why);
+    card.appendChild(notice);
+    card.appendChild(hint(T.t('plug.brokenHelp')));
+    return card;
+  }
+
+  if (plugin.description) card.appendChild(hint(plugin.description));
+
+  const row = document.createElement('div');
+  row.className = 'switch-row';
+  const label = document.createElement('span');
+  label.className = 'text';
+  label.textContent = T.t('plug.enable');
+  row.appendChild(label);
+
+  const knob = document.createElement('button');
+  knob.type = 'button';
+  knob.className = 'switch';
+  knob.setAttribute('role', 'switch');
+  knob.setAttribute('aria-checked', plugin.enabled ? 'true' : 'false');
+  knob.innerHTML = '<span class="knob"></span>';
+  row.appendChild(knob);
+  row.addEventListener('click', async () => {
+    const next = knob.getAttribute('aria-checked') !== 'true';
+    knob.setAttribute('aria-checked', next ? 'true' : 'false');
+    await api.plugins.setEnabled(plugin.id, next);
+    plugin.enabled = next;
+    renderPlugins();
+  });
+  card.appendChild(row);
+
+  if (!plugin.settings.length) {
+    card.appendChild(hint(T.t('plug.noSettings')));
+  } else {
+    // Said once per card, above the plugin's own words rather than after them.
+    card.appendChild(hint(T.t('plug.authorText')));
+    for (const field of plugin.settings) {
+      const element = pluginField(plugin, field);
+      if (element) card.appendChild(element);
+    }
+  }
+
+  const tools = document.createElement('div');
+  tools.className = 'row';
+  const reveal = document.createElement('button');
+  reveal.className = 'btn ghost';
+  reveal.type = 'button';
+  reveal.textContent = T.t('plug.reveal');
+  reveal.addEventListener('click', () => api.plugins.reveal(plugin.id));
+  tools.appendChild(reveal);
+  card.appendChild(tools);
+
+  return card;
+}
+
+/**
+ * One declared setting, as the control the manifest asked for.
+ *
+ * The type is a closed list, so there is no path from a manifest to markup we
+ * did not write. An unknown type draws nothing rather than guessing.
+ */
+function pluginField(plugin, field) {
+  const write = (value) => api.plugins.setSetting(plugin.id, field.key, value);
+  const shown = () => !field.showIf || plugin.values[field.showIf.key] === (field.showIf.equals ?? true);
+
+  if (field.type === 'note') {
+    const note = hint(field.text);
+    if (!shown()) note.classList.add('hidden');
+    return note;
+  }
+
+  const wrap = document.createElement('label');
+  wrap.className = 'field';
+  if (!shown()) wrap.classList.add('hidden');
+
+  if (field.type === 'switch') {
+    const row = document.createElement('div');
+    row.className = 'switch-row';
+    const text = document.createElement('span');
+    text.className = 'text';
+    text.textContent = field.label || field.key;
+    if (field.help) {
+      const small = document.createElement('small');
+      small.textContent = field.help;
+      text.appendChild(small);
+    }
+    row.appendChild(text);
+
+    const knob = document.createElement('button');
+    knob.type = 'button';
+    knob.className = 'switch';
+    knob.setAttribute('role', 'switch');
+    knob.setAttribute('aria-checked', plugin.values[field.key] ? 'true' : 'false');
+    knob.innerHTML = '<span class="knob"></span>';
+    row.appendChild(knob);
+
+    row.addEventListener('click', async () => {
+      const next = knob.getAttribute('aria-checked') !== 'true';
+      knob.setAttribute('aria-checked', next ? 'true' : 'false');
+      plugin.values[field.key] = next;
+      await write(next);
+      // A switch may be what another field hangs off, so redraw the card.
+      renderPlugins();
+    });
+    return row;
+  }
+
+  const head = document.createElement('span');
+  head.className = 'field-head';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = field.label || field.key;
+  head.appendChild(label);
+  wrap.appendChild(head);
+
+  if (field.type === 'choice') {
+    // Four or fewer is a segmented control; more wraps better as pills.
+    const box = document.createElement('div');
+    box.className = field.options.length <= 4 ? 'segmented' : 'pill-row';
+    for (const option of field.options) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      if (box.className === 'pill-row') button.className = 'pill';
+      button.textContent = option.label;
+      button.setAttribute(
+        'aria-selected',
+        plugin.values[field.key] === option.value ? 'true' : 'false',
+      );
+      button.addEventListener('click', async () => {
+        plugin.values[field.key] = option.value;
+        await write(option.value);
+        renderPlugins();
+      });
+      box.appendChild(button);
+    }
+    wrap.appendChild(box);
+  } else {
+    const input = document.createElement('input');
+    input.type =
+      field.type === 'colour' ? 'color' : field.type === 'text' ? 'text' : field.type === 'range' ? 'range' : 'number';
+    if (field.type === 'number') input.className = 'mid';
+    if (Number.isFinite(field.min)) input.min = String(field.min);
+    if (Number.isFinite(field.max)) input.max = String(field.max);
+    if (Number.isFinite(field.step)) input.step = String(field.step);
+    input.value = String(plugin.values[field.key] ?? '');
+
+    const commit = () => {
+      const value = field.type === 'text' || field.type === 'colour' ? input.value : Number(input.value);
+      plugin.values[field.key] = value;
+      write(value);
+    };
+    input.addEventListener('change', commit);
+    input.addEventListener('input', debounce(commit, 400));
+    wrap.appendChild(input);
+  }
+
+  if (field.help) wrap.appendChild(hint(field.help));
+  return wrap;
+}
+
+function chip(text, className) {
+  const span = document.createElement('span');
+  span.className = className;
+  span.textContent = text;
+  return span;
+}
+
+function hint(text) {
+  const span = document.createElement('span');
+  span.className = 'hint';
+  span.textContent = text;
+  return span;
+}
+
 function bindActions() {
   const reconnect = () => api.actions.reconnectDiscord();
   $('btn-reconnect').addEventListener('click', reconnect);
@@ -522,6 +767,12 @@ function bindActions() {
     if (outcome === 'missing') await loadLibrary();
   });
   $('btn-open-logs').addEventListener('click', () => api.actions.openLogFolder());
+
+  $('plug-reload').addEventListener('click', async () => {
+    plugEntries = await api.plugins.reload();
+    renderPlugins();
+  });
+  $('plug-open').addEventListener('click', () => api.plugins.openFolder());
 
   $('btn-pick-cookies').addEventListener('click', async () => {
     const file = await api.actions.pickCookiesFile();

@@ -449,4 +449,32 @@ module.exports = {
   'tr.cookiesNone': 'ninguno elegido',
   'tray.ready': 'listo',
   'tray.waitingDiscord': 'esperando a Discord',
+  'nav.plug': 'Complementos',
+  'search.plug': 'Complementos plugins superposición OBS superficie carpeta',
+  'plug.title': 'Complementos',
+  'plug.sub': 'Lo que han escrito otros — y lo que escribas tú.',
+  'plug.trust':
+    'Un complemento aquí es una página, no un programa. Se ejecuta en el navegador que lo abra y solo recibe la canción, el tiempo y la letra — no puede leer tus archivos ni llegar a Discord.',
+  'plug.folderWarn':
+    'La carpeta vive en los datos de la aplicación y desaparece al desinstalar Overtone. Guarda una copia de lo que hayas escrito tú.',
+  'plug.count': '{active} de {total} activos',
+  'plug.reload': 'Volver a leer la carpeta',
+  'plug.openFolder': 'Abrir la carpeta',
+  'plug.emptyTitle': 'Todavía no hay nada instalado',
+  'plug.empty':
+    'Pon aquí una carpeta de complemento y pulsa «Volver a leer la carpeta». Cada uno aparecerá abajo con lo que haya pedido poder ajustar.',
+  'plug.enable': 'Activo',
+  'plug.noSettings': 'Este complemento no tiene nada que ajustar.',
+  'plug.by': 'de {author}',
+  'plug.authorText': 'Los nombres y las etiquetas de abajo son del complemento, no de Overtone.',
+  'plug.brokenChip': 'Roto',
+  'plug.brokenTitle': 'Este complemento no se ha podido leer',
+  'plug.brokenHelp':
+    'Overtone lo ha dejado apagado. Arregla la carpeta y pulsa «Volver a leer la carpeta».',
+  'plug.idTaken':
+    'Ya viene un complemento con ese nombre en Overtone, así que esta carpeta se ha ignorado.',
+  'plug.reveal': 'Mostrar los archivos',
+  'msg.plugFound': 'Complemento cargado: {id}',
+  'msg.plugBroken': 'Complemento {id} rechazado: {reason}',
+  'msg.plugIdTaken': 'Complemento {id} ignorado: ya viene uno con ese nombre',
 };

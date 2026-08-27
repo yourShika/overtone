@@ -340,7 +340,10 @@
     if (index < 0) {
       const first = state.cues[0].t;
       const from = Math.max(0, first - GAP_MAX);
-      return first - at > GAP_MIN ? progress(at, from, first) : null;
+      // Whether the intro is long enough to be worth a countdown — not how much
+      // of it is left. Measuring what remains made the dots quit four seconds
+      // before the first line instead of handing over to it.
+      return first - from > GAP_MIN ? progress(at, from, first) : null;
     }
 
     const cue = state.cues[index];
@@ -368,12 +371,29 @@
    *     · · ·
    *     the line coming next
    */
+  /** What a row of dots is called when we are tracking what is on screen. */
+  const DOTS = '\u0000dots';
+
+  /**
+   * Draw the visible rows.
+   *
+   * The dots are one of those rows rather than an extra beneath them, which is
+   * the whole trick: the window is always the same height, the dots hold the
+   * place of the line that has not arrived, and when it does it moves into that
+   * place the way any line moves into any other — same easing, same slide, same
+   * scaling under the lifted style. Nothing about them is special-cased in the
+   * animation, because they are not special.
+   *
+   *     … the line just sung
+   *     · · ·          <- the active row while the song is quiet
+   *     the line coming next
+   */
   function renderLyrics(index, gap) {
     lastRenderedLine = index;
     gapShown = gap !== null && gap !== undefined;
-    els.lyrics.textContent = '';
 
     if (!state || state.privacy) {
+      els.lyrics.textContent = '';
       onScreen = [];
       gapShown = false;
       return;
@@ -383,67 +403,108 @@
     // empty one is a wait of unknown length — dots, but breathing rather than
     // filling, because there is nothing honest to fill towards.
     if (state.mode === 'caption') {
-      if (state.line) {
-        els.lyrics.appendChild(line(state.line, true, !onScreen.includes(state.line)));
-        onScreen = [state.line];
-        gapShown = false;
-      } else {
-        els.lyrics.appendChild(dotsLine(null));
-        onScreen = [];
-        gapShown = true;
-      }
+      draw(state.line ? [state.line] : [DOTS], 0, null);
+      gapShown = !state.line;
       return;
     }
 
     if (state.mode !== 'timed') {
+      els.lyrics.textContent = '';
       onScreen = [];
       gapShown = false;
       return;
     }
 
-    const count = Number(body.dataset.lines) || 3;
-    // With one line there is nothing to lead with; with more, keep one behind
-    // so the reader can see what was just sung.
-    const before = count > 1 ? 1 : 0;
+    // One flat list of rows: every cue that has words, plus the dots standing
+    // where the wait is. Windowing over that keeps the height constant whether
+    // the song is between lines or in the middle of one.
+    const rows = [];
+    let active = -1;
+    let lastSung = -1;
 
-    // Before the first line there is nothing to show but the wait.
+    for (let i = 0; i < state.cues.length; i++) {
+      const cue = state.cues[i];
+      // An empty cue is the file marking a pause, not a line to draw — the dots
+      // below stand where it would have been.
+      if (cue.text.trim()) {
+        if (i === index && !gapShown) active = rows.length;
+        rows.push(cue.text);
+        if (i <= index) lastSung = rows.length - 1;
+      }
+      if (i === index && gapShown) {
+        active = rows.length;
+        rows.push(DOTS);
+      }
+    }
+
+    // The playhead can sit on a cue that produced no row: an empty one marking a
+    // pause too long to count down, so there are neither words nor dots to point
+    // at. The last line actually sung is what the block should still be showing —
+    // without this the window fell back to zero and the overlay jumped to the
+    // first lines of the song.
+    if (active < 0) active = lastSung;
+
+    // Before the first line the wait is the only row there is.
     if (index < 0) {
-      onScreen = [];
-      if (gapShown) els.lyrics.appendChild(dotsLine(gap));
+      if (gapShown) draw([DOTS], 0, gap);
+      else {
+        els.lyrics.textContent = '';
+        onScreen = [];
+      }
       return;
     }
 
-    const texts = [];
-    for (let i = index - before; i < index - before + count; i++) {
-      const cue = state.cues[i];
-      if (!cue) continue;
+    const count = Number(body.dataset.lines) || 3;
+    // With one row there is nothing to lead with; with more, keep one behind so
+    // the reader can see what was just sung.
+    const before = count > 1 ? 1 : 0;
+    // Keep the window full even at the end, where there is nothing left to
+    // lead with: slide it back rather than let the block shrink, which under a
+    // centred anchor would drag every line upward on the last verse.
+    const from = Math.min(Math.max(0, active - before), Math.max(0, rows.length - count));
 
-      // An empty cue is the file marking a pause, not a line to draw. Rendering
-      // it would leave a blank row beside the dots that already say the same
-      // thing — and the dots below still go where it would have been.
-      if (!cue.text.trim()) {
-        if (i === index && gapShown) els.lyrics.appendChild(dotsLine(gap));
-        continue;
-      }
-
-      texts.push(cue.text);
-      // While the dots are up, nothing is "now" — the current line has been
-      // sung and the next has not started.
-      els.lyrics.appendChild(line(cue.text, i === index && !gapShown, !onScreen.includes(cue.text)));
-
-      // The dots sit straight after the line that was just sung.
-      if (i === index && gapShown) els.lyrics.appendChild(dotsLine(gap));
+    // Nothing to point at at all — every cue in the file is empty.
+    if (active < 0) {
+      els.lyrics.textContent = '';
+      onScreen = [];
+      return;
     }
-    onScreen = texts;
+
+    draw(rows.slice(from, from + count), active - from, gap);
   }
 
-  /** A line of three dots, which is a line like any other as far as layout goes. */
-  function dotsLine(amount) {
+  /** Put a window of rows on screen, animating in whatever is new. */
+  function draw(rows, activeAt, gap) {
+    els.lyrics.textContent = '';
+
+    for (let i = 0; i < rows.length; i++) {
+      const arriving = !onScreen.includes(rows[i]);
+      els.lyrics.appendChild(
+        rows[i] === DOTS ? dotsLine(gap, i === activeAt, arriving) : line(rows[i], i === activeAt, arriving),
+      );
+    }
+    onScreen = rows;
+  }
+
+/**
+   * A row of dots, built the same way a row of words is.
+   *
+   * Same element, same classes, same entering treatment — so every lyric style
+   * applies to it without knowing it exists.
+   */
+  function dotsLine(amount, current, arriving) {
     const div = document.createElement('div');
-    div.className = 'line now-line dots-line';
-    if (amount === null) div.classList.add('waiting');
+    div.className = current ? 'line now-line dots-line' : 'line dots-line';
+    if (amount === null || amount === undefined) div.classList.add('waiting');
+    div.style.setProperty('--row', String(els.lyrics.childElementCount));
+
     for (let i = 0; i < DOT_STARTS.length; i++) div.appendChild(document.createElement('i'));
     fillDots(div, amount);
+
+    if (arriving && body.dataset.smooth !== 'off') {
+      div.classList.add('entering');
+      settle(div);
+    }
     return div;
   }
 
@@ -457,7 +518,7 @@
    */
   function fillDots(div, amount) {
     // An unknown wait cannot be filled honestly, so the CSS breathes instead.
-    if (amount === null) return;
+    if (!div || amount === null || amount === undefined) return;
 
     for (let i = 0; i < DOT_STARTS.length; i++) {
       const dot = div.children[i];
@@ -483,7 +544,7 @@
 
     if (arriving && body.dataset.smooth !== 'off') {
       div.classList.add('entering');
-      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('entering')));
+      settle(div);
     }
     return div;
   }
@@ -498,6 +559,22 @@
   function idleText() {
     if (body.dataset.hideIdle !== 'no') return '';
     return body.dataset.idleText || '';
+  }
+
+/**
+   * Let a row settle into place.
+   *
+   * Two frames, because the displaced state has to be painted once before the
+   * transition to the settled one means anything — and a timer beside them,
+   * because requestAnimationFrame is not called at all while the page is
+   * hidden. Without the timer a line added while the scene was off-screen kept
+   * its entering state, which is opacity zero: invisible, for as long as OBS
+   * did not show that scene.
+   */
+  function settle(div) {
+    const done = () => div.classList.remove('entering');
+    requestAnimationFrame(() => requestAnimationFrame(done));
+    setTimeout(done, 60);
   }
 
   function clamp(value, low, high) {

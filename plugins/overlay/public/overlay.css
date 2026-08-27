@@ -382,13 +382,17 @@ body[data-style="lyrics"] .dots-line i {
   height: 0.42em;
 }
 
-/* The dots never scale with the lyric styles — they are already the animation. */
-body[data-lyric="spotify"] .dots-line,
-body[data-lyric="slideUp"] .dots-line.entering,
-body[data-lyric="slideLeft"] .dots-line.entering,
-body[data-lyric="slideRight"] .dots-line.entering {
-  transform: none;
-  filter: none;
+/*
+ * Nothing here excludes the dots from anything.
+ *
+ * They used to be exempted from the lyric styles, which made them appear and
+ * vanish while every line around them slid and faded — exactly the thing that
+ * made them read as a separate gadget rather than as part of the words. They
+ * are a .line, so every style already applies; this only keeps the three dots
+ * themselves from being squashed by a scale meant for text.
+ */
+.dots-line i {
+  flex: none;
 }
 
 .idle {

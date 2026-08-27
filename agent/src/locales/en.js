@@ -489,11 +489,9 @@ module.exports = {
   'plug.brokenTitle': 'This plugin could not be read',
   'plug.brokenHelp':
     'Overtone left it switched off. Fix the folder and press Read the folder again.',
-  'plug.idTaken': 'A plugin of that name already ships with Overtone, so this folder was ignored.',
   'plug.reveal': 'Show files',
   'msg.plugFound': 'Plugin loaded: {id}',
   'msg.plugBroken': 'Plugin {id} was refused: {reason}',
-  'msg.plugIdTaken': 'Plugin {id} was ignored: a plugin of that name ships with Overtone',
   'plug.address': 'Address',
   'plug.addressHelp':
     'Add a Browser Source in OBS and paste this. 900 × 200 suits the card and the bar, 900 × 320 the lyrics.',
@@ -513,4 +511,10 @@ module.exports = {
   'msg.plugServerDown': 'The surface server stopped, because nothing needs it',
   'msg.plugServerFailed': 'The surface server could not start on port {port}: {error}',
   'msg.plugRejected': 'A request to the surface server was turned away: {reason}',
+  'plug.examplesTitle': 'Examples that came with Overtone',
+  'plug.examplesHelp':
+    'Not installed — adding one copies it into your folder, where it is yours to change or delete. An update will not put it back.',
+  'plug.addExample': 'Add {id}',
+  'msg.plugExampleAdded': 'Example copied into the plugins folder: {id}',
+  'msg.plugExampleFailed': 'Example {id} could not be copied: {error}',
 };

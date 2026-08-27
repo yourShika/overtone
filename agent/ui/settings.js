@@ -45,6 +45,9 @@ let libSelected = null;
 let libEditing = false;
 /** The plugin folder, as last read. Refreshed when the panel is opened. */
 let plugEntries = [];
+/** Examples that travel with the app and are not installed yet. */
+let plugExamples = [];
+
 /** Whether anything is listening, and on what address. */
 let plugSurface = { running: false, port: 0, error: null, addresses: {} };
 
@@ -457,6 +460,7 @@ function markLanguage() {
 async function loadPlugins() {
   plugEntries = await api.plugins.list();
   plugSurface = await api.plugins.surface();
+  plugExamples = await api.plugins.examples();
   renderPlugins();
 }
 
@@ -481,6 +485,46 @@ function renderPlugins() {
   badge.className = active ? 'chip good' : 'chip hidden';
 
   for (const plugin of plugEntries) list.appendChild(pluginCard(plugin));
+  renderExamples();
+}
+
+/**
+ * The examples that came with the app but are not installed.
+ *
+ * Adding one copies it into the user's own folder, where it is theirs: they can
+ * change it, delete it, and an update will not put it back or overwrite what
+ * they wrote. Which is the whole reason it is not installed to begin with.
+ */
+function renderExamples() {
+  const box = $('plug-examples');
+  box.textContent = '';
+  box.classList.toggle('hidden', !plugExamples.length);
+  if (!plugExamples.length) return;
+
+  const head = document.createElement('span');
+  head.className = 'field-head';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = T.t('plug.examplesTitle');
+  head.appendChild(label);
+  box.appendChild(head);
+  box.appendChild(hint(T.t('plug.examplesHelp')));
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  for (const id of plugExamples) {
+    const button = document.createElement('button');
+    button.className = 'btn';
+    button.type = 'button';
+    button.textContent = T.t('plug.addExample', { id });
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      await api.plugins.addExample(id);
+      await loadPlugins();
+    });
+    row.appendChild(button);
+  }
+  box.appendChild(row);
 }
 
 function pluginCard(plugin) {
@@ -497,17 +541,10 @@ function pluginCard(plugin) {
 
   if (plugin.version) head.appendChild(chip(plugin.version, 'chip mono'));
   if (plugin.problem) head.appendChild(chip(T.t('plug.brokenChip'), 'chip bad'));
-  // Only where there is an author to name. A shadowed folder was never read,
-  // so it has none, and "by —" reads like the author is called that.
-  else if (plugin.origin === 'user' && !plugin.shadowed && plugin.author) {
-    head.appendChild(chip(T.t('plug.by', { author: plugin.author }), 'tag'));
-  }
+  // Only where there is one to name: "by —" reads like the author is called
+  // that, and a broken folder was never read far enough to have one.
+  else if (plugin.author) head.appendChild(chip(T.t('plug.by', { author: plugin.author }), 'tag'));
   card.appendChild(head);
-
-  if (plugin.shadowed) {
-    card.appendChild(hint(T.t('plug.idTaken')));
-    return card;
-  }
 
   if (plugin.problem) {
     const notice = document.createElement('div');

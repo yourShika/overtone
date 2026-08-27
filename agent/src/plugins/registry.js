@@ -9,10 +9,10 @@
  * is the worst outcome here: the author changes something, it vanishes, and
  * nothing anywhere says why.
  *
- * Two roots, in order. The bundled folder ships with the app and is read first;
- * the user folder is read second and may not take an id the bundled pass
- * already used — otherwise dropping in a folder named after a bundled plugin
- * would quietly replace it, including its stored settings.
+ * One root, and only one: the folder in your app data. Nothing is installed by
+ * being shipped. The overlay that comes with Overtone is a template sitting
+ * beside the program until somebody copies it in — after which it is theirs, it
+ * can be edited, and an update will not put it back.
  */
 
 const fs = require('node:fs/promises');
@@ -26,27 +26,25 @@ const UNSAFE = /[\\/\0]|^\.+$/;
 class PluginRegistry {
   /**
    * @param {object} options
-   * @param {string} options.bundledDir  ships with the app, read first
-   * @param {string} options.userDir     %APPDATA%/Overtone/plugins
-   * @param {object} options.store       PluginStore, for enabled state and values
+   * @param {string} options.userDir  %APPDATA%/Overtone/plugins
+   * @param {object} options.store    PluginStore, for enabled state and values
    * @param {object} [options.logger]
    */
-  constructor({ bundledDir, userDir, store, logger = console }) {
-    this.bundledDir = bundledDir;
+  constructor({ userDir, store, logger = console }) {
     this.userDir = userDir;
     this.store = store;
     this.logger = logger;
-    /** @type {Map<string, object>} id -> { id, origin, dir, manifest, problem }*/
+    /** @type {Map<string, object>} id -> { id, dir, manifest, problem } */
     this.plugins = new Map();
   }
 
-  /** Make sure the user folder exists, so the window can offer to open it. */
+  /** Make sure the folder exists, so the window can offer to open it. */
   async ensureUserDir() {
     await fs.mkdir(this.userDir, { recursive: true }).catch(() => {});
   }
 
   /**
-   * Read both folders from scratch.
+   * Read the folder from scratch.
    *
    * Called on start and whenever someone presses Reload — never on a timer. A
    * plugin folder does not change by itself, and re-reading every file once a
@@ -56,20 +54,8 @@ class PluginRegistry {
     this.plugins = new Map();
     await this.ensureUserDir();
 
-    for (const [origin, dir] of [
-      ['bundled', this.bundledDir],
-      ['user', this.userDir],
-    ]) {
-      for (const name of await folders(dir)) {
-        const found = this.plugins.get(name);
-        if (found) {
-          // Only reachable in the user pass, and only against a bundled id.
-          this.logger.info?.(`plugin ${name} ignored: ${found.origin} already uses that name`);
-          this.plugins.set(name, { ...found, shadowed: true });
-          continue;
-        }
-        this.plugins.set(name, await read(path.join(dir, name), name, origin));
-      }
+    for (const name of await folders(this.userDir)) {
+      this.plugins.set(name, await read(path.join(this.userDir, name), name));
     }
 
     return this.plugins;
@@ -85,17 +71,15 @@ class PluginRegistry {
     const out = [];
 
     for (const entry of this.plugins.values()) {
-      const { id, origin, problem, manifest, shadowed } = entry;
+      const { id, problem, manifest } = entry;
 
       if (problem || !manifest) {
-        out.push({ id, origin, shadowed: Boolean(shadowed), problem: problem || 'unreadable', name: id });
+        out.push({ id, problem: problem || 'unreadable', name: id, settings: [], values: {} });
         continue;
       }
 
       out.push({
         id,
-        origin,
-        shadowed: Boolean(shadowed),
         problem: null,
         name: pick(manifest.name, locale) || id,
         description: pick(manifest.description, locale),
@@ -108,13 +92,13 @@ class PluginRegistry {
       });
     }
 
-    // Bundled first, then by name, so the list does not reorder itself when a
-    // folder is added.
-    return out.sort(
-      (a, b) =>
-        (a.origin === b.origin ? 0 : a.origin === 'bundled' ? -1 : 1) ||
-        a.name.localeCompare(b.name),
-    );
+    // By name, so the list does not reorder itself when a folder is added.
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Whether a folder of this name is already there, broken or not. */
+  has(id) {
+    return this.plugins.has(id);
   }
 
   /** The manifest for one plugin, or null if it is broken or unknown. */
@@ -124,8 +108,7 @@ class PluginRegistry {
 
   /** Where a plugin's files live, or null. */
   dirFor(id) {
-    const entry = this.plugins.get(id);
-    return entry && !entry.shadowed ? entry.dir : null;
+    return this.plugins.get(id)?.dir || null;
   }
 
   /** Enabled plugins that serve a page, which is what the server needs. */
@@ -168,7 +151,7 @@ async function folders(dir) {
 }
 
 /** One folder, read into either a manifest or a reason it could not be. */
-async function read(dir, id, origin) {
+async function read(dir, id) {
   const file = path.join(dir, 'plugin.json');
 
   let size;
@@ -177,23 +160,23 @@ async function read(dir, id, origin) {
     // reason to pull a gigabyte into memory to find out it is not one.
     ({ size } = await fs.stat(file));
   } catch {
-    return { id, origin, dir, manifest: null, problem: 'no plugin.json' };
+    return { id, dir, manifest: null, problem: 'no plugin.json' };
   }
   if (size > MAX_BYTES) {
-    return { id, origin, dir, manifest: null, problem: `plugin.json is ${size} bytes, max ${MAX_BYTES}` };
+    return { id, dir, manifest: null, problem: `plugin.json is ${size} bytes, max ${MAX_BYTES}` };
   }
 
   let raw;
   try {
     raw = await fs.readFile(file, 'utf8');
   } catch (err) {
-    return { id, origin, dir, manifest: null, problem: err.message };
+    return { id, dir, manifest: null, problem: err.message };
   }
 
   const result = parseManifest(raw, { id });
-  if (result.problem) return { id, origin, dir, manifest: null, problem: result.problem };
+  if (result.problem) return { id, dir, manifest: null, problem: result.problem };
 
-  return { id, origin, dir, manifest: result.manifest, problem: null };
+  return { id, dir, manifest: result.manifest, problem: null };
 }
 
 module.exports = { PluginRegistry, describeFields, defaults, UNSAFE };

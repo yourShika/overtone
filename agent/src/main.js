@@ -120,16 +120,20 @@ const extension = { version: null, features: [] };
  * source it is simply the repo's tools directory.
  */
 /**
- * Plugins that ship with the app.
+ * Example plugins that travel with the app but are not installed by it.
  *
- * Same split as the transcription worker below: packaged, they sit beside the
- * asar rather than inside it, because a surface's files are served to a browser
- * and reading them out of an archive on every request would be pointless work.
+ * Nothing here is loaded. A plugin becomes real by being copied into the user's
+ * own folder, on purpose, once — after which it is theirs to edit or delete,
+ * and an update will not put it back or overwrite what they changed.
+ *
+ * Packaged, they sit beside the asar rather than inside it: a surface's files
+ * are served to a browser, and reading them out of an archive on every request
+ * would be pointless work.
  */
-function bundledPluginsPath() {
+function examplesPath() {
   return app.isPackaged
-    ? path.join(process.resourcesPath, 'plugins')
-    : path.join(__dirname, '..', 'plugins');
+    ? path.join(process.resourcesPath, 'examples')
+    : path.join(__dirname, '..', 'examples');
 }
 
 function transcribeScriptPath() {
@@ -187,15 +191,13 @@ app.whenReady().then(async () => {
 
   pluginStore = new PluginStore(path.join(userData, 'plugins.json'), logger);
   plugins = new PluginRegistry({
-    bundledDir: bundledPluginsPath(),
     userDir: path.join(userData, 'plugins'),
     store: pluginStore,
     logger,
   });
   await plugins.scan();
   for (const found of plugins.describe(getLocale())) {
-    if (found.shadowed) logger.warn(t('msg.plugIdTaken', { id: found.id }));
-    else if (found.problem) logger.warn(t('msg.plugBroken', { id: found.id, reason: found.problem }));
+    if (found.problem) logger.warn(t('msg.plugBroken', { id: found.id, reason: found.problem }));
     else logger.debug(t('msg.plugFound', { id: found.id }));
   }
 
@@ -1401,6 +1403,43 @@ function registerIpc() {
     pluginStore.setValue(id, key, value);
     refreshUi();
     return true;
+  });
+
+  ipcMain.handle('plugins:examples', async () => {
+    const dir = examplesPath();
+    let names = [];
+    try {
+      names = (await require('node:fs/promises').readdir(dir, { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name);
+    } catch {
+      return [];
+    }
+    // Only the ones not already there. An example the user has installed is
+    // their plugin now, and offering to add it again invites overwriting it.
+    return names.filter((name) => !plugins.has(name));
+  });
+
+  ipcMain.handle('plugins:addExample', async (_event, id) => {
+    const fsp = require('node:fs/promises');
+    const from = path.join(examplesPath(), path.basename(String(id || '')));
+    const to = path.join(app.getPath('userData'), 'plugins', path.basename(String(id || '')));
+
+    // Never over the top of something already there. Whatever a person has in
+    // their own folder is theirs, even when it shares a name with an example.
+    if (plugins.has(path.basename(String(id || '')))) return 'exists';
+
+    try {
+      await fsp.cp(from, to, { recursive: true, errorOnExist: true, force: false });
+    } catch (err) {
+      logger.warn(t('msg.plugExampleFailed', { id, error: err.message }));
+      return 'failed';
+    }
+
+    await plugins.scan();
+    logger.info(t('msg.plugExampleAdded', { id }));
+    refreshUi();
+    return 'added';
   });
 
   ipcMain.handle('plugins:openFolder', () => shell.openPath(path.join(app.getPath('userData'), 'plugins')));

@@ -65,6 +65,8 @@ contextBridge.exposeInMainWorld('overtone', {
     setEnabled: (id, on) => ipcRenderer.invoke('plugins:setEnabled', id, on),
     setSetting: (id, key, value) => ipcRenderer.invoke('plugins:setSetting', id, key, value),
     openFolder: () => ipcRenderer.invoke('plugins:openFolder'),
+    examples: () => ipcRenderer.invoke('plugins:examples'),
+    addExample: (id) => ipcRenderer.invoke('plugins:addExample', id),
     reveal: (id) => ipcRenderer.invoke('plugins:reveal', id),
     surface: () => ipcRenderer.invoke('plugins:surface'),
     newAddress: () => ipcRenderer.invoke('plugins:newAddress'),

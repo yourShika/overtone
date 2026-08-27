@@ -467,11 +467,9 @@ module.exports = {
   'plug.brokenTitle': 'Tej wtyczki nie udało się odczytać',
   'plug.brokenHelp':
     'Overtone zostawił ją wyłączoną. Popraw folder i naciśnij „Wczytaj folder ponownie”.',
-  'plug.idTaken': 'Wtyczka o tej nazwie jest już dołączona do Overtone, więc ten folder pominięto.',
   'plug.reveal': 'Pokaż pliki',
   'msg.plugFound': 'Wtyczka wczytana: {id}',
   'msg.plugBroken': 'Wtyczka {id} odrzucona: {reason}',
-  'msg.plugIdTaken': 'Wtyczka {id} pominięta: wtyczka o tej nazwie jest dołączona do Overtone',
   'plug.address': 'Adres',
   'plug.addressHelp':
     'Dodaj w OBS źródło przeglądarki i wklej to. 900 × 200 pasuje do karty i paska, 900 × 320 do tekstu.',
@@ -491,4 +489,10 @@ module.exports = {
   'msg.plugServerDown': 'Serwer powierzchni zatrzymany, bo nic go nie potrzebuje',
   'msg.plugServerFailed': 'Serwer powierzchni nie wystartował na porcie {port}: {error}',
   'msg.plugRejected': 'Żądanie do serwera powierzchni odrzucone: {reason}',
+  'plug.examplesTitle': 'Przykłady dołączone do Overtone',
+  'plug.examplesHelp':
+    'Nie są zainstalowane — dodanie kopiuje przykład do twojego folderu, gdzie należy do ciebie: możesz go zmienić lub usunąć. Aktualizacja go nie przywróci.',
+  'plug.addExample': 'Dodaj {id}',
+  'msg.plugExampleAdded': 'Przykład skopiowany do folderu wtyczek: {id}',
+  'msg.plugExampleFailed': 'Nie udało się skopiować przykładu {id}: {error}',
 };

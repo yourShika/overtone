@@ -471,12 +471,9 @@ module.exports = {
   'plug.brokenTitle': 'Este complemento no se ha podido leer',
   'plug.brokenHelp':
     'Overtone lo ha dejado apagado. Arregla la carpeta y pulsa «Volver a leer la carpeta».',
-  'plug.idTaken':
-    'Ya viene un complemento con ese nombre en Overtone, así que esta carpeta se ha ignorado.',
   'plug.reveal': 'Mostrar los archivos',
   'msg.plugFound': 'Complemento cargado: {id}',
   'msg.plugBroken': 'Complemento {id} rechazado: {reason}',
-  'msg.plugIdTaken': 'Complemento {id} ignorado: ya viene uno con ese nombre',
   'plug.address': 'Dirección',
   'plug.addressHelp':
     'Añade una fuente de navegador en OBS y pega esto. 900 × 200 va bien para la tarjeta y la barra, 900 × 320 para la letra.',
@@ -496,4 +493,10 @@ module.exports = {
   'msg.plugServerFailed':
     'El servidor de superficies no ha podido arrancar en el puerto {port}: {error}',
   'msg.plugRejected': 'Se ha rechazado una petición al servidor de superficies: {reason}',
+  'plug.examplesTitle': 'Ejemplos que vienen con Overtone',
+  'plug.examplesHelp':
+    'No están instalados — añadir uno lo copia a tu carpeta, donde es tuyo para cambiarlo o borrarlo. Una actualización no lo devolverá.',
+  'plug.addExample': 'Añadir {id}',
+  'msg.plugExampleAdded': 'Ejemplo copiado a la carpeta de complementos: {id}',
+  'msg.plugExampleFailed': 'No se ha podido copiar el ejemplo {id}: {error}',
 };

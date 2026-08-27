@@ -301,16 +301,14 @@ const QUIET = { info() {}, warn() {}, error() {}, debug() {} };
 /** Two plugin roots and a store, thrown away afterwards. */
 async function withRoots(run) {
   const root = await fsp.mkdtemp(nodePath.join(os.tmpdir(), 'overtone-plug-'));
-  const bundledDir = nodePath.join(root, 'bundled');
   const userDir = nodePath.join(root, 'user');
-  await fsp.mkdir(bundledDir, { recursive: true });
 
   const store = new PluginStore(nodePath.join(root, 'plugins.json'), QUIET);
-  const registry = new PluginRegistry({ bundledDir, userDir, store, logger: QUIET });
+  const registry = new PluginRegistry({ userDir, store, logger: QUIET });
 
-  /** Drop a plugin folder into one of the roots. */
-  const put = async (where, id, manifest) => {
-    const dir = nodePath.join(where === 'bundled' ? bundledDir : userDir, id);
+  /** Drop a plugin folder into the one root there is. */
+  const put = async (_where, id, manifest) => {
+    const dir = nodePath.join(userDir, id);
     await fsp.mkdir(dir, { recursive: true });
     if (manifest !== null) {
       await fsp.writeFile(
@@ -322,7 +320,7 @@ async function withRoots(run) {
   };
 
   try {
-    await run({ registry, store, put, root, bundledDir, userDir });
+    await run({ registry, store, put, root, userDir });
   } finally {
     await fsp.rm(root, { recursive: true, force: true });
   }
@@ -348,7 +346,6 @@ test('a plugin folder is found and described in the asked language', async () =>
 
     const [plugin] = registry.describe('de');
     assert.equal(plugin.name, 'Mein Overlay');
-    assert.equal(plugin.origin, 'user');
     assert.equal(plugin.problem, null);
     assert.equal(plugin.enabled, false, 'nichts läuft, weil es installiert wurde');
     assert.deepEqual(plugin.values, { showLyrics: true });
@@ -372,20 +369,14 @@ test('a broken plugin is listed as broken rather than left out', async () => {
   });
 });
 
-test('a user folder cannot take the name of a bundled plugin', async () => {
-  // Otherwise dropping in a folder named after a bundled one would quietly
-  // replace it, stored settings and all.
-  await withRoots(async ({ registry, put }) => {
-    await put('bundled', 'overlay', { ...MANIFEST('overlay'), name: { en: 'The real one' } });
-    await put('user', 'overlay', { ...MANIFEST('overlay'), name: { en: 'The impostor' } });
-    await registry.scan();
+test('a folder already there is never overwritten by an example', () => {
+  // has() is what the add-an-example handler asks before copying. Whatever
+  // somebody has in their own folder is theirs, even when it shares a name.
+  const registry = new PluginRegistry({ userDir: 'C:/nowhere', store: new PluginStore('C:/none.json', QUIET), logger: QUIET });
+  registry.plugins.set('overlay', { id: 'overlay', dir: 'x', manifest: null, problem: 'broken' });
 
-    const found = registry.describe('en');
-    assert.equal(found.length, 1);
-    assert.equal(found[0].name, 'The real one');
-    assert.equal(found[0].origin, 'bundled');
-    assert.equal(found[0].shadowed, true, 'gemeldet, nicht stillschweigend übergangen');
-  });
+  assert.equal(registry.has('overlay'), true, 'auch ein kaputtes zählt als vorhanden');
+  assert.equal(registry.has('something-else'), false);
 });
 
 test('a manifest too large to be one is refused without reading it', async () => {
@@ -593,7 +584,7 @@ const { SurfaceServer } = require('../src/plugins/surface');
 /** A running server over one surface plugin, torn down afterwards. */
 async function withServer(run) {
   const root = await fsp.mkdtemp(nodePath.join(os.tmpdir(), 'overtone-surf-'));
-  const dir = nodePath.join(root, 'bundled', 'demo');
+  const dir = nodePath.join(root, 'plugins', 'demo');
   await fsp.mkdir(nodePath.join(dir, 'public'), { recursive: true });
   await fsp.writeFile(nodePath.join(dir, 'public', 'index.html'), '<!doctype html><p>hi');
   await fsp.writeFile(
@@ -604,8 +595,7 @@ async function withServer(run) {
   const store = new PluginStore(nodePath.join(root, 'plugins.json'), QUIET);
   store.setEnabled('demo', true);
   const registry = new PluginRegistry({
-    bundledDir: nodePath.join(root, 'bundled'),
-    userDir: nodePath.join(root, 'user'),
+    userDir: nodePath.join(root, 'plugins'),
     store,
     logger: QUIET,
   });
@@ -786,11 +776,12 @@ test('no plugin manifest hides inside the app source', () => {
   }
 });
 
-test('the bundled overlay is a manifest this app would accept from anyone', () => {
-  // It ships with Overtone but goes through the same door as a folder somebody
-  // dropped in — if it needed an exception, the door would be the wrong shape.
+test('the example overlay is a manifest this app would accept from anyone', () => {
+  // It travels with Overtone but is not installed by it, and it goes through
+  // exactly the door a folder somebody dropped in goes through. If it needed an
+  // exception, the door would be the wrong shape.
   const raw = require('node:fs').readFileSync(
-    nodePath.join(__dirname, '..', 'plugins', 'overlay', 'plugin.json'),
+    nodePath.join(__dirname, '..', 'examples', 'overlay', 'plugin.json'),
     'utf8',
   );
   const result = parseManifest(raw, { id: 'overlay' });

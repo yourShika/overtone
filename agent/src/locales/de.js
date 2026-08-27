@@ -471,12 +471,9 @@ module.exports = {
   'plug.brokenTitle': 'Dieses Plugin ließ sich nicht lesen',
   'plug.brokenHelp':
     'Overtone hat es ausgeschaltet gelassen. Bring den Ordner in Ordnung und drücke „Ordner neu einlesen“.',
-  'plug.idTaken':
-    'Ein Plugin dieses Namens liegt Overtone bereits bei, deshalb wurde dieser Ordner übergangen.',
   'plug.reveal': 'Dateien zeigen',
   'msg.plugFound': 'Plugin geladen: {id}',
   'msg.plugBroken': 'Plugin {id} wurde abgewiesen: {reason}',
-  'msg.plugIdTaken': 'Plugin {id} übergangen: ein Plugin dieses Namens liegt Overtone bei',
   'plug.address': 'Adresse',
   'plug.addressHelp':
     'Füge in OBS eine Browser-Quelle hinzu und setze das hier ein. 900 × 200 passt für Karte und Leiste, 900 × 320 für den Songtext.',
@@ -496,4 +493,10 @@ module.exports = {
   'msg.plugServerDown': 'Der Oberflächen-Server wurde beendet, weil ihn nichts mehr braucht',
   'msg.plugServerFailed': 'Der Oberflächen-Server konnte auf Port {port} nicht starten: {error}',
   'msg.plugRejected': 'Eine Anfrage an den Oberflächen-Server wurde abgewiesen: {reason}',
+  'plug.examplesTitle': 'Beispiele, die Overtone mitbringt',
+  'plug.examplesHelp':
+    'Nicht installiert — Hinzufügen kopiert eines in deinen Ordner, wo es dir gehört: änderbar, löschbar. Ein Update legt es nicht wieder hin.',
+  'plug.addExample': '{id} hinzufügen',
+  'msg.plugExampleAdded': 'Beispiel in den Plugin-Ordner kopiert: {id}',
+  'msg.plugExampleFailed': 'Beispiel {id} ließ sich nicht kopieren: {error}',
 };

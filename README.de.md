@@ -25,6 +25,8 @@ Deine Freunde sehen den Song — nicht bloß „schaut YouTube".
 - 🎤 **Die Lyrics, Zeile für Zeile** — laufen mit dem Song mit, wahlweise als Absatz
 - ▶️ **Ein kleines Symbol** — läuft, pausiert, Wiederholung oder Live
 - 🔗 **Ein Knopf zum Video** — ein Klick, und sie hören mit
+- 🎬 **Ein Overlay für OBS** — Song, Zeit und Songzeile auf dem Stream: vier Stile, anpassbar, und ein Plugin wie jedes andere
+- 🔌 **Plugins** — Ordner hineinlegen, und es steht unter Plugins mit allem, was es einstellbar haben wollte
 - 📚 **Eine Sammlung zum Bearbeiten** — jede gespeicherte Lyrics-Datei in einer Liste: ansehen, korrigieren oder neu transkribieren lassen
 - 🔒 **Diskret-Modus** — zeigt, dass du etwas schaust, ohne zu verraten was
 

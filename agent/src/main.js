@@ -38,6 +38,8 @@ const { parseTrack } = require('./lyrics/trackparse');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
 const { PluginRegistry } = require('./plugins/registry');
 const { PluginStore } = require('./plugins/store');
+const { SurfaceServer } = require('./plugins/surface');
+const { overlayPayload } = require('./plugins/feed');
 
 const TICK_MS = 1000;
 const ASSETS = path.join(__dirname, '..', 'assets');
@@ -76,6 +78,7 @@ let transcriber;
 let thumbnails;
 let plugins;
 let pluginStore;
+let surface;
 
 const session = new Session();
 
@@ -196,6 +199,19 @@ app.whenReady().then(async () => {
     else logger.debug(t('msg.plugFound', { id: found.id }));
   }
 
+  surface = new SurfaceServer({
+    registry: plugins,
+    payload: () =>
+      overlayPayload({
+        snapshot: statusSnapshot(),
+        config: config.all(),
+        lines: lyricState.lines,
+        now: Date.now(),
+      }),
+    logger,
+  });
+  await surface.sync(config.get('pluginSurfacePort'));
+
   lyrics = new LyricsProvider({
     cacheDir: path.join(userData, 'lyrics-cache'),
     userAgent: `Overtone/${app.getVersion()} (https://github.com/overtone-app/overtone)`,
@@ -223,6 +239,21 @@ app.whenReady().then(async () => {
 // Electron quits when the last window closes *unless* something listens here.
 // A tray app spends most of its life without any window, so we listen and do
 // nothing on purpose.
+/**
+ * Last resort, and it exists because there was none.
+ *
+ * A throw from a timer or a socket callback has nothing above it, so Electron
+ * would take the tray agent down without a word — the presence simply stops and
+ * the log ends mid-sentence. Logging it and staying up is the better failure:
+ * whatever threw is one feature, and the rest of the app still works.
+ */
+process.on('uncaughtException', (err) => {
+  logger?.error?.(`${err?.message || err}\n${err?.stack || ''}`);
+});
+process.on('unhandledRejection', (reason) => {
+  logger?.error?.(String(reason?.stack || reason));
+});
+
 app.on('window-all-closed', () => {});
 
 app.on('second-instance', () => openSettings());
@@ -236,6 +267,7 @@ app.on('before-quit', async () => {
     /* connection already gone */
   }
   discord?.destroy();
+  await surface?.stop();
   await bridge?.stop();
   logger?.close();
 });
@@ -1333,11 +1365,29 @@ function registerIpc() {
     return plugins.describe(getLocale());
   });
 
-  ipcMain.handle('plugins:setEnabled', (_event, id, on) => {
+  ipcMain.handle('plugins:setEnabled', async (_event, id, on) => {
     if (!plugins.manifestFor(id)) return false;
     pluginStore.setEnabled(id, on);
+    await surface.sync(config.get('pluginSurfacePort'));
     refreshUi();
     return true;
+  });
+
+  ipcMain.handle('plugins:surface', () => ({
+    running: surface.running,
+    port: surface.port,
+    error: surface.error,
+    addresses: Object.fromEntries(
+      plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id)]),
+    ),
+  }));
+
+  ipcMain.handle('plugins:newAddress', async () => {
+    // Retires the current token by starting over with a fresh one.
+    await surface.stop();
+    await surface.sync(config.get('pluginSurfacePort'));
+    refreshUi();
+    return surface.running;
   });
 
   ipcMain.handle('plugins:setSetting', (_event, id, key, value) => {
@@ -1588,6 +1638,7 @@ function refreshUi() {
   const snapshot = statusSnapshot();
   sendToSettings('status:update', snapshot);
   bridge?.broadcast('status', snapshot);
+  surface?.publish();
 }
 
 function sendToSettings(channel, payload) {
@@ -1636,6 +1687,9 @@ function onConfigChanged(changed) {
     bridge.setPort(config.get('port')).catch((err) => {
       logger.error(t('msg.portChangeFailed', { error: err.message }));
     });
+  }
+  if (changed.includes('pluginSurfacePort')) {
+    surface?.sync(config.get('pluginSurfacePort')).then(refreshUi);
   }
   if (changed.includes('autoStart')) applyAutoStart();
   if (changed.includes('lyricsEnabled')) resetLyrics();

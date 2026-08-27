@@ -96,6 +96,14 @@ const DEFAULTS = {
    * writes it into chrome.storage, where the content script has always read it.
    */
   watchdogEnabled: true,
+  /**
+   * Port the surface server listens on, when a surface plugin is switched on.
+   *
+   * Its own number rather than the bridge's: the bridge must stay on loopback
+   * for ever and restarts whenever its port changes, which would tear down a
+   * running Browser Source for a reason that has nothing to do with it.
+   */
+  pluginSurfacePort: 8788,
   /** Suppress titles/artwork but keep "is watching something" visible. */
   privacyMode: false,
 
@@ -414,6 +422,10 @@ function sanitise(input) {
   // the window keeps showing "waiting for …", which reads like a hang.
   // Straight onto a command line, so it is a choice from a list rather than
   // free text. An unknown name would become an argument yt-dlp cannot read.
+  if (out.pluginSurfacePort !== undefined) {
+    out.pluginSurfacePort = Math.min(65535, Math.max(1024, Math.round(Number(out.pluginSurfacePort) || 8788)));
+  }
+
   if (out.cookiesFile !== undefined) {
     out.cookiesFile = typeof out.cookiesFile === 'string' ? out.cookiesFile.trim() : '';
   }

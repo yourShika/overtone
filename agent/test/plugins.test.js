@@ -456,3 +456,313 @@ test('a plugin id that names something on the prototype is still its own entry',
   assert.equal(store.isEnabled('constructor'), false);
   assert.deepEqual(store.valuesFor('toString'), {});
 });
+
+// --------------------------------------------- what a surface is told
+
+const { overlayPayload, changed } = require('../src/plugins/feed');
+
+const SNAP = {
+  now: {
+    title: 'DJ SKIBA - KRĘCISZ MNIE',
+    artist: 'DJ SKIBA',
+    thumbnail: 'https://i.ytimg.com/vi/abc/hqdefault.jpg',
+    source: 'youtube',
+    duration: 187.4,
+    position: 42.8,
+    paused: false,
+  },
+  lyrics: { status: 'found', line: 'a line', origin: 'library' },
+  // Things that must never reach a stream, present exactly as the real
+  // snapshot has them.
+  discordUser: 'yourshika',
+  lastError: 'Discord: something went wrong',
+  transcription: { queue: ['a private song'] },
+  version: '2.3.2',
+};
+
+const CFG = { privacyMode: false, lyricsEnabled: true, lyricsMusicOnly: false };
+
+test('the overlay payload is an allowlist, not a filtered snapshot', () => {
+  // Asserted literally so a field added to statusSnapshot() cannot arrive on
+  // somebody's stream by simply existing.
+  const payload = overlayPayload({ snapshot: SNAP, config: CFG, lines: null, now: 1000 });
+
+  assert.deepEqual(
+    Object.keys(payload).sort(),
+    ['artist', 'at', 'cover', 'duration', 'mode', 'paused', 'playing', 'position', 'privacy', 'source', 'title'].sort(),
+  );
+
+  const asText = JSON.stringify(payload);
+  for (const secret of ['yourshika', 'something went wrong', 'a private song', '2.3.2']) {
+    assert.equal(asText.includes(secret), false, secret + ' ist durchgekommen');
+  }
+});
+
+test('private mode blanks the overlay exactly as it blanks Discord', () => {
+  const payload = overlayPayload({
+    snapshot: SNAP,
+    config: { ...CFG, privacyMode: true },
+    lines: [{ time: 1, text: 'x' }],
+    now: 1000,
+  });
+
+  assert.equal(payload.privacy, true);
+  assert.equal(payload.title, undefined);
+  assert.equal(payload.artist, undefined);
+  assert.equal(payload.cover, undefined);
+  assert.equal(payload.mode, 'none');
+  // The bar may still move: that it is playing was never the secret.
+  assert.equal(payload.duration, 187);
+});
+
+test('nothing playing is a state the page renders, not an error', () => {
+  const payload = overlayPayload({ snapshot: { now: null }, config: CFG, lines: null, now: 5 });
+  assert.equal(payload.playing, false);
+  assert.equal(payload.mode, 'none');
+});
+
+test('cues travel once per track, capped, with the anchor', () => {
+  const lines = Array.from({ length: 500 }, (_, i) => ({ time: i, text: 'x'.repeat(400) }));
+  const payload = overlayPayload({ snapshot: SNAP, config: CFG, lines, now: 9000 });
+
+  assert.equal(payload.mode, 'timed');
+  assert.equal(payload.cues.length, 400, 'gedeckelt');
+  assert.equal(payload.cues[0].text.length, 300, 'jede Zeile gedeckelt');
+  assert.equal(payload.at, 9000);
+  assert.equal(payload.position, 43, 'ganze Sekunden');
+});
+
+test('subtitles are one line and say so, because there is nothing to read ahead', () => {
+  const payload = overlayPayload({
+    snapshot: { ...SNAP, lyrics: { status: 'captions', line: 'right now' } },
+    config: CFG,
+    lines: null,
+    now: 1,
+  });
+  assert.equal(payload.mode, 'caption');
+  assert.equal(payload.line, 'right now');
+  assert.equal(payload.cues, undefined);
+});
+
+test('lyrics off, or music-only on a plain video, means no lyric half at all', () => {
+  const lines = [{ time: 1, text: 'x' }];
+  assert.equal(
+    overlayPayload({ snapshot: SNAP, config: { ...CFG, lyricsEnabled: false }, lines, now: 1 }).mode,
+    'none',
+  );
+  assert.equal(
+    overlayPayload({ snapshot: SNAP, config: { ...CFG, lyricsMusicOnly: true }, lines, now: 1 }).mode,
+    'none',
+  );
+});
+
+test('artwork from anywhere but the two known hosts is dropped', () => {
+  for (const bad of ['http://evil/x.jpg', 'javascript:alert(1)', 'https://i.ytimg.com.evil/x']) {
+    const payload = overlayPayload({
+      snapshot: { ...SNAP, now: { ...SNAP.now, thumbnail: bad } },
+      config: CFG,
+      lines: null,
+      now: 1,
+    });
+    assert.equal(payload.cover, '', bad + ' kam durch');
+  }
+});
+
+test('the song simply advancing is not a change worth sending', () => {
+  // The page has the anchor and runs its own clock, so a position that moved by
+  // exactly the elapsed time tells it nothing it did not already know.
+  const a = overlayPayload({ snapshot: SNAP, config: CFG, lines: null, now: 1000 });
+  const later = { ...SNAP, now: { ...SNAP.now, position: 47.8 } };
+  const b = overlayPayload({ snapshot: later, config: CFG, lines: null, now: 6000 });
+  assert.equal(changed(a, b), false);
+
+  // A seek is.
+  const jumped = { ...SNAP, now: { ...SNAP.now, position: 120 } };
+  assert.equal(changed(a, overlayPayload({ snapshot: jumped, config: CFG, lines: null, now: 6000 })), true);
+
+  // And so is a pause, or a new song.
+  const paused = { ...SNAP, now: { ...SNAP.now, paused: true } };
+  assert.equal(changed(a, overlayPayload({ snapshot: paused, config: CFG, lines: null, now: 1000 })), true);
+  assert.equal(changed(null, a), true);
+});
+
+// ------------------------------------------------- the door, under attack
+
+const { SurfaceServer } = require('../src/plugins/surface');
+
+/** A running server over one surface plugin, torn down afterwards. */
+async function withServer(run) {
+  const root = await fsp.mkdtemp(nodePath.join(os.tmpdir(), 'overtone-surf-'));
+  const dir = nodePath.join(root, 'bundled', 'demo');
+  await fsp.mkdir(nodePath.join(dir, 'public'), { recursive: true });
+  await fsp.writeFile(nodePath.join(dir, 'public', 'index.html'), '<!doctype html><p>hi');
+  await fsp.writeFile(
+    nodePath.join(dir, 'plugin.json'),
+    JSON.stringify({ engine: 1, id: 'demo', name: { en: 'Demo' }, surface: true }),
+  );
+
+  const store = new PluginStore(nodePath.join(root, 'plugins.json'), QUIET);
+  store.setEnabled('demo', true);
+  const registry = new PluginRegistry({
+    bundledDir: nodePath.join(root, 'bundled'),
+    userDir: nodePath.join(root, 'user'),
+    store,
+    logger: QUIET,
+  });
+  await registry.scan();
+
+  const server = new SurfaceServer({
+    registry,
+    payload: () => ({ playing: true, title: 'A song', at: 1 }),
+    logger: QUIET,
+  });
+  // Port 0 lets the OS pick, so a busy machine cannot make this flaky.
+  await server.start(0);
+
+  /** A raw request, so the Host header can be wrong on purpose. */
+  const ask = (path, headers = {}) =>
+    new Promise((resolve) => {
+      const req = require('node:http').request(
+        {
+          host: '127.0.0.1',
+          port: server.port,
+          path,
+          method: headers.method || 'GET',
+          headers: { host: `127.0.0.1:${server.port}`, ...headers },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => (body += c));
+          res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
+        },
+      );
+      req.on('error', () => resolve({ status: 0, headers: {}, body: '' }));
+      req.end();
+    });
+
+  try {
+    await run({ server, ask, dir, root });
+  } finally {
+    await server.stop();
+    await fsp.rm(root, { recursive: true, force: true });
+  }
+}
+
+test('a page with the address is served, and everything else is not', async () => {
+  await withServer(async ({ server, ask }) => {
+    const good = await ask(`/s/${server.token}/demo/`);
+    assert.equal(good.status, 200);
+    assert.match(good.body, /hi/);
+    assert.equal(good.headers['x-content-type-options'], 'nosniff');
+    assert.equal(good.headers['referrer-policy'], 'no-referrer');
+    assert.equal(good.headers['access-control-allow-origin'], undefined, 'nichts darf das lesen');
+
+    assert.equal((await ask('/')).status, 404);
+    assert.equal((await ask('/s/')).status, 404);
+    assert.equal((await ask(`/s/${server.token}/nonesuch/`)).status, 404);
+  });
+});
+
+test('a wrong-length token is refused rather than crashing the agent', async () => {
+  // timingSafeEqual throws RangeError on unequal lengths, and one such throw in
+  // an http listener would take the whole tray agent down.
+  await withServer(async ({ ask }) => {
+    for (const token of ['a', '', 'x'.repeat(200), '../../etc']) {
+      const res = await ask(`/s/${encodeURIComponent(token)}/demo/`);
+      assert.equal(res.status, 404, JSON.stringify(token));
+    }
+  });
+});
+
+test('a request that did not ask for 127.0.0.1 by name is refused', async () => {
+  // This is what makes "it only works on this computer" true: a page on the
+  // internet can point a name at 127.0.0.1, but cannot forge this header.
+  await withServer(async ({ server, ask }) => {
+    const res = await ask(`/s/${server.token}/demo/`, { host: 'overlay.evil.com' });
+    assert.equal(res.status, 403);
+  });
+});
+
+test('a page trying its luck from another origin is refused', async () => {
+  await withServer(async ({ server, ask }) => {
+    const res = await ask(`/s/${server.token}/demo/`, { origin: 'https://evil.example' });
+    assert.equal(res.status, 403);
+    // No Origin at all is a top-level navigation, which is how OBS opens it.
+    assert.equal((await ask(`/s/${server.token}/demo/`)).status, 200);
+  });
+});
+
+test('nothing outside the plugin public folder can be reached', async () => {
+  await withServer(async ({ server, ask, root }) => {
+    await fsp.writeFile(nodePath.join(root, 'secret.html'), 'private');
+
+    for (const attempt of [
+      '../../secret.html',
+      '..%2f..%2fsecret.html',
+      '%2e%2e%2f%2e%2e%2fsecret.html',
+      'sub/index.html',
+      'index.html%00.png',
+    ]) {
+      const res = await ask(`/s/${server.token}/demo/${attempt}`);
+      assert.equal(res.status, 404, attempt);
+      assert.equal(res.body.includes('private'), false, attempt + ' hat gelesen');
+    }
+  });
+});
+
+test('a file type the surface never declared is not served', async () => {
+  await withServer(async ({ server, ask, dir }) => {
+    await fsp.writeFile(nodePath.join(dir, 'public', 'notes.txt'), 'text');
+    assert.equal((await ask(`/s/${server.token}/demo/notes.txt`)).status, 404);
+  });
+});
+
+test('the feed opens, sends at once, and closes with the server', async () => {
+  await withServer(async ({ server }) => {
+    const chunks = [];
+    const res = await new Promise((resolve) => {
+      require('node:http')
+        .get(
+          {
+            host: '127.0.0.1',
+            port: server.port,
+            path: `/s/${server.token}/demo/feed`,
+            headers: { host: `127.0.0.1:${server.port}` },
+          },
+          resolve,
+        )
+        .end();
+    });
+    res.on('data', (c) => chunks.push(c.toString()));
+
+    await new Promise((r) => setTimeout(r, 60));
+    assert.match(chunks.join(''), /A song/, 'ein Bild sofort, nicht erst bei der nächsten Änderung');
+    assert.equal(res.headers['content-type'], 'text/event-stream; charset=utf-8');
+    assert.equal(server.clients.size, 1);
+
+    res.destroy();
+  });
+});
+
+test('a new address retires the old one', async () => {
+  await withServer(async ({ server, ask }) => {
+    const old = server.token;
+    assert.equal((await ask(`/s/${old}/demo/`)).status, 200);
+
+    // A fresh port, because the old one is still in the kernel's hands for a
+    // moment after close and this test is about the token, not the number.
+    await server.stop();
+    await server.start(0);
+
+    assert.notEqual(server.token, old);
+    assert.equal((await ask(`/s/${old}/demo/`)).status, 404, 'die alte Adresse ist tot');
+    assert.equal((await ask(`/s/${server.token}/demo/`)).status, 200, 'die neue lebt');
+  });
+});
+
+test('a method other than GET or HEAD is refused', async () => {
+  await withServer(async ({ server, ask }) => {
+    assert.equal((await ask(`/s/${server.token}/demo/`, { method: 'POST' })).status, 405);
+    assert.equal((await ask(`/s/${server.token}/demo/`, { method: 'HEAD' })).status, 200);
+  });
+});

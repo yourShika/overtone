@@ -535,6 +535,21 @@ test('subtitles are one line and say so, because there is nothing to read ahead'
   assert.equal(payload.cues, undefined);
 });
 
+test('subtitles that were only a sound description still say subtitles', () => {
+  // The agent strips "[Musik]" before it gets here, so the line is empty while
+  // the mode is not. That difference is the whole message: subtitles are on and
+  // nothing is being sung, which the page draws as the waiting dots. Falling
+  // back to mode 'none' would blank the block as though captions were off.
+  const payload = overlayPayload({
+    snapshot: { ...SNAP, lyrics: { status: 'captions', line: '' } },
+    config: CFG,
+    lines: null,
+    now: 1,
+  });
+  assert.equal(payload.mode, 'caption');
+  assert.equal(payload.line, '');
+});
+
 test('lyrics off, or music-only on a plain video, means no lyric half at all', () => {
   const lines = [{ time: 1, text: 'x' }];
   assert.equal(

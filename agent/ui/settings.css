@@ -403,6 +403,46 @@ input[type="range"]::-webkit-slider-thumb {
   white-space: pre-line;
 }
 
+/*
+ * Finished jobs.
+ *
+ * Built from .nav-item and .nav-tail as they already stand, so a row here sits
+ * at the same rhythm as one in the lyrics library. Only two things differ: the
+ * rows are not selectable, so the pointer and the hover fill are taken back
+ * off, and the retry button is smaller than a .btn in a form because it lives
+ * inside a row rather than beside one.
+ */
+.job-history {
+  margin-top: 8px;
+}
+
+.job-history .nav-item {
+  cursor: default;
+  padding: 6px 8px;
+  font-weight: 500;
+}
+
+.job-history .nav-item:hover {
+  background: transparent;
+}
+
+.job-history .text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.job-history .text small {
+  display: block;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.job-history .btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
 /* --- log ---------------------------------------------------------------- */
 
 .log-tools {

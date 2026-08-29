@@ -35,6 +35,7 @@ const { LyricsLibrary } = require('./lyrics/library');
 const { Transcriber } = require('./lyrics/transcriber');
 const { lyricWindow, buildBlocks, blockAt } = require('./lyrics/lrc');
 const { parseTrack } = require('./lyrics/trackparse');
+const { cleanCaption } = require('./lyrics/captions');
 const { ThumbnailResolver, youtubeThumb } = require('./thumbnails');
 const { PluginRegistry } = require('./plugins/registry');
 const { PluginStore } = require('./plugins/store');
@@ -397,6 +398,19 @@ async function setupBridge() {
         logger.warn(t('msg.playerRestarting', { title: trackLabel() }));
       }
     }
+    // A subtitle line has to go straight out. Everything else on a surface is
+    // either static for the song or read off the anchor the page already has,
+    // so the tick is soon enough; a caption is pushed by the page and expires
+    // in a couple of seconds. Waiting for the tick would leave a Browser Source
+    // showing the previous line for up to a second of every line's life.
+    //
+    // Only the surfaces: rebuilding the tray menu at subtitle speed would
+    // redraw it several times a song for nothing.
+    if (change.captionChanged && session.state) {
+      currentLyricLine(session.state, config.all());
+      surface?.publish();
+    }
+
     // These must not sit behind a lyric-boundary deferral: showing the previous
     // song for a few extra seconds is far worse than a slightly early lyric.
     if (change.trackChanged || change.pausedChanged || change.seeked) {
@@ -676,7 +690,15 @@ function resolveLyric(state, cfg) {
   // database misses, including auto-generated and auto-translated tracks.
   // Nothing to merge — the next line is unknown until YouTube renders it.
   if (source !== 'lrclib' && state.caption) {
-    return { text: state.caption, origin: 'captions', nextTime: null, merged: 1 };
+    // Auto-captions describe the sound as well as transcribe it, so on a music
+    // video whole lines read "[Musik]". What is left when those go can be
+    // nothing at all, and nothing is the honest answer: the song is playing and
+    // no words are being sung. Saying so beats putting a stage direction on
+    // somebody's stream for the length of an instrumental.
+    const text =
+      cfg.captionsHideNoise === false ? state.caption : cleanCaption(state.caption);
+    if (text) return { text, origin: 'captions', nextTime: null, merged: 1 };
+    return { text: null, origin: 'captions', nextTime: null, merged: 1 };
   }
 
   return none;
@@ -1496,6 +1518,43 @@ function registerIpc() {
       getConfig: () => config.all(),
     });
   });
+  /**
+   * Run a transcription that failed once more.
+   *
+   * Deliberately not routed through library:regenerate: that one starts from an
+   * .lrc file, and a job that failed never wrote one. The failure itself is the
+   * only record of the attempt, which is why the history carries the video id.
+   *
+   * The identifiers come back from the renderer, so they are checked rather
+   * than trusted — the id is the one thing that reaches a spawned process.
+   */
+  ipcMain.handle('transcribe:retry', (_event, videoId) => {
+    const id = String(videoId || '');
+    if (!/^[\w-]{11}$/.test(id)) return 'noVideo';
+    if (transcriber.busy) return 'busy';
+
+    // Find what we knew about it, so the retry keeps the artist and title the
+    // first attempt had. Falling back to the id alone still works; the lyrics
+    // file would just be named less helpfully.
+    const past = [...transcriber.history].reverse().find((entry) => entry.videoId === id);
+
+    // A retry is somebody saying "try this one again" on purpose, so the halt
+    // that stops automatic attempts has to lift with it.
+    transcriber.forget(id);
+    logger.info(t('msg.trRetry', { track: past?.label || id }));
+
+    const outcome = transcriber.submit({
+      videoId: id,
+      url: past?.url || `https://www.youtube.com/watch?v=${id}`,
+      artist: past?.artist || '',
+      track: past?.track || '',
+      config: config.all(),
+      getConfig: () => config.all(),
+    });
+    refreshUi();
+    return outcome;
+  });
+
   ipcMain.handle('discord:reconnect', () => {
     logger.info(t('msg.reconnecting'));
     // setupDiscord() replaces both objects, so retire the old pair first —

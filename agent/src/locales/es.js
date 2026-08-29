@@ -94,6 +94,8 @@ module.exports = {
   'lyr.combineStandard': 'Estándar',
   'lyr.combineMore': 'Más',
   'lyr.combineMax': 'Máximo',
+  'lyr.captionNoise': 'Ocultar las descripciones de sonido',
+  'lyr.captionNoiseSub': 'los subtítulos escriben «[Música]» y «[Aplausos]» donde no se canta nada',
   'lyr.musicOnly': 'Solo en YouTube Music',
   'lyr.prominent': 'Letra en la primera línea, en negrita',
   'lyr.save': 'Guardar la letra encontrada como archivo',
@@ -132,6 +134,10 @@ module.exports = {
   'tr.held': 'listo — esperando un hueco libre',
   'tr.halted': 'En pausa tras {count} fallos seguidos',
   'tr.failed': 'ha fallado',
+  'tr.retryNo': 'Ahora no',
+  'tr.retryBusy': 'Hay otra en curso',
+  'tr.retrying': 'Empezando…',
+  'tr.retry': 'Intentar de nuevo',
 
   'sys.title': 'Sistema',
   'sys.sub': 'Cómo se comporta el programa en sí.',
@@ -288,6 +294,7 @@ module.exports = {
   'msg.trWhisper': 'Transcripción: Whisper trabajando (tarda alrededor de un tercio de la canción) …',
   'msg.trDone': 'Transcripción terminada — en la próxima escucha la letra estará ahí.',
   'msg.trFailed': 'La transcripción ha fallado: {error}',
+  'msg.trRetry': 'Transcribiendo de nuevo a petición: {track}',
   'msg.trHalted':
     'Transcripción en pausa tras {count} fallos seguidos — parece un problema de configuración, no de la canción.',
   'msg.trQueued': 'Transcripción en cola: «{track}» ({count} esperando)',

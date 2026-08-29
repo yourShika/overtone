@@ -264,7 +264,7 @@ class Transcriber extends EventEmitter {
 
       this.logger.info?.(t('msg.trDone'));
       this.consecutiveFailures = 0;
-      this._record(track || videoId, 'ok', null);
+      this._record(track || videoId, 'ok', null, { videoId, url, artist, track });
       this.emit('done', { videoId });
       return true;
     } catch (err) {
@@ -288,7 +288,7 @@ class Transcriber extends EventEmitter {
           t('msg.trHalted', { count: this.consecutiveFailures }),
         );
       }
-      this._record(track || videoId, 'failed', advice || err.message);
+      this._record(track || videoId, 'failed', advice || err.message, { videoId, url, artist, track });
       return false;
     } finally {
       // The audio is a means to an end and must not linger, whether the run
@@ -310,11 +310,24 @@ class Transcriber extends EventEmitter {
     this.emit('change');
   }
 
-  _record(label, outcome, detail) {
+  /**
+   * Note how a job ended.
+   *
+   * The identifiers ride along with the label because a failure is the one
+   * entry somebody wants to act on, and "Artist - Title" is not enough to act
+   * with: the worker downloads by video id. Without them the window could show
+   * that a track failed but not offer to run it again, which is the obvious
+   * next thing to want.
+   */
+  _record(label, outcome, detail, { videoId = null, url = null, artist = '', track = '' } = {}) {
     this.history.push({
       label,
       outcome,
       detail,
+      videoId,
+      url,
+      artist,
+      track,
       seconds: this.startedAt ? Math.round((Date.now() - this.startedAt) / 1000) : null,
     });
     if (this.history.length > 20) this.history.shift();
@@ -330,7 +343,17 @@ class Transcriber extends EventEmitter {
       lastError: this.lastError,
       halted: this.halted,
       consecutiveFailures: this.consecutiveFailures,
-      history: this.history.slice(-5).reverse(),
+      // `retry` rather than leaving the window to work it out: whether a job
+      // can be run again is this class's rule — it needs a video id because the
+      // worker downloads by id, and it will not start a second job while one is
+      // running. The window should render that answer, not re-derive it.
+      history: this.history
+        .slice(-5)
+        .reverse()
+        .map((entry) => ({
+          ...entry,
+          retry: entry.outcome === 'failed' && Boolean(entry.videoId) && !this.busy,
+        })),
       attempted: this.attempted.size,
       queued: this.queue.length,
       queue: this.queue.map((item) => item.track || item.videoId),

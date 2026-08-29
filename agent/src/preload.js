@@ -59,6 +59,10 @@ contextBridge.exposeInMainWorld('overtone', {
     reveal: (name) => ipcRenderer.invoke('library:reveal', name),
     regenerate: (name) => ipcRenderer.invoke('library:regenerate', name),
   },
+  transcribe: {
+    /** Run a job that failed once more; the id comes from the failure itself. */
+    retry: (videoId) => ipcRenderer.invoke('transcribe:retry', videoId),
+  },
   plugins: {
     list: () => ipcRenderer.invoke('plugins:list'),
     reload: () => ipcRenderer.invoke('plugins:reload'),

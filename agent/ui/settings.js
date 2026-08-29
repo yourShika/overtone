@@ -1097,6 +1097,12 @@ ${T.t('tr.queued', { count: job.queued, names: job.queue.join(', ') })}`
 ${T.t('tr.alsoWaiting', { count: job.watching.length, names: job.watching.join(', ') })}`
     : '';
 
+  // Before the branches below, every one of which returns. The finished jobs
+  // are worth seeing whatever the transcriber is doing now — and the retry
+  // buttons have to come down while a job runs, which they would not if this
+  // only ran on the idle path.
+  renderTranscribeHistory(job);
+
   if (job?.phase) {
     box.dataset.busy = '1';
     spinner.hidden = false;
@@ -1125,14 +1131,72 @@ ${T.t('tr.alsoWaiting', { count: job.watching.length, names: job.watching.join('
     ? T.t('tr.halted', { count: job.consecutiveFailures })
     : T.t('tr.idle');
 
-  const history = (job?.history || [])
-    .map((h) =>
-      h.outcome === 'ok'
-        ? `✓ ${h.label} (${duration(h.seconds)})`
-        : `✗ ${h.label} — ${h.detail || T.t('tr.failed')}`,
-    )
-    .join('\n');
-  detail.textContent = [waiting.trim(), also.trim(), history].filter(Boolean).join('\n');
+  detail.textContent = [waiting.trim(), also.trim()].filter(Boolean).join('\n');
+}
+
+/**
+ * The finished jobs, newest first, with a way to run the failures again.
+ *
+ * This was a run of text under the status line. Reading that a track failed and
+ * having nothing to press is the wrong end of the problem: the reasons are
+ * mostly transient — a download that timed out, a network that dropped, a run
+ * of failures that halted the queue and has since been fixed in this very
+ * window — and the only way back was to play the song again and wait.
+ */
+function renderTranscribeHistory(job) {
+  const box = $('transcribe-history');
+  box.textContent = '';
+
+  for (const entry of job?.history || []) {
+    const row = document.createElement('div');
+    row.className = 'nav-item';
+
+    const text = document.createElement('span');
+    text.className = 'text';
+    const head = document.createElement('span');
+    head.textContent = `${entry.outcome === 'ok' ? '✓' : '✗'} ${cut(entry.label, 46)}`;
+    text.appendChild(head);
+
+    const note = document.createElement('small');
+    note.textContent =
+      entry.outcome === 'ok'
+        ? duration(entry.seconds)
+        : entry.detail || T.t('tr.failed');
+    text.appendChild(note);
+    row.appendChild(text);
+
+    // Only where pressing it could do something. The agent decides that — it
+    // knows whether a video id was recorded and whether a job is already
+    // running — so a disabled button here would be this window guessing.
+    if (entry.retry) {
+      const tail = document.createElement('span');
+      tail.className = 'nav-tail';
+
+      const again = document.createElement('button');
+      again.type = 'button';
+      again.className = 'btn ghost';
+      again.textContent = T.t('tr.retry');
+      again.addEventListener('click', async () => {
+        again.disabled = true;
+        again.textContent = T.t('tr.retrying');
+        const outcome = await api.transcribe.retry(entry.videoId);
+        // 'started' and 'queued' both mean it was taken, and the status line
+        // above takes over from here — this row is rebuilt by the update that
+        // follows. Anything else is a refusal, and it has to be said in words:
+        // an unknown key renders as the key, so the outcomes are named here
+        // rather than turned into one.
+        if (outcome !== 'started' && outcome !== 'queued') {
+          again.textContent = T.t(outcome === 'busy' ? 'tr.retryBusy' : 'tr.retryNo');
+          again.disabled = false;
+        }
+      });
+
+      tail.appendChild(again);
+      row.appendChild(tail);
+    }
+
+    box.appendChild(row);
+  }
 }
 
 function duration(total) {

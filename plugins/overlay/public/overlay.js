@@ -85,6 +85,18 @@
   let gapShown = false;
   /** The dots row the song is currently inside, so the frame loop can fill it. */
   let activeDots = null;
+  /**
+   * The subtitle lines seen on this track, oldest first.
+   *
+   * Subtitles arrive one at a time and there is nothing to read ahead, so
+   * without this the block held a single line however many rows were asked for.
+   * Keeping what has already been said fills the same window with the same
+   * animation — which is what somebody watching a stream reads anyway, having
+   * looked away for a moment.
+   */
+  let captions = [];
+  /** Enough to fill any window the panel offers, and no transcript. */
+  const CAPTION_HISTORY = 12;
   let swapTimer = null;
 
   start();
@@ -191,6 +203,13 @@
     receivedAt = performance.now();
     delete body.dataset.stale;
 
+    // Remembered here rather than in the drawing, which runs several times per
+    // message and would file the same line again each time.
+    if (next.mode === 'caption' && next.line && captions[captions.length - 1] !== next.line) {
+      captions.push(next.line);
+      if (captions.length > CAPTION_HISTORY) captions.shift();
+    }
+
     if (!newTrack) {
       paint();
       return;
@@ -199,6 +218,7 @@
     cueIndex = 0;
     lastRenderedLine = -1;
     onScreen = [];
+    captions = [];
 
     // A different song is a change of subject, so the block fades out, swaps,
     // and fades back rather than rewriting itself word by word under the eye.
@@ -422,11 +442,20 @@
       return;
     }
 
-    // Subtitles arrive one at a time, so there is nothing to read ahead. An
-    // empty one is a wait of unknown length — dots, but breathing rather than
-    // filling, because there is nothing honest to fill towards.
+    // Subtitles arrive one at a time, so there is nothing to read ahead — the
+    // window is filled with what has already been said and anchored at the
+    // bottom, the way live captions run. A pause is a wait of unknown length:
+    // dots, but breathing rather than filling, because there is nothing honest
+    // to fill towards.
     if (state.mode === 'caption') {
-      draw(state.line ? [state.line] : [dotsKey(-1)], 0, null);
+      const rows = captions.slice();
+      if (!state.line) rows.push(dotsKey(-1));
+
+      const count = Number(body.dataset.lines) || 3;
+      const from = Math.max(0, rows.length - count);
+      const window = rows.slice(from);
+
+      draw(window, window.length - 1, null);
       gapShown = !state.line;
       return;
     }

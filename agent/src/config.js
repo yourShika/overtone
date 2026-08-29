@@ -141,6 +141,16 @@ const DEFAULTS = {
    * compensate for Discord's update limit.
    */
   lyricsSource: 'auto',
+  /**
+   * Drop YouTube's sound-event markers from subtitle lines.
+   *
+   * Auto-generated captions transcribe what they hear, so a music video is full
+   * of lines reading nothing but "[Musik]" or "[Applaus]". Correct as a
+   * transcript, useless as a lyric, and on a stream overlay it is what viewers
+   * spend the song reading. Off leaves the line exactly as YouTube wrote it,
+   * which is what somebody captioning a talk rather than a song wants.
+   */
+  captionsHideNoise: true,
   /** Only run lyrics on music.youtube.com, not on every video. */
   lyricsMusicOnly: false,
   /**

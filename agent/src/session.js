@@ -45,7 +45,8 @@ class Session {
 
   /**
    * @param {object} snapshot payload from the extension bridge
-   * @returns {{ trackChanged: boolean, pausedChanged: boolean, seeked: boolean }}
+   * @returns {{ trackChanged: boolean, resumed: boolean, pausedChanged: boolean,
+   *             captionChanged: boolean, seeked: boolean }}
    */
   update(snapshot) {
     const previous = this.raw;
@@ -63,6 +64,16 @@ class Session {
       /** The same track came back after a clear: a reconnect, not a new song. */
       resumed: !previous && known !== null && known === this.raw.id,
       pausedChanged: previous?.paused !== this.raw.paused,
+      /**
+       * A new subtitle line arrived.
+       *
+       * The one lyric the agent cannot work out for itself: timed lyrics are
+       * loaded once and read off a clock, but a caption exists only because the
+       * page just rendered it. So it needs its own signal — without one it
+       * would wait for the next tick, and a line that lasts two seconds would
+       * spend half its life being the previous line on somebody's stream.
+       */
+      captionChanged: (previous?.caption || '') !== (this.raw.caption || ''),
       seeked:
         previous?.id === this.raw.id &&
         previousPosition != null &&

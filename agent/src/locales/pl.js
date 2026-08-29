@@ -94,6 +94,8 @@ module.exports = {
   'lyr.combineStandard': 'Standardowo',
   'lyr.combineMore': 'Więcej',
   'lyr.combineMax': 'Maksymalnie',
+  'lyr.captionNoise': 'Ukryj opisy dźwięków',
+  'lyr.captionNoiseSub': 'napisy piszą „[Muzyka]” i „[Brawa]” tam, gdzie nikt nie śpiewa',
   'lyr.musicOnly': 'Tylko w YouTube Music',
   'lyr.prominent': 'Tekst w pierwszej, pogrubionej linii',
   'lyr.save': 'Zapisuj znalezione teksty jako pliki',
@@ -132,6 +134,10 @@ module.exports = {
   'tr.held': 'gotowe — czeka na wolne miejsce',
   'tr.halted': 'Wstrzymane po {count} niepowodzeniach z rzędu',
   'tr.failed': 'nie powiodło się',
+  'tr.retryNo': 'Nie teraz',
+  'tr.retryBusy': 'Trwa już inna',
+  'tr.retrying': 'Uruchamiam…',
+  'tr.retry': 'Spróbuj ponownie',
 
   'sys.title': 'System',
   'sys.sub': 'Zachowanie samego programu.',
@@ -288,6 +294,7 @@ module.exports = {
   'msg.trWhisper': 'Transkrypcja: Whisper pracuje (trwa mniej więcej jedną trzecią długości utworu) …',
   'msg.trDone': 'Transkrypcja gotowa — przy następnym odtworzeniu tekst będzie na miejscu.',
   'msg.trFailed': 'Transkrypcja nie powiodła się: {error}',
+  'msg.trRetry': 'Ponowna transkrypcja na życzenie: {track}',
   'msg.trHalted':
     'Transkrypcja wstrzymana po {count} niepowodzeniach z rzędu — wygląda to na problem z konfiguracją, nie z utworem.',
   'msg.trQueued': 'Transkrypcja w kolejce: „{track}” ({count} czeka)',

@@ -208,6 +208,9 @@
                     </div>
                   </div>
 
+                  <div class="switch-row" data-switch="captionsHideNoise">
+                    <span class="text"><span data-i18n="lyr.captionNoise"></span><small data-i18n="lyr.captionNoiseSub"></small></span>
+                  </div>
                   <div class="switch-row" data-switch="lyricsMusicOnly"><span class="text" data-i18n="lyr.musicOnly"></span></div>
                   <div class="switch-row" data-switch="lyricsProminent"><span class="text" data-i18n="lyr.prominent"></span></div>
                   <div class="switch-row" data-switch="lyricsSave">
@@ -292,6 +295,13 @@
                 <div class="job-text">
                   <p class="job-line" id="transcribe-phase" data-i18n="tr.idle"></p>
                   <p class="job-detail" id="transcribe-detail"></p>
+
+                  <!--
+                    Finished jobs, newest first. A list rather than the run of
+                    text this used to be: a failure is the one entry somebody
+                    wants to do something about, and there was nothing to press.
+                  -->
+                  <div class="job-history" id="transcribe-history"></div>
                 </div>
               </div>
 

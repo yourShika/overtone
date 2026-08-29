@@ -94,6 +94,8 @@ module.exports = {
   'lyr.combineStandard': 'Standard',
   'lyr.combineMore': 'Mehr',
   'lyr.combineMax': 'Maximal',
+  'lyr.captionNoise': 'Geräuschbeschreibungen ausblenden',
+  'lyr.captionNoiseSub': 'Untertitel schreiben „[Musik]“ und „[Applaus]“, wo nichts gesungen wird',
   'lyr.musicOnly': 'Nur auf YouTube Music',
   'lyr.prominent': 'Songzeile in die erste, fette Zeile',
   'lyr.save': 'Gefundene Lyrics als Datei speichern',
@@ -132,6 +134,10 @@ module.exports = {
   'tr.held': 'bereit — wartet auf einen freien Platz',
   'tr.halted': 'Pausiert nach {count} Fehlschlägen in Folge',
   'tr.failed': 'fehlgeschlagen',
+  'tr.retryNo': 'Gerade nicht',
+  'tr.retryBusy': 'Eine andere läuft gerade',
+  'tr.retrying': 'Startet…',
+  'tr.retry': 'Erneut versuchen',
 
   'sys.title': 'System',
   'sys.sub': 'Verhalten des Programms selbst.',
@@ -288,6 +294,7 @@ module.exports = {
   'msg.trWhisper': 'Transkription: Whisper läuft (dauert etwa ein Drittel der Songlänge) …',
   'msg.trDone': 'Transkription fertig — beim nächsten Hören sind die Lyrics da.',
   'msg.trFailed': 'Transkription fehlgeschlagen: {error}',
+  'msg.trRetry': 'Transkribiere auf Wunsch erneut: {track}',
   'msg.trHalted':
     'Transkription pausiert nach {count} Fehlschlägen in Folge — sieht nach einem Einrichtungsproblem aus, nicht nach dem Song.',
   'msg.trQueued': 'Transkription eingereiht: „{track}“ ({count} warten)',

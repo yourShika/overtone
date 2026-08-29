@@ -110,6 +110,8 @@ module.exports = {
   'lyr.combineStandard': 'Standard',
   'lyr.combineMore': 'More',
   'lyr.combineMax': 'Maximum',
+  'lyr.captionNoise': 'Hide sound descriptions',
+  'lyr.captionNoiseSub': 'subtitles write “[Music]” and “[Applause]” where nothing is sung',
   'lyr.musicOnly': 'Only on YouTube Music',
   'lyr.prominent': 'Lyric on the first, bold line',
   'lyr.save': 'Save found lyrics as files',
@@ -149,6 +151,10 @@ module.exports = {
   'tr.held': 'ready — waiting for a free slot',
   'tr.halted': 'Paused after {count} failures in a row',
   'tr.failed': 'failed',
+  'tr.retryNo': 'Not right now',
+  'tr.retryBusy': 'Another one is running',
+  'tr.retrying': 'Starting…',
+  'tr.retry': 'Try again',
 
   // --- system panel ---------------------------------------------------------
   'sys.title': 'System',
@@ -313,6 +319,7 @@ module.exports = {
   'msg.trWhisper': 'Transcription: Whisper is running (takes about a third of the song’s length) …',
   'msg.trDone': 'Transcription finished — the lyrics are there next time.',
   'msg.trFailed': 'Transcription failed: {error}',
+  'msg.trRetry': 'Transcribing again on request: {track}',
   'msg.trHalted':
     'Transcription paused after {count} failures in a row — this looks like a setup problem rather than the song.',
   'msg.trQueued': 'Transcription queued: “{track}” ({count} waiting)',

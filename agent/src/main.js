@@ -1420,7 +1420,24 @@ function registerIpc() {
     running: surface.running,
     port: surface.port,
     error: surface.error,
-    addresses: Object.fromEntries(plugins.surfaces().map((p) => [p.id, surface.addressFor(p.id)])),
+    /**
+     * One address per page a plugin offers, keyed by view.
+     *
+     * Only the addresses. The names come from plugins:list, which resolves them
+     * in the window's language — sending them from here too would be a second
+     * copy that could disagree with the first.
+     */
+    addresses: Object.fromEntries(
+      plugins.surfaces().map((p) => [
+        p.id,
+        Object.fromEntries(
+          (p.views?.length ? p.views : [{ id: 'main', file: 'index.html' }]).map((view) => [
+            view.id,
+            surface.addressFor(p.id, view.file),
+          ]),
+        ),
+      ]),
+    ),
   }));
 
   ipcMain.handle('plugins:newAddress', async () => {
@@ -1728,6 +1745,10 @@ function statusSnapshot() {
           position: Math.round(state.position),
           duration: Math.round(state.duration),
           url: state.url,
+          // The id on its own, not only inside the url: a surface that wants to
+          // show the video needs to build an embed address, and picking the id
+          // back out of a url is a parser every one of them would have to carry.
+          videoId: state.videoId || '',
           // Regular YouTube snapshots carry no artwork — the agent derives it
           // from the video id. Derive it here too, or the settings preview
           // shows an empty box for every non-Music track.

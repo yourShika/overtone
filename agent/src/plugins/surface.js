@@ -76,8 +76,13 @@ class SurfaceServer {
    * A source that wants to differ from the rest still appends its own
    * ?name=value; anything named there wins over what the panel sends.
    */
-  addressFor(id) {
-    return this.running ? `http://127.0.0.1:${this.port}/s/${this.token}/${id}/` : '';
+  addressFor(id, file = '') {
+    if (!this.running) return '';
+    const base = `http://127.0.0.1:${this.port}/s/${this.token}/${id}/`;
+    // index.html is what the bare address already serves, so naming it would
+    // only make the line longer and the two addresses look different when they
+    // are the same page.
+    return !file || file === 'index.html' ? base : base + file;
   }
 
   /**
@@ -323,10 +328,18 @@ const COMMON_HEADERS = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
+  /**
+   * `frame-src` is the one host that is not ours, and it is deliberately the
+   * narrowest possible widening: YouTube's own embedded player, on the domain
+   * that sets no cookies until something is played, and *only* as a frame. No
+   * script-src entry goes with it, because the page drives the embed through
+   * its address rather than YouTube's JavaScript API — which would have meant
+   * running a third party's code inside a surface to save a page reload.
+   */
   'Content-Security-Policy':
     "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' https://i.ytimg.com https://lh3.googleusercontent.com data:; " +
-    "font-src 'self'; connect-src 'self'",
+    "font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com",
 };
 
 function refuse(res, code, reason) {

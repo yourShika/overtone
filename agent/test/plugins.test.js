@@ -480,7 +480,9 @@ test('the overlay payload is an allowlist, not a filtered snapshot', () => {
 
   assert.deepEqual(
     Object.keys(payload).sort(),
-    ['artist', 'at', 'cover', 'duration', 'mode', 'paused', 'playing', 'position', 'privacy', 'source', 'title'].sort(),
+    // 'video' is the id, added on purpose for the surface that shows the video
+    // rather than words about it. It says no more than the title beside it.
+    ['artist', 'at', 'cover', 'duration', 'mode', 'paused', 'playing', 'position', 'privacy', 'source', 'title', 'video'].sort(),
   );
 
   const asText = JSON.stringify(payload);

@@ -50,6 +50,28 @@ const HOLDS = {
 const ID = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
 /**
+ * A view's name, which becomes part of a URL path.
+ *
+ * Same shape as a setting key rather than the plugin id: it is written by the
+ * same author in the same file, and it never has to be a folder name.
+ */
+const VIEW_ID = /^[a-zA-Z][a-zA-Z0-9_]{0,31}$/;
+
+/**
+ * A page a view points at.
+ *
+ * Exactly what the server will serve: one flat name, no separators, no walking
+ * up. Checked here as well as there on purpose — a manifest that names a file
+ * the server would refuse is a plugin that looks installed and shows a broken
+ * address, and saying so at load time is the difference between a bug report
+ * and a line in the panel.
+ */
+const VIEW_FILE = /^[a-zA-Z0-9._-]+\.html$/;
+
+/** Enough for a set of overlays; not a site. */
+const MAX_VIEWS = 8;
+
+/**
  * A setting key.
  *
  * It becomes a property name in `out[field.key] = …` and a key in plugins.json.
@@ -139,6 +161,9 @@ function parseManifest(raw, { id }) {
     return { problem: 'main must be a file name in the plugin folder' };
   }
 
+  const views = parseViews(json, hasSurface);
+  if (typeof views === 'string') return { problem: views };
+
   const settings = Array.isArray(json.settings) ? json.settings : [];
   if (settings.length > MAX_FIELDS) return { problem: `${settings.length} fields, max ${MAX_FIELDS}` };
 
@@ -155,7 +180,58 @@ function parseManifest(raw, { id }) {
     if (problem) return { problem };
   }
 
-  return { manifest: { ...json, settings } };
+  // A field may say which page it belongs to, so the window can put it under
+  // that page's address instead of in one undifferentiated list. A name that
+  // matches no view would simply never be shown, which is worse than refusing.
+  for (const field of settings) {
+    if (field.view === undefined) continue;
+    if (typeof field.view !== 'string' || !views.some((view) => view.id === field.view)) {
+      return { problem: `field "${field.key || field.type}" names view "${field.view}"` };
+    }
+  }
+
+  return { manifest: { ...json, settings, views } };
+}
+
+/**
+ * The pages this plugin offers, each of which gets its own address.
+ *
+ * A plugin that declares none still has one: index.html, under the plugin's own
+ * name. That is what every existing plugin means, so saying it here keeps the
+ * rest of the app from having to care whether `views` was written.
+ *
+ * @returns {Array|string} the views, or what is wrong with them
+ */
+function parseViews(json, hasSurface) {
+  if (!hasSurface) return [];
+
+  const fallback = [{ id: 'main', file: 'index.html', name: json.name }];
+  if (json.views === undefined) return fallback;
+  if (!Array.isArray(json.views)) return 'views must be a list';
+  if (!json.views.length) return fallback;
+  if (json.views.length > MAX_VIEWS) return `${json.views.length} views, max ${MAX_VIEWS}`;
+
+  const seen = new Set();
+  const out = [];
+
+  for (const view of json.views) {
+    if (!view || typeof view !== 'object') return 'a view is not an object';
+    if (typeof view.id !== 'string' || !VIEW_ID.test(view.id)) return `view id "${view.id}"`;
+    if (seen.has(view.id)) return `two views called "${view.id}"`;
+    seen.add(view.id);
+
+    if (typeof view.file !== 'string' || !VIEW_FILE.test(view.file) || view.file.includes('..')) {
+      return `view "${view.id}" file "${view.file}" — one .html name in public/`;
+    }
+    if (!view.name || (typeof view.name !== 'object' && typeof view.name !== 'string')) {
+      return `view "${view.id}" has no name`;
+    }
+    if (tooLong(view.help, MAX_HELP)) return `view "${view.id}" help is over ${MAX_HELP}`;
+
+    out.push({ id: view.id, file: view.file, name: view.name, help: view.help });
+  }
+
+  return out;
 }
 
 /** @returns {string|null} what is wrong with one field, or null */
@@ -354,6 +430,7 @@ module.exports = {
   coerce,
   optionValues,
   ENGINE,
+  MAX_VIEWS,
   TYPES,
   ID,
   KEY,

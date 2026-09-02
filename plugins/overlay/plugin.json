@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.3.4",
+  "version": "1.4.0",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",
@@ -24,71 +24,216 @@
       "key": "style",
       "default": "card",
       "options": [
-        { "value": "card", "label": { "en": "Card", "de": "Karte", "pl": "Karta", "ru": "Карточка", "es": "Tarjeta" } },
-        { "value": "bar", "label": { "en": "Bar", "de": "Leiste", "pl": "Pasek", "ru": "Полоса", "es": "Barra" } },
-        { "value": "lyrics", "label": { "en": "Lyrics only", "de": "Nur Songtext", "pl": "Sam tekst", "ru": "Только текст", "es": "Solo la letra" } },
-        { "value": "ticker", "label": { "en": "Ticker", "de": "Laufband", "pl": "Pasek przewijany", "ru": "Бегущая строка", "es": "Cinta" } }
+        {
+          "value": "card",
+          "label": {
+            "en": "Card",
+            "de": "Karte",
+            "pl": "Karta",
+            "ru": "Карточка",
+            "es": "Tarjeta"
+          }
+        },
+        {
+          "value": "bar",
+          "label": {
+            "en": "Bar",
+            "de": "Leiste",
+            "pl": "Pasek",
+            "ru": "Полоса",
+            "es": "Barra"
+          }
+        },
+        {
+          "value": "lyrics",
+          "label": {
+            "en": "Lyrics only",
+            "de": "Nur Songtext",
+            "pl": "Sam tekst",
+            "ru": "Только текст",
+            "es": "Solo la letra"
+          }
+        },
+        {
+          "value": "ticker",
+          "label": {
+            "en": "Ticker",
+            "de": "Laufband",
+            "pl": "Pasek przewijany",
+            "ru": "Бегущая строка",
+            "es": "Cinta"
+          }
+        }
       ],
-      "label": { "en": "Layout", "de": "Aufbau", "pl": "Układ", "ru": "Компоновка", "es": "Diseño" },
+      "label": {
+        "en": "Layout",
+        "de": "Aufbau",
+        "pl": "Układ",
+        "ru": "Компоновка",
+        "es": "Diseño"
+      },
       "help": {
         "en": "Changes here reach a Browser Source that is already open. A source that should differ names its own ?name=value on the end of the address.",
         "de": "Änderungen hier erreichen eine bereits offene Browser-Quelle. Eine Quelle, die abweichen soll, hängt ihr eigenes ?name=wert an die Adresse.",
         "pl": "Zmiany tutaj docierają do już otwartego źródła. Źródło, które ma się różnić, dopisuje własne ?nazwa=wartość na końcu adresu.",
         "ru": "Изменения здесь доходят до уже открытого источника. Источник, который должен отличаться, дописывает своё ?имя=значение в конец адреса.",
         "es": "Los cambios aquí llegan a una fuente ya abierta. Una fuente que deba diferir añade su propio ?nombre=valor al final de la dirección."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "background",
       "default": "none",
       "options": [
-        { "value": "none", "label": { "en": "Transparent", "de": "Durchsichtig", "pl": "Przezroczyste", "ru": "Прозрачный", "es": "Transparente" } },
-        { "value": "glow", "label": { "en": "Glow", "de": "Schimmer", "pl": "Poświata", "ru": "Свечение", "es": "Resplandor" } },
-        { "value": "soft", "label": { "en": "Soft", "de": "Weich", "pl": "Miękkie", "ru": "Мягкий", "es": "Suave" } },
-        { "value": "solid", "label": { "en": "Solid", "de": "Deckend", "pl": "Pełne", "ru": "Плотный", "es": "Sólido" } }
+        {
+          "value": "none",
+          "label": {
+            "en": "Transparent",
+            "de": "Durchsichtig",
+            "pl": "Przezroczyste",
+            "ru": "Прозрачный",
+            "es": "Transparente"
+          }
+        },
+        {
+          "value": "glow",
+          "label": {
+            "en": "Glow",
+            "de": "Schimmer",
+            "pl": "Poświata",
+            "ru": "Свечение",
+            "es": "Resplandor"
+          }
+        },
+        {
+          "value": "soft",
+          "label": {
+            "en": "Soft",
+            "de": "Weich",
+            "pl": "Miękkie",
+            "ru": "Мягкий",
+            "es": "Suave"
+          }
+        },
+        {
+          "value": "solid",
+          "label": {
+            "en": "Solid",
+            "de": "Deckend",
+            "pl": "Pełne",
+            "ru": "Плотный",
+            "es": "Sólido"
+          }
+        }
       ],
-      "label": { "en": "Background", "de": "Hintergrund", "pl": "Tło", "ru": "Фон", "es": "Fondo" },
+      "label": {
+        "en": "Background",
+        "de": "Hintergrund",
+        "pl": "Tło",
+        "ru": "Фон",
+        "es": "Fondo"
+      },
       "help": {
         "en": "Glow is a soft wash of the accent colour behind the text, with no hard edge to give the source away.",
         "de": "Schimmer ist ein weicher Hauch der Akzentfarbe hinter dem Text, ohne harte Kante, die die Quelle verrät.",
         "pl": "Poświata to miękka mgiełka koloru akcentu za tekstem, bez twardej krawędzi zdradzającej źródło.",
         "ru": "Свечение — мягкая дымка акцентного цвета за текстом, без резкой границы, выдающей источник.",
         "es": "El resplandor es un velo suave del color de acento tras el texto, sin borde duro que delate la fuente."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "colour",
       "key": "accent",
       "default": "#7d6cf6",
-      "label": { "en": "Accent colour", "de": "Akzentfarbe", "pl": "Kolor akcentu", "ru": "Цвет акцента", "es": "Color de acento" },
+      "label": {
+        "en": "Accent colour",
+        "de": "Akzentfarbe",
+        "pl": "Kolor akcentu",
+        "ru": "Цвет акцента",
+        "es": "Color de acento"
+      },
       "help": {
         "en": "The progress bar, and the glow if you picked it.",
         "de": "Der Fortschrittsbalken — und der Schimmer, falls gewählt.",
         "pl": "Pasek postępu i poświata, jeśli ją wybrałeś.",
         "ru": "Полоса прогресса и свечение, если оно выбрано.",
         "es": "La barra de progreso y el resplandor, si lo has elegido."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "font",
       "default": "sans",
       "options": [
-        { "value": "sans", "label": { "en": "Clean", "de": "Klar", "pl": "Czysta", "ru": "Чистый", "es": "Limpia" } },
-        { "value": "round", "label": { "en": "Rounded", "de": "Rund", "pl": "Zaokrąglona", "ru": "Округлый", "es": "Redondeada" } },
-        { "value": "serif", "label": { "en": "Serif", "de": "Serifen", "pl": "Szeryfowa", "ru": "С засечками", "es": "Con serifa" } },
-        { "value": "mono", "label": { "en": "Monospace", "de": "Feste Breite", "pl": "Stała szerokość", "ru": "Моноширинный", "es": "Monoespaciada" } },
-        { "value": "condensed", "label": { "en": "Narrow", "de": "Schmal", "pl": "Wąska", "ru": "Узкий", "es": "Estrecha" } }
+        {
+          "value": "sans",
+          "label": {
+            "en": "Clean",
+            "de": "Klar",
+            "pl": "Czysta",
+            "ru": "Чистый",
+            "es": "Limpia"
+          }
+        },
+        {
+          "value": "round",
+          "label": {
+            "en": "Rounded",
+            "de": "Rund",
+            "pl": "Zaokrąglona",
+            "ru": "Округлый",
+            "es": "Redondeada"
+          }
+        },
+        {
+          "value": "serif",
+          "label": {
+            "en": "Serif",
+            "de": "Serifen",
+            "pl": "Szeryfowa",
+            "ru": "С засечками",
+            "es": "Con serifa"
+          }
+        },
+        {
+          "value": "mono",
+          "label": {
+            "en": "Monospace",
+            "de": "Feste Breite",
+            "pl": "Stała szerokość",
+            "ru": "Моноширинный",
+            "es": "Monoespaciada"
+          }
+        },
+        {
+          "value": "condensed",
+          "label": {
+            "en": "Narrow",
+            "de": "Schmal",
+            "pl": "Wąska",
+            "ru": "Узкий",
+            "es": "Estrecha"
+          }
+        }
       ],
-      "label": { "en": "Font", "de": "Schrift", "pl": "Czcionka", "ru": "Шрифт", "es": "Fuente" },
+      "label": {
+        "en": "Font",
+        "de": "Schrift",
+        "pl": "Czcionka",
+        "ru": "Шрифт",
+        "es": "Fuente"
+      },
       "help": {
         "en": "Whatever your machine has for each of these. A font Overtone shipped would look wrong beside the rest of your scene anyway.",
         "de": "Was dein Rechner dafür hat. Eine mitgelieferte Schrift säße neben dem Rest deiner Szene ohnehin falsch.",
         "pl": "To, co ma twój komputer. Czcionka dostarczona z programem i tak nie pasowałaby do reszty sceny.",
         "ru": "То, что есть на вашем компьютере. Шрифт из комплекта всё равно выбивался бы из остальной сцены.",
         "es": "Lo que tenga tu equipo. Una fuente incluida desentonaría con el resto de tu escena."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "range",
@@ -97,14 +242,21 @@
       "min": 60,
       "max": 200,
       "step": 5,
-      "label": { "en": "Size", "de": "Größe", "pl": "Rozmiar", "ru": "Размер", "es": "Tamaño" },
+      "label": {
+        "en": "Size",
+        "de": "Größe",
+        "pl": "Rozmiar",
+        "ru": "Размер",
+        "es": "Tamaño"
+      },
       "help": {
         "en": "Per cent. Easier than resizing the Browser Source, which only crops it.",
         "de": "Prozent. Einfacher als die Browser-Quelle zu ziehen, die nur beschneidet.",
         "pl": "W procentach. Prościej niż skalować źródło, które tylko przycina.",
         "ru": "В процентах. Проще, чем менять размер источника, который лишь обрезает.",
         "es": "En por ciento. Más fácil que redimensionar la fuente, que solo recorta."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "switch",
@@ -123,101 +275,324 @@
         "pl": "Wyłączone oznacza natychmiastowe zmiany — przydatne, gdy scena i tak jest ruchliwa.",
         "ru": "Выключено — все изменения мгновенны, что удобно на и без того насыщенной сцене.",
         "es": "Apagado hace cada cambio instantáneo, que es lo que quieres si la escena ya está cargada."
-      }
+      },
+      "view": "main"
     },
-    { "type": "switch", "key": "showCover", "default": true, "label": { "en": "Cover art", "de": "Cover anzeigen", "pl": "Okładka", "ru": "Обложка", "es": "Portada" } },
-    { "type": "switch", "key": "showTimes", "default": true, "label": { "en": "Progress and time", "de": "Fortschritt und Zeit", "pl": "Postęp i czas", "ru": "Прогресс и время", "es": "Progreso y tiempo" } },
+    {
+      "type": "switch",
+      "key": "showCover",
+      "default": true,
+      "label": {
+        "en": "Cover art",
+        "de": "Cover anzeigen",
+        "pl": "Okładka",
+        "ru": "Обложка",
+        "es": "Portada"
+      },
+      "view": "main"
+    },
+    {
+      "type": "switch",
+      "key": "showTimes",
+      "default": true,
+      "label": {
+        "en": "Progress and time",
+        "de": "Fortschritt und Zeit",
+        "pl": "Postęp i czas",
+        "ru": "Прогресс и время",
+        "es": "Progreso y tiempo"
+      },
+      "view": "main"
+    },
     {
       "type": "switch",
       "key": "showLyrics",
       "default": true,
-      "label": { "en": "The lyric line", "de": "Die Songzeile", "pl": "Wers tekstu", "ru": "Строка текста", "es": "La línea de la letra" },
+      "label": {
+        "en": "The lyric line",
+        "de": "Die Songzeile",
+        "pl": "Wers tekstu",
+        "ru": "Строка текста",
+        "es": "La línea de la letra"
+      },
       "help": {
         "en": "Off unless lyrics are switched on in Overtone as well.",
         "de": "Wirkt nur, wenn Lyrics auch in Overtone eingeschaltet sind.",
         "pl": "Działa tylko, gdy tekst jest włączony także w Overtone.",
         "ru": "Работает, только если текст включён и в самом Overtone.",
         "es": "Solo si la letra está activada también en Overtone."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "lyricStyle",
       "default": "spotify",
       "options": [
-        { "value": "spotify", "label": { "en": "Lifted", "de": "Hervorgehoben", "pl": "Wyróżniony", "ru": "С выделением", "es": "Destacada" } },
-        { "value": "fade", "label": { "en": "Fade", "de": "Überblenden", "pl": "Przenikanie", "ru": "Затухание", "es": "Fundido" } },
-        { "value": "slideUp", "label": { "en": "Slide up", "de": "Nach oben", "pl": "W górę", "ru": "Вверх", "es": "Hacia arriba" } },
-        { "value": "slideLeft", "label": { "en": "In from the right", "de": "Von rechts herein", "pl": "Z prawej", "ru": "Справа", "es": "Desde la derecha" } },
-        { "value": "slideRight", "label": { "en": "In from the left", "de": "Von links herein", "pl": "Z lewej", "ru": "Слева", "es": "Desde la izquierda" } },
-        { "value": "plain", "label": { "en": "No movement", "de": "Ohne Bewegung", "pl": "Bez ruchu", "ru": "Без движения", "es": "Sin movimiento" } }
+        {
+          "value": "spotify",
+          "label": {
+            "en": "Lifted",
+            "de": "Hervorgehoben",
+            "pl": "Wyróżniony",
+            "ru": "С выделением",
+            "es": "Destacada"
+          }
+        },
+        {
+          "value": "fade",
+          "label": {
+            "en": "Fade",
+            "de": "Überblenden",
+            "pl": "Przenikanie",
+            "ru": "Затухание",
+            "es": "Fundido"
+          }
+        },
+        {
+          "value": "slideUp",
+          "label": {
+            "en": "Slide up",
+            "de": "Nach oben",
+            "pl": "W górę",
+            "ru": "Вверх",
+            "es": "Hacia arriba"
+          }
+        },
+        {
+          "value": "slideLeft",
+          "label": {
+            "en": "In from the right",
+            "de": "Von rechts herein",
+            "pl": "Z prawej",
+            "ru": "Справа",
+            "es": "Desde la derecha"
+          }
+        },
+        {
+          "value": "slideRight",
+          "label": {
+            "en": "In from the left",
+            "de": "Von links herein",
+            "pl": "Z lewej",
+            "ru": "Слева",
+            "es": "Desde la izquierda"
+          }
+        },
+        {
+          "value": "plain",
+          "label": {
+            "en": "No movement",
+            "de": "Ohne Bewegung",
+            "pl": "Bez ruchu",
+            "ru": "Без движения",
+            "es": "Sin movimiento"
+          }
+        }
       ],
-      "showIf": { "key": "showLyrics", "equals": true },
-      "label": { "en": "How lines change", "de": "Wie Zeilen wechseln", "pl": "Jak zmieniają się wersy", "ru": "Как меняются строки", "es": "Cómo cambian las líneas" },
+      "showIf": {
+        "key": "showLyrics",
+        "equals": true
+      },
+      "label": {
+        "en": "How lines change",
+        "de": "Wie Zeilen wechseln",
+        "pl": "Jak zmieniają się wersy",
+        "ru": "Как меняются строки",
+        "es": "Cómo cambian las líneas"
+      },
       "help": {
         "en": "Lifted grows the line being sung and dims the rest, the way a music player does.",
         "de": "Hervorgehoben vergrößert die gesungene Zeile und dimmt den Rest, wie ein Musikplayer.",
         "pl": "Wyróżniony powiększa śpiewany wers i przygasza resztę, jak w odtwarzaczu.",
         "ru": "«С выделением» увеличивает поющуюся строку и приглушает остальные, как в плеере.",
         "es": "Destacada agranda la línea que suena y atenúa el resto, como un reproductor."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "lyricLines",
       "default": "3",
       "options": [
-        { "value": "1", "label": { "en": "One line", "de": "Eine Zeile", "pl": "Jeden wers", "ru": "Одна строка", "es": "Una línea" } },
-        { "value": "3", "label": { "en": "Three", "de": "Drei", "pl": "Trzy", "ru": "Три", "es": "Tres" } },
-        { "value": "5", "label": { "en": "Five", "de": "Fünf", "pl": "Pięć", "ru": "Пять", "es": "Cinco" } }
+        {
+          "value": "1",
+          "label": {
+            "en": "One line",
+            "de": "Eine Zeile",
+            "pl": "Jeden wers",
+            "ru": "Одна строка",
+            "es": "Una línea"
+          }
+        },
+        {
+          "value": "3",
+          "label": {
+            "en": "Three",
+            "de": "Drei",
+            "pl": "Trzy",
+            "ru": "Три",
+            "es": "Tres"
+          }
+        },
+        {
+          "value": "5",
+          "label": {
+            "en": "Five",
+            "de": "Fünf",
+            "pl": "Pięć",
+            "ru": "Пять",
+            "es": "Cinco"
+          }
+        }
       ],
-      "showIf": { "key": "showLyrics", "equals": true },
-      "label": { "en": "Lines at once", "de": "Zeilen auf einmal", "pl": "Wersów naraz", "ru": "Строк сразу", "es": "Líneas a la vez" },
+      "showIf": {
+        "key": "showLyrics",
+        "equals": true
+      },
+      "label": {
+        "en": "Lines at once",
+        "de": "Zeilen auf einmal",
+        "pl": "Wersów naraz",
+        "ru": "Строк сразу",
+        "es": "Líneas a la vez"
+      },
       "help": {
         "en": "More than one only works with lyrics from a file — subtitles arrive one at a time.",
         "de": "Mehr als eine geht nur mit Lyrics aus einer Datei — Untertitel kommen einzeln.",
         "pl": "Więcej niż jeden działa tylko z tekstem z pliku — napisy przychodzą pojedynczo.",
         "ru": "Больше одной — только с текстом из файла: субтитры приходят по одной.",
         "es": "Más de una solo con letra de un archivo — los subtítulos llegan de una en una."
-      }
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "align",
       "default": "left",
       "options": [
-        { "value": "left", "label": { "en": "Left", "de": "Links", "pl": "Do lewej", "ru": "Слева", "es": "Izquierda" } },
-        { "value": "center", "label": { "en": "Centre", "de": "Mittig", "pl": "Do środka", "ru": "По центру", "es": "Centro" } },
-        { "value": "right", "label": { "en": "Right", "de": "Rechts", "pl": "Do prawej", "ru": "Справа", "es": "Derecha" } }
+        {
+          "value": "left",
+          "label": {
+            "en": "Left",
+            "de": "Links",
+            "pl": "Do lewej",
+            "ru": "Слева",
+            "es": "Izquierda"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "en": "Centre",
+            "de": "Mittig",
+            "pl": "Do środka",
+            "ru": "По центру",
+            "es": "Centro"
+          }
+        },
+        {
+          "value": "right",
+          "label": {
+            "en": "Right",
+            "de": "Rechts",
+            "pl": "Do prawej",
+            "ru": "Справа",
+            "es": "Derecha"
+          }
+        }
       ],
-      "label": { "en": "Alignment", "de": "Ausrichtung", "pl": "Wyrównanie", "ru": "Выравнивание", "es": "Alineación" }
+      "label": {
+        "en": "Alignment",
+        "de": "Ausrichtung",
+        "pl": "Wyrównanie",
+        "ru": "Выравнивание",
+        "es": "Alineación"
+      },
+      "view": "main"
     },
     {
       "type": "choice",
       "key": "anchor",
       "default": "top",
       "options": [
-        { "value": "top", "label": { "en": "Top", "de": "Oben", "pl": "U góry", "ru": "Сверху", "es": "Arriba" } },
-        { "value": "middle", "label": { "en": "Middle", "de": "Mitte", "pl": "Na środku", "ru": "По центру", "es": "En medio" } },
-        { "value": "bottom", "label": { "en": "Bottom", "de": "Unten", "pl": "Na dole", "ru": "Снизу", "es": "Abajo" } }
+        {
+          "value": "top",
+          "label": {
+            "en": "Top",
+            "de": "Oben",
+            "pl": "U góry",
+            "ru": "Сверху",
+            "es": "Arriba"
+          }
+        },
+        {
+          "value": "middle",
+          "label": {
+            "en": "Middle",
+            "de": "Mitte",
+            "pl": "Na środku",
+            "ru": "По центру",
+            "es": "En medio"
+          }
+        },
+        {
+          "value": "bottom",
+          "label": {
+            "en": "Bottom",
+            "de": "Unten",
+            "pl": "Na dole",
+            "ru": "Снизу",
+            "es": "Abajo"
+          }
+        }
       ],
-      "label": { "en": "Sits at the", "de": "Sitzt am", "pl": "Umieszczone", "ru": "Расположение", "es": "Se coloca" },
+      "label": {
+        "en": "Sits at the",
+        "de": "Sitzt am",
+        "pl": "Umieszczone",
+        "ru": "Расположение",
+        "es": "Se coloca"
+      },
       "help": {
         "en": "Where everything sits inside the Browser Source, so you can size the source generously and place the content instead.",
         "de": "Wo alles innerhalb der Browser-Quelle sitzt — mach die Quelle ruhig groß und platziere stattdessen den Inhalt.",
         "pl": "Gdzie wszystko siedzi wewnątrz źródła — daj źródłu zapas i ustaw zamiast tego treść.",
         "ru": "Где всё располагается внутри источника — задайте источнику запас и двигайте содержимое.",
         "es": "Dónde se coloca todo dentro de la fuente — hazla generosa y coloca el contenido en su lugar."
-      }
+      },
+      "view": "main"
     },
-    { "type": "switch", "key": "hideIdle", "default": true, "label": { "en": "Disappear when nothing plays", "de": "Verschwinden, wenn nichts läuft", "pl": "Znikaj, gdy nic nie gra", "ru": "Исчезать, когда ничего не играет", "es": "Desaparecer cuando no suena nada" } },
+    {
+      "type": "switch",
+      "key": "hideIdle",
+      "default": true,
+      "label": {
+        "en": "Disappear when nothing plays",
+        "de": "Verschwinden, wenn nichts läuft",
+        "pl": "Znikaj, gdy nic nie gra",
+        "ru": "Исчезать, когда ничего не играет",
+        "es": "Desaparecer cuando no suena nada"
+      },
+      "view": "main"
+    },
     {
       "type": "text",
       "key": "idleText",
       "default": "",
       "maxLength": 60,
-      "showIf": { "key": "hideIdle", "equals": false },
-      "label": { "en": "Show instead", "de": "Stattdessen zeigen", "pl": "Pokaż zamiast", "ru": "Показывать вместо", "es": "Mostrar en su lugar" }
+      "showIf": {
+        "key": "hideIdle",
+        "equals": false
+      },
+      "label": {
+        "en": "Show instead",
+        "de": "Stattdessen zeigen",
+        "pl": "Pokaż zamiast",
+        "ru": "Показывать вместо",
+        "es": "Mostrar en su lugar"
+      },
+      "view": "main"
     },
     {
       "type": "note",
@@ -227,6 +602,317 @@
         "pl": "Dodaj w OBS źródło przeglądarki i wklej adres powyżej. Pozostaje ten sam po restarcie, więc wklejasz go raz.",
         "ru": "Добавьте в OBS «Браузер» и вставьте адрес выше. Он не меняется при перезапуске, так что вставить его нужно один раз.",
         "es": "Añade una fuente de navegador en OBS y pega la dirección de arriba. No cambia al reiniciar, así que se pega una sola vez."
+      },
+      "view": "main"
+    },
+    {
+      "type": "note",
+      "view": "video",
+      "text": {
+        "en": "The video plays muted — the sound is already coming from wherever you are playing it. Set the opacity in OBS on the source itself.",
+        "de": "Das Video läuft stumm — der Ton kommt schon von dort, wo du es abspielst. Die Deckkraft stellst du in OBS an der Quelle selbst ein.",
+        "es": "El vídeo se reproduce en silencio: el sonido ya viene de donde lo estés reproduciendo. La opacidad se ajusta en OBS en la propia fuente.",
+        "pl": "Wideo odtwarza się bez dźwięku — dźwięk już leci stamtąd, gdzie je odtwarzasz. Krycie ustaw w OBS na samym źródle.",
+        "ru": "Видео идёт без звука — звук уже идёт оттуда, где вы его слушаете. Непрозрачность задаётся в OBS у самого источника."
+      }
+    },
+    {
+      "type": "choice",
+      "key": "videoSource",
+      "view": "video",
+      "label": {
+        "en": "Show",
+        "de": "Zeigen",
+        "es": "Mostrar",
+        "pl": "Pokaż",
+        "ru": "Показывать"
+      },
+      "help": {
+        "en": "Some videos are not allowed to be embedded and show a notice instead of playing. The artwork always works.",
+        "de": "Manche Videos dürfen nicht eingebettet werden und zeigen dann einen Hinweis, statt zu laufen. Das Coverbild geht immer.",
+        "es": "Algunos vídeos no permiten incrustarse y muestran un aviso en vez de reproducirse. La carátula siempre funciona.",
+        "pl": "Niektóre filmy nie pozwalają na osadzanie i zamiast odtwarzania pokazują komunikat. Okładka działa zawsze.",
+        "ru": "Некоторые видео запрещают встраивание и показывают уведомление вместо воспроизведения. Обложка работает всегда."
+      },
+      "default": "video",
+      "options": [
+        {
+          "value": "video",
+          "label": {
+            "en": "The video",
+            "de": "Das Video",
+            "es": "El vídeo",
+            "pl": "Wideo",
+            "ru": "Видео"
+          }
+        },
+        {
+          "value": "art",
+          "label": {
+            "en": "The artwork",
+            "de": "Das Coverbild",
+            "es": "La carátula",
+            "pl": "Okładka",
+            "ru": "Обложка"
+          }
+        }
+      ]
+    },
+    {
+      "type": "choice",
+      "key": "videoFit",
+      "view": "video",
+      "label": {
+        "en": "Fit",
+        "de": "Einpassen",
+        "es": "Ajuste",
+        "pl": "Dopasowanie",
+        "ru": "Вписывание"
+      },
+      "default": "cover",
+      "options": [
+        {
+          "value": "cover",
+          "label": {
+            "en": "Fill",
+            "de": "Füllen",
+            "es": "Rellenar",
+            "pl": "Wypełnij",
+            "ru": "Заполнить"
+          }
+        },
+        {
+          "value": "contain",
+          "label": {
+            "en": "Whole picture",
+            "de": "Ganzes Bild",
+            "es": "Imagen entera",
+            "pl": "Cały obraz",
+            "ru": "Целиком"
+          }
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "key": "videoBlur",
+      "view": "video",
+      "label": {
+        "en": "Blur",
+        "de": "Weichzeichnen",
+        "es": "Desenfoque",
+        "pl": "Rozmycie",
+        "ru": "Размытие"
+      },
+      "help": {
+        "en": "A background nobody is meant to read. Blurred, it stops competing with whatever is written over it.",
+        "de": "Ein Hintergrund, den niemand lesen soll. Weichgezeichnet steht er dem, was darüber steht, nicht mehr im Weg.",
+        "es": "Un fondo que nadie debe leer. Desenfocado deja de competir con lo que va encima.",
+        "pl": "Tło, którego nikt nie ma czytać. Rozmyte przestaje konkurować z tym, co jest na wierzchu.",
+        "ru": "Фон, который не нужно читать. Размытый, он перестаёт спорить с тем, что написано поверх."
+      },
+      "default": 0,
+      "min": 0,
+      "max": 40,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoZoom",
+      "view": "video",
+      "label": {
+        "en": "Zoom",
+        "de": "Vergrößern",
+        "es": "Zoom",
+        "pl": "Powiększenie",
+        "ru": "Увеличение"
+      },
+      "default": 0,
+      "min": 0,
+      "max": 60,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoBrightness",
+      "view": "video",
+      "label": {
+        "en": "Brightness",
+        "de": "Helligkeit",
+        "es": "Brillo",
+        "pl": "Jasność",
+        "ru": "Яркость"
+      },
+      "default": 100,
+      "min": 10,
+      "max": 200,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoContrast",
+      "view": "video",
+      "label": {
+        "en": "Contrast",
+        "de": "Kontrast",
+        "es": "Contraste",
+        "pl": "Kontrast",
+        "ru": "Контраст"
+      },
+      "default": 100,
+      "min": 10,
+      "max": 200,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoSaturate",
+      "view": "video",
+      "label": {
+        "en": "Colour",
+        "de": "Farbe",
+        "es": "Color",
+        "pl": "Kolor",
+        "ru": "Цвет"
+      },
+      "default": 100,
+      "min": 0,
+      "max": 300,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoGrey",
+      "view": "video",
+      "label": {
+        "en": "Black and white",
+        "de": "Schwarzweiß",
+        "es": "Blanco y negro",
+        "pl": "Czarno-biały",
+        "ru": "Чёрно-белое"
+      },
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "colour",
+      "key": "videoTint",
+      "view": "video",
+      "label": {
+        "en": "Tint",
+        "de": "Einfärben",
+        "es": "Tinte",
+        "pl": "Zabarwienie",
+        "ru": "Оттенок"
+      },
+      "default": "#000000"
+    },
+    {
+      "type": "range",
+      "key": "videoTintStrength",
+      "view": "video",
+      "label": {
+        "en": "Tint strength",
+        "de": "Stärke der Färbung",
+        "es": "Fuerza del tinte",
+        "pl": "Siła zabarwienia",
+        "ru": "Сила оттенка"
+      },
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoVignette",
+      "view": "video",
+      "label": {
+        "en": "Darken the edges",
+        "de": "Ränder abdunkeln",
+        "es": "Oscurecer los bordes",
+        "pl": "Przyciemnij brzegi",
+        "ru": "Затемнить края"
+      },
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "switch",
+      "key": "videoDrift",
+      "view": "video",
+      "label": {
+        "en": "Let the artwork drift",
+        "de": "Coverbild bewegen",
+        "es": "Mover la carátula",
+        "pl": "Poruszaj okładką",
+        "ru": "Двигать обложку"
+      },
+      "help": {
+        "en": "A slow pan, so a still picture does not look like a frozen stream.",
+        "de": "Ein langsames Wandern, damit ein Standbild nicht wie ein eingefrorener Stream aussieht.",
+        "es": "Un movimiento lento, para que una imagen fija no parezca un directo congelado.",
+        "pl": "Powolny ruch, żeby nieruchomy obraz nie wyglądał jak zawieszona transmisja.",
+        "ru": "Медленное движение, чтобы неподвижная картинка не выглядела зависшей трансляцией."
+      },
+      "default": true
+    },
+    {
+      "type": "range",
+      "key": "videoFade",
+      "view": "video",
+      "label": {
+        "en": "Fade",
+        "de": "Überblenden",
+        "es": "Fundido",
+        "pl": "Przenikanie",
+        "ru": "Затухание"
+      },
+      "default": 700,
+      "min": 0,
+      "max": 3000,
+      "step": 50
+    }
+  ],
+  "views": [
+    {
+      "id": "main",
+      "file": "index.html",
+      "name": {
+        "en": "Now playing",
+        "de": "Läuft gerade",
+        "es": "Sonando ahora",
+        "pl": "Teraz odtwarzane",
+        "ru": "Сейчас играет"
+      },
+      "help": {
+        "en": "Cover, title, time and the lyric line. 900 × 200 suits the card, 900 × 320 the lyrics.",
+        "de": "Cover, Titel, Zeit und die Textzeile. 900 × 200 passt zur Karte, 900 × 320 zu den Lyrics.",
+        "es": "Carátula, título, tiempo y la letra. 900 × 200 va bien con la tarjeta, 900 × 320 con la letra.",
+        "pl": "Okładka, tytuł, czas i wers tekstu. 900 × 200 pasuje do karty, 900 × 320 do tekstu.",
+        "ru": "Обложка, название, время и строка текста. 900 × 200 подходит карточке, 900 × 320 — тексту."
+      }
+    },
+    {
+      "id": "video",
+      "file": "video.html",
+      "name": {
+        "en": "Video",
+        "de": "Video",
+        "es": "Vídeo",
+        "pl": "Wideo",
+        "ru": "Видео"
+      },
+      "help": {
+        "en": "The video itself, muted, edge to edge. Put it at the bottom of the scene at a low opacity. Full screen size, e.g. 1920 × 1080.",
+        "de": "Das Video selbst, stumm, randlos. Ganz unten in der Szene mit niedriger Deckkraft. Volle Bildgröße, z. B. 1920 × 1080.",
+        "es": "El vídeo en sí, silenciado, a sangre. Ponlo al fondo de la escena con poca opacidad. Tamaño completo, p. ej. 1920 × 1080.",
+        "pl": "Samo wideo, wyciszone, na całą powierzchnię. Umieść je na spodzie sceny z niską krycia. Pełny rozmiar, np. 1920 × 1080.",
+        "ru": "Само видео, без звука, во весь кадр. Поместите в самый низ сцены с низкой непрозрачностью. Полный размер, напр. 1920 × 1080."
       }
     }
   ]

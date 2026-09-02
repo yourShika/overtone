@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Overtone video</title>
+    <link rel="stylesheet" href="video.css" />
+  </head>
+  <body data-source="video" data-fit="cover" data-state="waiting">
+    <!--
+      Two layers, one shown at a time.
+
+      The frame is YouTube's own embedded player, muted, pointed at whatever is
+      playing. The artwork behind it is the same picture the card overlay uses,
+      blown up and moving slowly — which is what a video that refuses to be
+      embedded leaves you with, and what somebody who would rather not put the
+      video itself on a stream can choose outright.
+
+      Both sit under the same effects, so switching between them changes what is
+      moving and nothing else.
+    -->
+    <div class="stage" id="stage">
+      <div class="layer frame" id="frame"></div>
+      <div class="layer art" id="art"></div>
+      <div class="tint" id="tint"></div>
+      <div class="vignette" id="vignette"></div>
+    </div>
+
+    <script src="video.js"></script>
+  </body>
+</html>

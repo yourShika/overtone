@@ -74,7 +74,7 @@ class PluginRegistry {
       const { id, problem, manifest } = entry;
 
       if (problem || !manifest) {
-        out.push({ id, problem: problem || 'unreadable', name: id, settings: [], values: {} });
+        out.push({ id, problem: problem || 'unreadable', name: id, views: [], settings: [], values: {} });
         continue;
       }
 
@@ -86,6 +86,15 @@ class PluginRegistry {
         author: pick(manifest.author, locale),
         version: typeof manifest.version === 'string' ? manifest.version.slice(0, 20) : '',
         surface: manifest.surface === true,
+        // Each page the plugin offers, named in the window's language. The
+        // address itself is not here — the registry has no idea whether the
+        // server is up or which port it took.
+        views: (manifest.views || []).map((view) => ({
+          id: view.id,
+          file: view.file,
+          name: pick(view.name, locale) || view.id,
+          help: pick(view.help, locale) || '',
+        })),
         enabled: this.store.isEnabled(id),
         settings: describeFields(manifest.settings, locale),
         values: coerce(manifest.settings, this.store.valuesFor(id)),
@@ -128,6 +137,10 @@ function describeFields(schema, locale) {
     min: field.min,
     max: field.max,
     step: field.step,
+    // Which page this belongs to, so the window can put it under that page's
+    // address. Null means "all of them", which is where a plugin with one view
+    // and every setting written before views existed lands.
+    view: typeof field.view === 'string' ? field.view : null,
     showIf: field.showIf || null,
     options: (field.options || []).map((option) =>
       option && typeof option === 'object'

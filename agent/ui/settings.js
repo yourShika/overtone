@@ -585,17 +585,12 @@ function pluginCard(plugin) {
   });
   card.appendChild(row);
 
-  if (plugin.surface && plugin.enabled) card.appendChild(addressBlock(plugin));
-
-  if (!plugin.settings.length) {
+  if (!plugin.settings.length && !(plugin.surface && plugin.enabled)) {
     card.appendChild(hint(T.t('plug.noSettings')));
   } else {
     // Said once per card, above the plugin's own words rather than after them.
-    card.appendChild(hint(T.t('plug.authorText')));
-    for (const field of plugin.settings) {
-      const element = pluginField(plugin, field);
-      if (element) card.appendChild(element);
-    }
+    if (plugin.settings.length) card.appendChild(hint(T.t('plug.authorText')));
+    for (const part of pluginParts(plugin)) card.appendChild(part);
   }
 
   const tools = document.createElement('div');
@@ -609,6 +604,43 @@ function pluginCard(plugin) {
   card.appendChild(tools);
 
   return card;
+}
+
+/**
+ * A card's contents below the on switch: the settings, and where a plugin
+ * offers pages, each page's address with its own settings under it.
+ *
+ * A plugin used to have one address and one flat list of settings. With several
+ * pages that list stops meaning anything on its own — "Font" says nothing about
+ * which of three overlays it changes. So a setting may name the page it belongs
+ * to, and lands beneath that page's address; the ones that name none stay at
+ * the top, where they apply to all of them.
+ */
+function pluginParts(plugin) {
+  const out = [];
+  const views = plugin.surface && plugin.enabled ? plugin.views || [] : [];
+
+  const owned = new Set(views.map((view) => view.id));
+  // A view named by nothing that exists any more would silently take its
+  // settings off screen, so those come back to the shared group.
+  const shared = plugin.settings.filter((field) => !field.view || !owned.has(field.view));
+  for (const field of shared) {
+    const element = pluginField(plugin, field);
+    if (element) out.push(element);
+  }
+
+  for (const view of views) {
+    const mine = plugin.settings.filter((field) => field.view === view.id);
+    // With one page there is nothing to tell apart, so the address keeps the
+    // plain look it always had rather than growing a heading over it.
+    out.push(addressBlock(plugin, view, views.length > 1, view === views[views.length - 1]));
+    for (const field of mine) {
+      const element = pluginField(plugin, field);
+      if (element) out.push(element);
+    }
+  }
+
+  return out;
 }
 
 /**
@@ -723,7 +755,7 @@ function pluginField(plugin, field) {
  * nothing is worse than none, because it looks like the thing to try when the
  * overlay stays blank.
  */
-function addressBlock(plugin) {
+function addressBlock(plugin, view, named, last) {
   const box = document.createElement('div');
   box.className = 'field';
 
@@ -731,9 +763,13 @@ function addressBlock(plugin) {
   head.className = 'field-head';
   const label = document.createElement('span');
   label.className = 'label';
-  label.textContent = T.t('plug.address');
+  // The page's own name once there is more than one, because at that point
+  // "Address" no longer says which of them is meant.
+  label.textContent = named ? view.name : T.t('plug.address');
   head.appendChild(label);
   box.appendChild(head);
+
+  if (named && view.help) box.appendChild(hint(view.help));
 
   if (!plugSurface.running) {
     box.appendChild(
@@ -746,7 +782,7 @@ function addressBlock(plugin) {
     return box;
   }
 
-  const url = plugSurface.addresses[plugin.id] || '';
+  const url = plugSurface.addresses[plugin.id]?.[view.id] || '';
   const path = document.createElement('p');
   path.className = 'path';
   path.textContent = url;
@@ -766,20 +802,27 @@ function addressBlock(plugin) {
   });
   row.appendChild(copy);
 
-  const rotate = document.createElement('button');
-  rotate.className = 'btn ghost';
-  rotate.type = 'button';
-  rotate.textContent = T.t('plug.rotate');
-  rotate.addEventListener('click', async () => {
-    await api.plugins.newAddress();
-    await loadPlugins();
-  });
-  row.appendChild(rotate);
+  // Once per card, not once per page: the button retires the whole token, so
+  // three of them would be three ways to do the same thing — and the sentences
+  // underneath say the same thing about every address on the card.
+  if (last) {
+    const rotate = document.createElement('button');
+    rotate.className = 'btn ghost';
+    rotate.type = 'button';
+    rotate.textContent = T.t('plug.rotate');
+    rotate.addEventListener('click', async () => {
+      await api.plugins.newAddress();
+      await loadPlugins();
+    });
+    row.appendChild(rotate);
+  }
   box.appendChild(row);
 
-  box.appendChild(hint(T.t('plug.addressHelp')));
-  box.appendChild(hint(T.t('plug.addressLocal')));
-  box.appendChild(hint(T.t('plug.rotateHelp')));
+  if (last) {
+    box.appendChild(hint(T.t('plug.addressHelp')));
+    box.appendChild(hint(T.t('plug.addressLocal')));
+    box.appendChild(hint(T.t('plug.rotateHelp')));
+  }
   return box;
 }
 

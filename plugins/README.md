@@ -32,14 +32,39 @@ layouts, new animations and new settings, is the plugin's own business.
 
 ---
 
-## overlay — a page for OBS
+## overlay — two pages for OBS
 
-Shows the cover, the title, the artist, elapsed and remaining time, and the
-lyric line moving with the song.
+One plugin, two addresses. Switch it on in *Plugins* and each page appears with
+its own address and its own settings under it. Copy either, and add a **Browser
+Source** in OBS with it.
 
-**Setting it up:** switch it on in *Plugins*, copy the address it shows, and add
-a **Browser Source** in OBS with that address. 900 × 200 suits the card and the
-bar; 900 × 320 the lyrics.
+### Now playing
+
+The cover, the title, the artist, elapsed and remaining time, and the lyric line
+moving with the song. 900 × 200 suits the card and the bar; 900 × 320 the
+lyrics.
+
+### Video
+
+The video itself, muted, edge to edge — the thing to put at the *bottom* of a
+scene at a low opacity, so a waiting screen or a pause card has something moving
+behind it. Size it to the whole canvas, e.g. 1920 × 1080, and set the opacity in
+OBS on the source itself.
+
+Blur, zoom, brightness, contrast, colour, black-and-white, a tint and a vignette
+are all on the page, so what OBS gets is already the picture you want.
+
+Three things about it are worth knowing before you build a scene on it:
+
+- **It plays muted, always.** The sound is already coming from wherever you are
+  actually playing the song, and two of them a second apart is unusable.
+- **Some videos refuse to be embedded.** Their uploader disallowed it, and
+  YouTube shows a notice instead of playing. Nothing on this side can detect
+  that — the player is a frame from another site — so *Show → The artwork* is a
+  switch you flip rather than something that happens by itself. The artwork
+  drifts slowly and always works.
+- **It is YouTube's own embedded player**, so it can show ads, and it decodes
+  the video a second time on your machine.
 
 ### Several sources at once
 
@@ -54,6 +79,7 @@ win over whatever the panel says:
 …/overlay/?style=card&lyricStyle=spotify        the song, on one scene
 …/overlay/?style=lyrics&lyricStyle=slideUp      the lyrics alone, on another
 …/overlay/?style=bar&showLyrics=false           a thin strip along an edge
+…/overlay/video.html?videoBlur=20               the video, blurred, behind both
 ```
 
 So one Browser Source follows the panel, and another stays exactly as you left
@@ -77,6 +103,22 @@ anywhere in Overtone.
 | `showCover`, `showTimes`, `showLyrics` | `true` · `false` |
 | `hideIdle`, `idleText` | what happens when nothing is playing |
 
+And on the video page:
+
+| | |
+|---|---|
+| `videoSource` | `video` · `art` — the video, or the artwork drifting |
+| `videoFit` | `cover` · `contain` |
+| `videoBlur` | 0–40 pixels |
+| `videoZoom` | 0–60 per cent |
+| `videoBrightness`, `videoContrast` | 10–200 per cent |
+| `videoSaturate` | 0–300 per cent |
+| `videoGrey` | 0–100 per cent |
+| `videoTint`, `videoTintStrength` | `#rrggbb`, and 0–100 per cent of it |
+| `videoVignette` | 0–100 per cent — darkens the edges |
+| `videoDrift` | `true` · `false` — the slow pan on the artwork |
+| `videoFade` | 0–3000 ms |
+
 Anything unrecognised in the address is ignored rather than obeyed.
 
 ---
@@ -98,6 +140,30 @@ your-plugin/
 (`switch`, `number`, `range`, `choice`, `text`, `colour`, `note`), a `key`, a
 `default`, and labels written as `{ "en": "…", "de": "…" }`. Overtone renders
 them; you write no interface.
+
+### More than one page
+
+A plugin that offers several overlays says so, and each gets its own address in
+the panel:
+
+```json
+"views": [
+  { "id": "main",  "file": "index.html", "name": { "en": "Now playing" } },
+  { "id": "video", "file": "video.html", "name": { "en": "Video" },
+    "help": { "en": "Put this at the bottom of the scene." } }
+]
+```
+
+A setting then names the page it belongs to with `"view": "video"`, and appears
+under that page's address rather than in one undifferentiated list — otherwise
+"Blur" says nothing about which of three overlays it changes. A setting that
+names no page stays at the top, where it applies to all of them.
+
+Write no `views` and nothing changes: the plugin has one page, `index.html`,
+under its own name, which is what every plugin written before this meant.
+
+Each page gets the same feed. `EventSource('feed')` is relative, so it resolves
+the same from `…/your-plugin/` and from `…/your-plugin/second.html`.
 
 Your page receives the song over `EventSource('feed')` — a relative URL, so the
 address's token travels with it. What arrives is the song, the artist, the

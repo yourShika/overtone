@@ -67,6 +67,16 @@ function overlayPayload({ snapshot, config, lines, now }) {
     // Only the two hosts the settings window already allows, so a surface's CSP
     // can name them and a manifest cannot smuggle in a third.
     cover: artwork(state.thumbnail),
+    /**
+     * The video's own id, for a surface that shows the video rather than words
+     * about it.
+     *
+     * Shaped rather than trusted: eleven of YouTube's id characters and nothing
+     * else, because a page will paste this into an embed address. It carries no
+     * more than the title and the artwork already here — and like them it is
+     * absent in private mode, which returns above this point.
+     */
+    video: /^[\w-]{11}$/.test(String(state.videoId || '')) ? String(state.videoId) : '',
     source: state.source === 'ytmusic' ? 'ytmusic' : 'youtube',
 
     duration: seconds(state.duration),

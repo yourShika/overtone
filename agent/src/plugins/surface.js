@@ -221,7 +221,7 @@ class SurfaceServer {
     // The DNS-rebinding fix, and what makes "only works on this computer" true
     // rather than hopeful: a page on the internet can resolve a name to
     // 127.0.0.1, but it cannot make the browser send this Host header.
-    if (req.headers.host !== `127.0.0.1:${this.port}`) {
+    if (!this._hostOk(req.headers.host)) {
       return refuse(res, 403, `host ${req.headers.host}`);
     }
 
@@ -229,7 +229,7 @@ class SurfaceServer {
     // present one that is not ours is a page trying its luck. Same shape as
     // bridge.js's verifyClient, for the same reason.
     const origin = req.headers.origin;
-    if (origin && origin !== `http://127.0.0.1:${this.port}`) {
+    if (origin && !this._hostOk(origin.replace(/^https?:\/\//, ''))) {
       return refuse(res, 403, `origin ${origin}`);
     }
 
@@ -249,6 +249,26 @@ class SurfaceServer {
     if (rest[0] === 'feed') return this._feed(req, res, id);
 
     return this._file(req, res, id, rest);
+  }
+
+  /**
+   * The two names this machine answers to, and nothing else.
+   *
+   * `localhost` is here because YouTube's embedded player refuses to play for a
+   * page whose origin is a bare loopback IP — measured, not guessed: the same
+   * embed reports playableInEmbed for `http://localhost:8799/` and does not for
+   * `http://127.0.0.1:8799/`. So the video overlay has to be reached by name,
+   * and the door has to open to that name.
+   *
+   * It costs nothing. The rebinding this check exists to stop works by pointing
+   * an attacker's *own* domain at 127.0.0.1, which makes the browser send that
+   * domain in the Host header; no page can cause a request carrying
+   * `Host: localhost`, because the name is reserved and resolves to this
+   * machine everywhere. Both names mean "the browser was pointed here on
+   * purpose", which is the whole content of the check.
+   */
+  _hostOk(host) {
+    return host === `127.0.0.1:${this.port}` || host === `localhost:${this.port}`;
   }
 
   /**

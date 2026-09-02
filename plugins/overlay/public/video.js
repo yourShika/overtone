@@ -21,6 +21,27 @@
  */
 
 (() => {
+  /**
+   * Reach this page by name, not by number.
+   *
+   * YouTube's player refuses to run for a page whose origin is a bare loopback
+   * IP — it answers with "error 153", the configuration error, and plays
+   * nothing. Measured against the same video: the embed reports itself playable
+   * for `http://localhost:PORT/` and does not for `http://127.0.0.1:PORT/`.
+   *
+   * Both names are this machine and the address is otherwise identical, token
+   * and all, so moving there costs one navigation nobody sees. Done first,
+   * before anything else runs, so the page does not build a player it is about
+   * to throw away. `?loopback=ip` opts out for anyone who needs it — the
+   * artwork source works either way.
+   */
+  if (location.hostname === '127.0.0.1' && new URLSearchParams(location.search).get('loopback') !== 'ip') {
+    const there = new URL(location.href);
+    there.hostname = 'localhost';
+    location.replace(there.toString());
+    return;
+  }
+
   const body = document.body;
   const els = {
     frame: document.getElementById('frame'),
@@ -35,10 +56,24 @@
   let state = null;
   let receivedAt = 0;
   /** What the frame currently holds, so it is only rebuilt when it must be. */
-  let showing = { video: '', at: 0, paused: null };
+  let showing = { video: '', at: 0 };
 
   connect();
   setInterval(watch, 1000);
+
+  /*
+   * A scene OBS is not drawing gets no player.
+   *
+   * A hidden page is throttled and the video stops, and a stopped player puts
+   * its play icon over the middle — so switching to another scene and back
+   * would bring the icon with it. Taking the frame down while hidden means
+   * there is nothing to stop, and it saves the decode as well; coming back
+   * rebuilds it at the right second, which it would have had to do anyway.
+   */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearFrame();
+    else paint();
+  });
 
   function connect() {
     const feed = new EventSource('feed');
@@ -98,6 +133,9 @@
     const zoom = 1 + number(value('videoZoom', 0), 0, 60) / 100;
     root.setProperty('--zoom', String(zoom + number(value('videoBlur', 0), 0, 40) / 220));
 
+    // Grown past the box so the player's own title and subtitles fall outside.
+    root.setProperty('--crop', String(number(value('videoCrop', 32), 0, 60) / 100));
+
     root.setProperty('--tint', colour(value('videoTint', '#000000')));
     root.setProperty('--tint-strength', String(number(value('videoTintStrength', 0), 0, 100) / 100));
     root.setProperty('--fade', `${number(value('videoFade', 700), 0, 3000)}ms`);
@@ -113,7 +151,20 @@
     body.dataset.state = 'playing';
     els.art.style.backgroundImage = state.cover ? `url("${cssUrl(state.cover)}")` : '';
 
-    if (body.dataset.source === 'art') {
+    /*
+     * A paused song shows the artwork, not a paused player.
+     *
+     * The embed draws a state icon over the middle of itself, and unlike the
+     * title along the top that one cannot be cropped away — it sits dead
+     * centre. So the answer is not to be in that state: while the song is
+     * paused there is no player at all, and the artwork drifts in its place.
+     * Which is also the better picture, a frozen frame being the one thing a
+     * background should not be.
+     */
+    const still = body.dataset.source === 'art' || state.paused || document.hidden;
+    body.dataset.showing = still ? 'art' : 'video';
+
+    if (still) {
       clearFrame();
       return;
     }
@@ -121,11 +172,9 @@
     const at = position();
     const drifted = Math.abs(at - expected()) > RESYNC_AFTER_S;
 
-    // Rebuilt only when it would show the wrong thing: a different song, a
-    // pause that the frame does not know about, or a seek it cannot follow.
-    if (state.video !== showing.video || state.paused !== showing.paused || drifted) {
-      mountFrame(state.video, at, state.paused);
-    }
+    // Rebuilt only when it would show the wrong thing: a different song, or a
+    // seek the running player cannot have followed.
+    if (state.video !== showing.video || drifted) mountFrame(state.video, at);
   }
 
   /**
@@ -136,9 +185,12 @@
    * history, and a Browser Source left running for an evening accumulates one
    * per song.
    */
-  function mountFrame(video, at, paused) {
+  function mountFrame(video, at) {
     const parameters = new URLSearchParams({
-      autoplay: paused ? '0' : '1',
+      // Always. A player that is not playing draws its own icon over the middle
+      // of itself, and the paused song never reaches this function — it shows
+      // the artwork instead.
+      autoplay: '1',
       // Muted always. The sound is already coming from wherever the song is
       // actually playing, and two of them a second apart is unusable.
       mute: '1',
@@ -147,6 +199,11 @@
       fs: '0',
       rel: '0',
       modestbranding: '1',
+      // No subtitles. The player brings its own along when the viewer's account
+      // has them switched on, and burnt-in German captions over a background
+      // that is meant to sit behind a waiting screen — beneath the lyric
+      // overlay, quite possibly — is the opposite of what this is for.
+      cc_load_policy: '0',
       playsinline: '1',
       iv_load_policy: '3',
       start: String(Math.max(0, Math.floor(at))),
@@ -154,20 +211,30 @@
 
     const frame = document.createElement('iframe');
     frame.allow = 'autoplay; encrypted-media';
-    frame.referrerPolicy = 'no-referrer';
+    /**
+     * The origin, and only the origin.
+     *
+     * Sending nothing is the other half of error 153 — the player has to know
+     * which page is embedding it. But the surface token lives in this page's
+     * *path*, and the whole document is served under `Referrer-Policy:
+     * no-referrer` to keep it out of anything that leaves this machine. So the
+     * frame overrides that policy with the narrowest setting that still says
+     * something: `http://localhost:PORT/`, no path, no token.
+     */
+    frame.referrerPolicy = 'origin';
     frame.tabIndex = -1;
     frame.setAttribute('aria-hidden', 'true');
     frame.src = `https://www.youtube-nocookie.com/embed/${video}?${parameters}`;
 
     els.frame.textContent = '';
     els.frame.appendChild(frame);
-    showing = { video, at, paused, mountedAt: performance.now() };
+    showing = { video, at, mountedAt: performance.now() };
   }
 
   function clearFrame() {
     if (!els.frame.childElementCount) return;
     els.frame.textContent = '';
-    showing = { video: '', at: 0, paused: null };
+    showing = { video: '', at: 0 };
   }
 
   /** Where the song is now, from the anchor the agent stamped. */
@@ -180,7 +247,6 @@
   /** Where the frame should have reached, if it has been playing since it was built. */
   function expected() {
     if (!showing.mountedAt) return position();
-    if (showing.paused) return showing.at;
     return showing.at + (performance.now() - showing.mountedAt) / 1000;
   }
 

@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",
@@ -692,6 +692,29 @@
           }
         }
       ]
+    },
+    {
+      "type": "range",
+      "key": "videoCrop",
+      "view": "video",
+      "label": {
+        "en": "Crop the player away",
+        "de": "Player wegschneiden",
+        "es": "Recortar el reproductor",
+        "pl": "Przytnij odtwarzacz",
+        "ru": "Обрезать плеер"
+      },
+      "help": {
+        "en": "The player draws its own title along the top and subtitles along the bottom, and neither switches off reliably. The picture is grown until they fall outside — more at the bottom.",
+        "de": "Der Player zeichnet oben seinen Titel und unten Untertitel; beides lässt sich nicht verlässlich abschalten. Das Bild wird vergrößert, bis sie herausfallen — unten mehr als oben.",
+        "es": "El reproductor dibuja su título arriba y subtítulos abajo, y no se apagan de forma fiable. La imagen se agranda hasta que quedan fuera, más por abajo.",
+        "pl": "Odtwarzacz rysuje u góry tytuł, a na dole napisy; nie da się ich pewnie wyłączyć. Obraz jest powiększany, aż wypadną poza kadr — na dole bardziej.",
+        "ru": "Плеер рисует сверху название, снизу субтитры; надёжно отключить их нельзя. Картинка увеличивается, пока они не уйдут за кадр — снизу сильнее."
+      },
+      "default": 32,
+      "min": 0,
+      "max": 60,
+      "step": 1
     },
     {
       "type": "range",

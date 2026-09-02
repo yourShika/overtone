@@ -17,6 +17,18 @@
   --tint-strength: 0;
   --vignette: 0;
   --fade: 700ms;
+  /*
+   * How far past the box the embedded player is grown, so its own furniture
+   * falls outside. 0 shows the player exactly as YouTube draws it.
+   *
+   * Cut unevenly, because the furniture is: the title runs along the very top
+   * and needs little, while subtitles sit low and need several times as much.
+   * The shift below pushes the player down so most of the growth is taken off
+   * the bottom.
+   */
+  --crop: 0.32;
+  --chrome: calc(1 + var(--crop));
+  --crop-shift: calc(var(--crop) * 18%);
 }
 
 * {
@@ -66,8 +78,15 @@ body[data-state='playing'] .stage {
   will-change: transform;
 }
 
-body[data-source='video'] .frame,
-body[data-source='art'] .art {
+/*
+ * `data-showing`, not `data-source`: the setting says what you asked for, this
+ * says what is actually on screen. They differ whenever a player would be
+ * standing still — paused, or in a scene OBS is not drawing — because a
+ * stopped player draws its own play icon over the middle of itself and that
+ * one cannot be cropped off the way the title can.
+ */
+body[data-showing='video'] .frame,
+body[data-showing='art'] .art {
   opacity: 1;
 }
 
@@ -83,18 +102,31 @@ body[data-source='art'] .art {
    */
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  /* Pushed down, so more of the growth is taken off the bottom than off the
+     top — subtitles sit low, the title runs along the very top and needs far
+     less. Percentages here are of the element's own height. */
+  transform: translate(-50%, calc(-50% + var(--crop-shift)));
   pointer-events: none;
 }
 
+/*
+ * Grown past the edges, so the player's own furniture falls outside.
+ *
+ * The embed still draws a title across the top and a state icon over the
+ * middle, and none of it can be reached from here — it is another site's
+ * document. What it cannot do is stay on screen once the player is bigger than
+ * the box that clips it. The title band is a fixed height whatever the size, so
+ * a few per cent is enough on a full-canvas source and the setting is there for
+ * anyone whose scene is shaped differently.
+ */
 body[data-fit='cover'] .frame iframe {
-  width: max(100vw, 177.78vh);
-  height: max(100vh, 56.25vw);
+  width: calc(max(100vw, 177.78vh) * var(--chrome));
+  height: calc(max(100vh, 56.25vw) * var(--chrome));
 }
 
 body[data-fit='contain'] .frame iframe {
-  width: min(100vw, 177.78vh);
-  height: min(100vh, 56.25vw);
+  width: calc(min(100vw, 177.78vh) * var(--chrome));
+  height: calc(min(100vh, 56.25vw) * var(--chrome));
 }
 
 /* --- the artwork ---------------------------------------------------------- */

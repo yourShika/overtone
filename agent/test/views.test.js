@@ -160,3 +160,29 @@ test('private mode keeps the video id back with everything else', () => {
   assert.equal(payload.privacy, true);
   assert.equal(payload.video, undefined);
 });
+
+// --- which names the door opens to ------------------------------------------
+
+test('both loopback names are let in, and nothing else', () => {
+  const server = new SurfaceServer({ registry: { surfaces: () => [] }, payload: () => null });
+  server.port = 8787;
+
+  assert.equal(server._hostOk('127.0.0.1:8787'), true);
+  // localhost, because YouTube's embedded player refuses to run for a page
+  // whose origin is a bare loopback IP — measured, not assumed.
+  assert.equal(server._hostOk('localhost:8787'), true);
+
+  for (const host of [
+    'evil.example:8787',
+    'localhost.evil.example:8787',
+    'localhost:8788',
+    '127.0.0.1',
+    'localhost',
+    '127.0.0.2:8787',
+    '[::1]:8787',
+    '',
+    undefined,
+  ]) {
+    assert.equal(server._hostOk(host), false, `durchgelassen: ${String(host)}`);
+  }
+});

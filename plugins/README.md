@@ -65,6 +65,9 @@ Three things about it are worth knowing before you build a scene on it:
   drifts slowly and always works.
 - **It is YouTube's own embedded player**, so it can show ads, and it decodes
   the video a second time on your machine.
+- **The player draws its own title and subtitles**, and neither can be switched
+  off from outside it. The picture is grown until they fall off the edges —
+  *Crop the player away* is that, and it is why a little of the frame is lost.
 
 ### Several sources at once
 

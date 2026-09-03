@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.4.2",
+  "version": "1.5.0",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",
@@ -715,6 +715,29 @@
       "min": 0,
       "max": 60,
       "step": 1
+    },
+    {
+      "type": "range",
+      "key": "videoSync",
+      "view": "video",
+      "label": {
+        "en": "Timing",
+        "de": "Zeitversatz",
+        "es": "Sincronía",
+        "pl": "Przesunięcie",
+        "ru": "Смещение"
+      },
+      "help": {
+        "en": "The picture is held on the song by asking the player where it is. This trims what is left — the delay between the browser tab and here. Minus shows the video later.",
+        "de": "Das Bild wird auf dem Lied gehalten, indem der Player nach seiner Zeit gefragt wird. Hier stellst du den Rest nach — die Verzögerung zwischen Browser-Tab und hier. Minus zeigt das Video später.",
+        "es": "La imagen se mantiene sobre la canción preguntando al reproductor. Aquí ajustas lo que queda: el retardo entre la pestaña y esto. Menos muestra el vídeo más tarde.",
+        "pl": "Obraz trzyma się utworu, bo odtwarzacz jest pytany o czas. Tu dostrajasz resztę — opóźnienie między kartą a tym. Minus pokazuje wideo później.",
+        "ru": "Картинка держится на песне: плеер спрашивают, где он. Здесь подстраивается остаток — задержка между вкладкой и этим. Минус показывает видео позже."
+      },
+      "default": 0,
+      "min": -3,
+      "max": 3,
+      "step": 0.05
     },
     {
       "type": "range",

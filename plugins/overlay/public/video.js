@@ -58,14 +58,27 @@
 
   /** How far out of step with the song the frame may drift before a reload. */
   const RESYNC_AFTER_S = 6;
-  /** How far out the player may be before a nudge is worth the rebuffer. */
-  const NUDGE_AFTER_S = 1.2;
-  /** Seeking costs a moment; aim slightly ahead so it lands on the beat. */
-  const SEEK_LEAD_S = 0.35;
-  /** After a nudge, let it settle before measuring again. */
-  const SETTLE_MS = 4000;
+  /**
+   * How far out the player may be before it is worth a correction.
+   *
+   * A seek is a visible jump, so this is not zero — but it is far tighter than
+   * it was, because both clocks run at the same speed: once they agree they
+   * keep agreeing, and a correction only follows a buffer stall or a seek.
+   */
+  const NUDGE_AFTER_S = 0.35;
+  /**
+   * After a correction, how long before the landing is worth measuring.
+   *
+   * Short, because a seek that has not finished cannot be mistaken for one that
+   * has: the player says it is buffering, and a reading taken then is thrown
+   * away above. What this really buys is one settled reading before the next
+   * correction, and waiting longer only left a bad landing standing.
+   */
+  const SETTLE_MS = 1200;
   /** A reading older than this is not a reading. */
-  const STALE_MS = 3000;
+  const STALE_MS = 1200;
+  /** How much of each measurement is believed, against what is known already. */
+  const LEARN = 0.6;
   /** Hold the last frame this long after the agent goes quiet, then fade. */
   const GONE_AFTER_MS = 20000;
 
@@ -80,17 +93,38 @@
    * below is working at all — without it the page falls back to guessing.
    */
   let reported = null;
+  /** The player's own state, when it says: 1 playing, 2 paused, 3 buffering. */
+  let playerState = null;
+  /** When the last correction went out, and what it was aiming at. */
   let nudgedAt = 0;
+  let nudgedTo = 0;
+  /** Whether the landing of that correction has been measured yet. */
+  let nudgeMeasured = true;
+
   /**
-   * How long the last player took from being built to playing.
+   * How long a player takes from being built to playing its first frame.
    *
-   * Used as the head start for the next one, so a slow load does not simply
-   * become lag. Two seconds to begin with, then measured.
+   * Handed to the next one as a head start, so a slow load stops turning into
+   * lag instead of being corrected afterwards. A guess to begin with, and only
+   * until the first mount has been watched.
    */
-  let warmup = 2;
+  let warmup = remembered('warmup', 1.5, 0, 12);
+  /**
+   * How far past the target a seek has to aim to land on it.
+   *
+   * Zero to begin with — deliberately. The old code assumed a third of a second
+   * and was wrong in a direction nobody could see, which is exactly the bias
+   * this is here to remove rather than replace. Whatever it really costs is
+   * measured from where the player lands.
+   */
+  let lead = remembered('lead', 0, -2, 2);
+  /** Set once playback has actually begun, so the mount can be scored. */
+  let moving = false;
+  /** The manual offset, in seconds. Minus shows the video later. */
+  let trim = 0;
 
   connect();
-  setInterval(watch, 1000);
+  setInterval(watch, 500);
 
   /*
    * A scene OBS is not drawing gets no player.
@@ -132,15 +166,49 @@
       }
     }
 
-    const time = Number(data?.info?.currentTime);
+    const info = data?.info;
+    if (info && typeof info.playerState === 'number') playerState = info.playerState;
+
+    const time = Number(info?.currentTime);
     if (!Number.isFinite(time) || time < 0) return;
 
-    // The first reading is also the answer to "how long did that take", which
-    // is what the next player gets as a head start.
-    if (!reported && showing.mountedAt) {
-      warmup = clampNumber((performance.now() - showing.mountedAt) / 1000, 0.5, 12);
-    }
+    const previous = reported;
     reported = { at: time, when: performance.now() };
+
+    /*
+     * The moment the clock first advances is the moment playback began — which
+     * is the one thing worth knowing about a mount, and not the same as the
+     * first message: the player answers while it is still buffering.
+     *
+     * Where it is *then*, against where the song is *then*, is the whole score
+     * for the head start it was given. Too big and the picture starts ahead of
+     * the sound, which is the complaint this is answering.
+     */
+    if (!moving && previous && time > previous.at + 0.05) {
+      moving = true;
+
+      /*
+       * How long it took, straight off the clock — not worked back from where
+       * the player landed.
+       *
+       * Working it back was wrong, and wrong in a way that got worse each time:
+       * `start=` takes whole seconds only, so every mount is up to half a
+       * second out by rounding alone, and treating that as news about the load
+       * had the estimate chasing noise. It fell 1.5 → 0.6 → 0.3 over three
+       * loads of the same page on the same line. The stopwatch says what the
+       * arithmetic could not.
+       */
+      const took = (performance.now() - showing.mountedAt) / 1000;
+      warmup = clampNumber(warmup * (1 - LEARN) + took * LEARN, 0, 12);
+      remember('warmup', warmup);
+
+      // And one correction now, whatever the error. This is the moment somebody
+      // notices — the picture appears — and the mount cannot have been better
+      // than half a second because of that rounding. Waiting for the tolerance
+      // to be exceeded would leave up to half a second standing for the whole
+      // song.
+      straighten();
+    }
   });
 
   function connect() {
@@ -201,6 +269,11 @@
     const zoom = 1 + number(value('videoZoom', 0), 0, 60) / 100;
     root.setProperty('--zoom', String(zoom + number(value('videoBlur', 0), 0, 40) / 220));
 
+    // Everything between the browser tab and this page — the reading, the
+    // hops, the player's own start-up — lands here as one number somebody can
+    // see the effect of immediately. Minus shows the video later.
+    trim = number(value('videoSync', 0), -3, 3);
+
     // Grown past the box so the player's own title and subtitles fall outside.
     root.setProperty('--crop', String(number(value('videoCrop', 32), 0, 60) / 100));
 
@@ -254,40 +327,108 @@
   }
 
   /**
-   * Put the player back on the beat.
+   * Where the picture should be, including the trim.
    *
-   * A nudge rather than a rebuild: seeking keeps the picture, where building
-   * the frame again costs another load — which is the thing that put it behind
-   * in the first place.
+   * The song's position as this page knows it, which is the agent's reading
+   * carried on an anchor — plus whatever the slider says, because the last
+   * stretch of the delay happens between the browser tab and here and cannot
+   * be measured from inside this page. Somebody watching both at once can see
+   * it in a second, so they are given the knob rather than a guess.
    */
-  function nudge() {
-    const frame = els.frame.firstElementChild;
-    if (!frame || !state || state.paused || !reported) return;
+  function target() {
+    return position() + trim;
+  }
 
+  /** Where the player is, or null when its word is too old to use. */
+  function playerAt() {
+    if (!reported) return null;
     const age = performance.now() - reported.when;
-    // It has stopped talking; its last word is no longer where it is.
-    if (age > STALE_MS) return;
-    if (performance.now() - nudgedAt < SETTLE_MS) return;
+    if (age > STALE_MS) return null;
+    // Buffering freezes the player's clock while this one keeps running, so a
+    // reading taken through a stall is not a reading.
+    if (playerState === 3) return null;
+    return reported.at + age / 1000;
+  }
 
-    const playerAt = reported.at + age / 1000;
-    if (Math.abs(position() - playerAt) < NUDGE_AFTER_S) return;
+  /**
+   * Hold the picture on the song.
+   *
+   * Two things happen here, and the order matters. First the landing of the
+   * last correction is scored, because that is the only way to learn what a
+   * seek really costs — asking for a point and seeing where it arrives. Then,
+   * if the picture has drifted, another correction goes out aimed by what has
+   * been learned.
+   *
+   * A correction is a seek rather than a rebuild: seeking keeps the picture,
+   * where building the frame again costs another load — the very thing that
+   * put it behind to begin with.
+   */
+  function sync() {
+    const frame = els.frame.firstElementChild;
+    if (!frame || !state || state.paused) return;
 
+    const now = playerAt();
+    if (now === null) return;
+
+    const settled = performance.now() - nudgedAt >= SETTLE_MS;
+    if (!settled) return;
+
+    const error = now - target();
+
+    // Score the last correction: it aimed at target + lead, so whatever it is
+    // out by is what the lead was out by.
+    if (!nudgeMeasured) {
+      nudgeMeasured = true;
+      lead = clampNumber(lead * (1 - LEARN) + (lead - error) * LEARN, -2, 2);
+      remember('lead', lead);
+    }
+
+    if (Math.abs(error) < NUDGE_AFTER_S) return;
+    straighten();
+  }
+
+  /** Aim the player at the target, by what the last landing taught. */
+  function straighten() {
+    const frame = els.frame.firstElementChild;
+    if (!frame) return;
+
+    const to = Math.max(0, target() + lead);
+    if (!command(frame, 'seekTo', [to, true])) return;
+
+    nudgedAt = performance.now();
+    nudgedTo = to;
+    nudgeMeasured = false;
+  }
+
+  /** Say something to the player. False when the frame has gone. */
+  function command(frame, func, args) {
     try {
       frame.contentWindow?.postMessage(
-        JSON.stringify({
-          event: 'command',
-          func: 'seekTo',
-          args: [Math.max(0, position() + SEEK_LEAD_S), true],
-          id: 1,
-          channel: 'widget',
-        }),
+        JSON.stringify({ event: 'command', func, args, id: 1, channel: 'widget' }),
         PLAYER_ORIGIN,
       );
-      nudgedAt = performance.now();
+      return true;
     } catch {
-      // Same as the handshake: a frame that is on its way out.
+      // A frame on its way out. The next pass will find it gone.
+      return false;
     }
   }
+
+  /** What the synchroniser knows, for anyone looking into the page. */
+  function syncReport() {
+    const now = playerAt();
+    return {
+      target: Number(target().toFixed(2)),
+      player: now === null ? null : Number(now.toFixed(2)),
+      error: now === null ? null : Number((now - target()).toFixed(2)),
+      lead: Number(lead.toFixed(2)),
+      warmup: Number(warmup.toFixed(2)),
+      trim,
+      playerState,
+      lastAimedAt: nudgedTo ? Number(nudgedTo.toFixed(2)) : null,
+    };
+  }
+  window.overtoneSync = syncReport;
 
   /**
    * Put the player in the page, pointed at this second of this song.
@@ -322,9 +463,9 @@
       cc_load_policy: '0',
       playsinline: '1',
       iv_load_policy: '3',
-      // Where the song will be by the time this player has finished loading,
-      // not where it is now. Everything the load takes is otherwise lag, and
-      // that was the whole of the drift on a slow start.
+      // Where the song will be once this player has finished loading, not
+      // where it is now — everything the load takes is otherwise lag. Whole
+      // seconds is all `start` accepts; the rest is the correction's job.
       start: String(Math.max(0, Math.round(at + warmup))),
     });
 
@@ -348,7 +489,10 @@
     // A new player knows nothing yet, and the old one's readings would be
     // taken for its own.
     reported = null;
+    playerState = null;
+    moving = false;
     nudgedAt = 0;
+    nudgeMeasured = true;
 
     frame.addEventListener('load', () => {
       // The handshake the API's own script sends. Without it the player talks
@@ -394,7 +538,7 @@
    */
   function watch() {
     if (!state) return;
-    nudge();
+    sync();
     if (body.dataset.stale === 'yes' && performance.now() - receivedAt > GONE_AFTER_MS) {
       body.dataset.state = 'waiting';
       clearFrame();
@@ -404,6 +548,43 @@
   /** Bounds for numbers that are already numbers. */
   function clampNumber(value, low, high) {
     return Math.min(high, Math.max(low, value));
+  }
+
+  /**
+   * What this machine learned last time.
+   *
+   * How long a player takes to load is a property of the computer and the line
+   * it is on, not of the session — so learning it again from scratch every time
+   * OBS restarts means the first song of every evening starts in the wrong
+   * place. That is the "only at the beginning" this is here to end.
+   *
+   * Storage is per address and stays in that browser, so two Browser Sources on
+   * two machines each learn their own. Every access is guarded: a source with
+   * site data switched off simply starts from the default, which is what the
+   * default is for.
+   */
+  function remembered(name, fallback, low, high) {
+    try {
+      const raw = localStorage.getItem(`overtone.video.${name}`);
+      // Tested as a string first, because Number(null) and Number('') are both
+      // zero and neither is a reading — which had a fresh source start with a
+      // load time of nought and put every first song half a second out.
+      if (raw === null || raw.trim() === '') return fallback;
+
+      const value = Number(raw);
+      return Number.isFinite(value) ? clampNumber(value, low, high) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function remember(name, value) {
+    try {
+      localStorage.setItem(`overtone.video.${name}`, String(value));
+    } catch {
+      // Private window, blocked site data, a quota. None of it is worth an
+      // error: the next mount simply starts from what is in memory.
+    }
   }
 
   function number(value, low, high) {

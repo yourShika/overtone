@@ -69,6 +69,19 @@ Three things about it are worth knowing before you build a scene on it:
   off from outside it. The picture is grown until they fall off the edges —
   *Crop the player away* is that, and it is why a little of the frame is lost.
 
+### Staying on the beat
+
+The page asks the player where it is, several times a second, and pulls it back
+when it has drifted. It also learns two things about your machine and remembers
+them: how long a player takes to load, and how far a seek overshoots. So the
+first video after installing settles within a couple of seconds, and every one
+after that starts already in place.
+
+What it cannot measure is the stretch between the YouTube tab and here — the
+reading, the hops, the player's own start-up. That is **Timing**, and it is a
+slider because you can see the answer in a second by watching both at once.
+Minus shows the video later.
+
 ### Several sources at once
 
 The address is bare and stays the same — paste it once, and it keeps working
@@ -121,6 +134,8 @@ And on the video page:
 | `videoVignette` | 0–100 per cent — darkens the edges |
 | `videoDrift` | `true` · `false` — the slow pan on the artwork |
 | `videoFade` | 0–3000 ms |
+| `videoCrop` | 0–60 per cent — how much of the player's own title and subtitles is cut off |
+| `videoSync` | −3…+3 s — trim, minus shows the video later |
 
 Anything unrecognised in the address is ignored rather than obeyed.
 

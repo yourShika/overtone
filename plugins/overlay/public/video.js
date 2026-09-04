@@ -79,6 +79,13 @@
   const STALE_MS = 1200;
   /** How much of each measurement is believed, against what is known already. */
   const LEARN = 0.6;
+  /** How often to ask the player to talk, and how many times before giving up. */
+  const HELLO_EVERY_MS = 300;
+  const HELLO_TRIES = 30;
+  /** Silence this long from a playing player means the channel needs remaking. */
+  const GONE_QUIET_MS = 3000;
+  /** How often to press play on a player that is not playing. */
+  const PUSH_PLAY_EVERY_MS = 1500;
   /** Hold the last frame this long after the agent goes quiet, then fade. */
   const GONE_AFTER_MS = 20000;
 
@@ -117,27 +124,33 @@
    * this is here to remove rather than replace. Whatever it really costs is
    * measured from where the player lands.
    */
-  let lead = remembered('lead', 0, -2, 2);
+  let lead = remembered('lead', 0, -1.5, 1.5);
   /** Set once playback has actually begun, so the mount can be scored. */
   let moving = false;
   /** The manual offset, in seconds. Minus shows the video later. */
   let trim = 0;
+  /** The repeating handshake, while the player has not answered yet. */
+  let helloTimer = 0;
+  /** When play was last pressed, so it is not pressed every half second. */
+  let pushedPlayAt = 0;
 
   connect();
   setInterval(watch, 500);
 
   /*
-   * A scene OBS is not drawing gets no player.
+   * Coming back into view.
    *
-   * A hidden page is throttled and the video stops, and a stopped player puts
-   * its play icon over the middle — so switching to another scene and back
-   * would bring the icon with it. Taking the frame down while hidden means
-   * there is nothing to stop, and it saves the decode as well; coming back
-   * rebuilds it at the right second, which it would have had to do anyway.
+   * A page that really was hidden had its media throttled or stopped outright,
+   * so the player is behind by however long that lasted — and may not be
+   * playing at all. Both are put right here.
+   *
+   * Nothing happens on the way out, deliberately: see the note in paint().
    */
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) clearFrame();
-    else paint();
+    if (document.hidden) return;
+    const frame = els.frame.firstElementChild;
+    if (frame) command(frame, 'playVideo', []);
+    straighten();
   });
 
   /**
@@ -199,8 +212,16 @@
        * arithmetic could not.
        */
       const took = (performance.now() - showing.mountedAt) / 1000;
-      warmup = clampNumber(warmup * (1 - LEARN) + took * LEARN, 0, 12);
-      remember('warmup', warmup);
+      // Not from a load that happened while nobody was drawing the page: a
+      // browser throttles a hidden page hard, so what would be measured is the
+      // throttling and not the machine. Keeping that would hand the next
+      // player a head start of several seconds it does not need. Skipping it
+      // leaves whatever was learned when the page was last on screen, or the
+      // default — which is what the default is for.
+      if (!document.hidden) {
+        warmup = clampNumber(warmup * (1 - LEARN) + took * LEARN, 0, 12);
+        remember('warmup', warmup);
+      }
 
       // And one correction now, whatever the error. This is the moment somebody
       // notices — the picture appears — and the mount cannot have been better
@@ -302,7 +323,18 @@
      * Which is also the better picture, a frozen frame being the one thing a
      * background should not be.
      */
-    const still = body.dataset.source === 'art' || state.paused || document.hidden;
+    /*
+     * Deliberately not `document.hidden`.
+     *
+     * Tearing the player down while the page reports itself hidden looked like
+     * a free saving — no decode for a scene nobody is drawing. But an OBS
+     * browser source renders off screen, and a page rendered off screen can
+     * report itself hidden the entire time it is plainly on somebody's stream.
+     * Then the video never plays at all, which is a far worse fault than the
+     * one that was being avoided. If the decode is not wanted, OBS has its own
+     * switch for it: "Shutdown source when not visible".
+     */
+    const still = body.dataset.source === 'art' || state.paused;
     body.dataset.showing = still ? 'art' : 'video';
 
     if (still) {
@@ -321,7 +353,10 @@
     // Without readings there is nothing to nudge towards, so a big divergence
     // falls back to what this did before: build it again. `expected()` is only
     // a model, which is why it is not trusted while the player is talking.
-    if (!reported && Math.abs(at - expected()) > RESYNC_AFTER_S) {
+    // Fresh, not "has it ever spoken": a player that answered once and then
+    // went quiet used to switch this off for good, which left the page with
+    // neither a correction nor a rebuild — nothing happening at all.
+    if (!fresh() && Math.abs(at - expected()) > RESYNC_AFTER_S) {
       mountFrame(state.video, at);
     }
   }
@@ -339,11 +374,48 @@
     return position() + trim;
   }
 
+  /**
+   * Ask the player to talk to us, and keep asking until it does.
+   *
+   * Once was not enough, and that was the whole of "sometimes it just does
+   * nothing". The handshake went out on the frame's load event, and a player
+   * that was not yet listening at that instant never registered — no readings,
+   * no corrections, for the rest of that song. Whether it landed was a matter
+   * of milliseconds, which is exactly why it worked most of the time and
+   * failed now and then.
+   *
+   * YouTube's own script does the same thing: it repeats until the player
+   * answers. So this repeats, and stops the moment a reading arrives or the
+   * player has plainly not got one to give.
+   */
+  function sayHello() {
+    if (helloTimer) clearInterval(helloTimer);
+
+    let tries = 0;
+    const knock = () => {
+      const frame = els.frame.firstElementChild;
+      // Nothing to talk to, it is already talking, or it has had long enough.
+      if (!frame || reported || ++tries > HELLO_TRIES) {
+        clearInterval(helloTimer);
+        helloTimer = 0;
+        return;
+      }
+      command(frame, null, null, { event: 'listening', id: 1, channel: 'widget' });
+    };
+
+    knock();
+    helloTimer = setInterval(knock, HELLO_EVERY_MS);
+  }
+
+  /** Whether the player's last word is recent enough to act on. */
+  function fresh() {
+    return Boolean(reported) && performance.now() - reported.when <= STALE_MS;
+  }
+
   /** Where the player is, or null when its word is too old to use. */
   function playerAt() {
-    if (!reported) return null;
+    if (!fresh()) return null;
     const age = performance.now() - reported.when;
-    if (age > STALE_MS) return null;
     // Buffering freezes the player's clock while this one keeps running, so a
     // reading taken through a stall is not a reading.
     if (playerState === 3) return null;
@@ -367,6 +439,51 @@
     const frame = els.frame.firstElementChild;
     if (!frame || !state || state.paused) return;
 
+    /*
+     * A player that has gone quiet gets asked again.
+     *
+     * It happens: an ad ends and the player is rebuilt inside its own frame, or
+     * the registration is simply lost. Without this the page would keep holding
+     * a reading from a minute ago, act on none of it, and look exactly like a
+     * synchroniser that had decided to stop.
+     */
+    if (!fresh() && !helloTimer) {
+      const silence = reported ? performance.now() - reported.when : performance.now() - showing.mountedAt;
+      if (silence > GONE_QUIET_MS) {
+        // Forgotten first, so the handshake knows it is still waiting for one.
+        reported = null;
+        sayHello();
+      }
+    }
+
+    /*
+     * A player that is not playing is told to.
+     *
+     * `autoplay=1` is a request, not a promise. A browser suppresses it when
+     * the page is not being drawn at the moment the frame is built — which is
+     * exactly what happens to a Browser Source whose scene is not on air yet —
+     * and the player then sits at its first frame for ever, because nothing was
+     * ever going to press play. That is a black rectangle on a stream, and it
+     * is the worst of the faults this file has had: not out of step, simply
+     * absent.
+     *
+     * 2 is paused, -1 is not started, 5 is cued. All three mean the same thing
+     * here: the song is playing and the picture is not.
+     */
+    if (playerState === 2 || playerState === -1 || playerState === 5) {
+      if (performance.now() - pushedPlayAt > PUSH_PLAY_EVERY_MS) {
+        pushedPlayAt = performance.now();
+        command(frame, 'playVideo', []);
+      }
+      // Pressing play is all that happens here. Where it then is will be wrong,
+      // of course — it stood still while the song went on — but that is an
+      // ordinary error and the loop below corrects it the moment the readings
+      // start advancing again. Seeking from here as well would mean a seek
+      // every second and a half for as long as a browser refuses to play,
+      // which is a thing browsers do to pages nobody is looking at.
+      return;
+    }
+
     const now = playerAt();
     if (now === null) return;
 
@@ -377,9 +494,14 @@
 
     // Score the last correction: it aimed at target + lead, so whatever it is
     // out by is what the lead was out by.
-    if (!nudgeMeasured) {
+    // Only from a player that is actually playing. A landing measured while it
+    // was stopped or stalling is not a landing, and one bad lesson stays: the
+    // value learned is what the *next* seek aims by, so a figure picked up
+    // during a stretch where nothing could play would overshoot every
+    // correction after it.
+    if (!nudgeMeasured && playerState === 1) {
       nudgeMeasured = true;
-      lead = clampNumber(lead * (1 - LEARN) + (lead - error) * LEARN, -2, 2);
+      lead = clampNumber(lead * (1 - LEARN) + (lead - error) * LEARN, -1.5, 1.5);
       remember('lead', lead);
     }
 
@@ -401,10 +523,10 @@
   }
 
   /** Say something to the player. False when the frame has gone. */
-  function command(frame, func, args) {
+  function command(frame, func, args, raw) {
     try {
       frame.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func, args, id: 1, channel: 'widget' }),
+        JSON.stringify(raw || { event: 'command', func, args, id: 1, channel: 'widget' }),
         PLAYER_ORIGIN,
       );
       return true;
@@ -493,20 +615,12 @@
     moving = false;
     nudgedAt = 0;
     nudgeMeasured = true;
+    if (helloTimer) clearInterval(helloTimer);
+    helloTimer = 0;
+    pushedPlayAt = 0;
 
-    frame.addEventListener('load', () => {
-      // The handshake the API's own script sends. Without it the player talks
-      // to nobody.
-      try {
-        frame.contentWindow?.postMessage(
-          JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }),
-          PLAYER_ORIGIN,
-        );
-      } catch {
-        // A frame that went away between the event and here. The next mount
-        // will try again; nothing here is worth an error for.
-      }
-    });
+    // Asked from the load event and then kept asking — see sayHello.
+    frame.addEventListener('load', sayHello);
 
     els.frame.textContent = '';
     els.frame.appendChild(frame);

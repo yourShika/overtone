@@ -17,18 +17,6 @@
   --tint-strength: 0;
   --vignette: 0;
   --fade: 700ms;
-  /*
-   * How far past the box the embedded player is grown, so its own furniture
-   * falls outside. 0 shows the player exactly as YouTube draws it.
-   *
-   * Cut unevenly, because the furniture is: the title runs along the very top
-   * and needs little, while subtitles sit low and need several times as much.
-   * The shift below pushes the player down so most of the growth is taken off
-   * the bottom.
-   */
-  --crop: 0.32;
-  --chrome: calc(1 + var(--crop));
-  --crop-shift: calc(var(--crop) * 18%);
 }
 
 * {
@@ -100,34 +88,26 @@ body[data-showing='art'] .art {
    * short side fills and lets the long side run off, which is what a
    * background wants; "contain" keeps all of it and leaves the rest empty.
    */
-  top: 50%;
-  left: 50%;
-  /* Pushed down, so more of the growth is taken off the bottom than off the
-     top — subtitles sit low, the title runs along the very top and needs far
-     less. Percentages here are of the element's own height. */
-  transform: translate(-50%, calc(-50% + var(--crop-shift)));
+  /*
+   * Placed and scaled from the script, in pixels.
+   *
+   * The element is kept at the chosen quality — 854 × 480 and the like — and
+   * the picture is scaled up to fill the scene, so YouTube serves a stream that
+   * size and the graphics card does the enlarging. Putting the size in the
+   * stylesheet meant asking for a stream larger than the canvas and decoding it
+   * for a background, which is what made it stutter.
+   */
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
   pointer-events: none;
 }
 
 /*
- * Grown past the edges, so the player's own furniture falls outside.
- *
- * The embed still draws a title across the top and a state icon over the
- * middle, and none of it can be reached from here — it is another site's
- * document. What it cannot do is stay on screen once the player is bigger than
- * the box that clips it. The title band is a fixed height whatever the size, so
- * a few per cent is enough on a full-canvas source and the setting is there for
- * anyone whose scene is shaped differently.
+ * The scaling is done from the script — see fitFrame — because the crop has to
+ * come off the bottom rather than evenly, and pixels say that exactly where a
+ * percentage of a scaled box does not.
  */
-body[data-fit='cover'] .frame iframe {
-  width: calc(max(100vw, 177.78vh) * var(--chrome));
-  height: calc(max(100vh, 56.25vw) * var(--chrome));
-}
-
-body[data-fit='contain'] .frame iframe {
-  width: calc(min(100vw, 177.78vh) * var(--chrome));
-  height: calc(min(100vh, 56.25vw) * var(--chrome));
-}
 
 /* --- the artwork ---------------------------------------------------------- */
 
@@ -185,6 +165,16 @@ body[data-drift='on'] .art {
     rgba(0, 0, 0, 0) 45%,
     rgba(0, 0, 0, calc(var(--vignette) * 0.85)) 100%
   );
+}
+
+/*
+ * Nothing set: no filter at all.
+ *
+ * A filter that changes nothing is still a full-screen pass on every frame, and
+ * on a machine already busy decoding video that is a real cost for no picture.
+ */
+body[data-plain='yes'] .layer {
+  filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

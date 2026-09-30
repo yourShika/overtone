@@ -2,7 +2,7 @@
   "engine": 1,
   "id": "overlay",
   "surface": true,
-  "version": "1.5.1",
+  "version": "1.6.0",
   "name": {
     "en": "Stream overlay",
     "de": "Stream-Overlay",
@@ -628,11 +628,11 @@
         "ru": "Показывать"
       },
       "help": {
-        "en": "Some videos are not allowed to be embedded and show a notice instead of playing. The artwork always works.",
-        "de": "Manche Videos dürfen nicht eingebettet werden und zeigen dann einen Hinweis, statt zu laufen. Das Coverbild geht immer.",
-        "es": "Algunos vídeos no permiten incrustarse y muestran un aviso en vez de reproducirse. La carátula siempre funciona.",
-        "pl": "Niektóre filmy nie pozwalają na osadzanie i zamiast odtwarzania pokazują komunikat. Okładka działa zawsze.",
-        "ru": "Некоторые видео запрещают встраивание и показывают уведомление вместо воспроизведения. Обложка работает всегда."
+        "en": "Some videos are not allowed to be embedded, and some will not play in the browser OBS uses. Either way the artwork takes over by itself; this forces it.",
+        "de": "Manche Videos dürfen nicht eingebettet werden, manche laufen im Browser von OBS nicht. In beiden Fällen übernimmt das Coverbild von allein; hier erzwingst du es.",
+        "es": "Algunos vídeos no permiten incrustarse y otros no se reproducen en el navegador de OBS. En ambos casos la carátula toma el relevo sola; aquí la fuerzas.",
+        "pl": "Niektóre filmy nie pozwalają na osadzanie, inne nie odtworzą się w przeglądarce OBS. W obu razach okładka przejmuje sama; tutaj ją wymuszasz.",
+        "ru": "Некоторые видео запрещают встраивание, другие не идут в браузере OBS. В обоих случаях обложка подхватывает сама; здесь вы её включаете принудительно."
       },
       "default": "video",
       "options": [
@@ -689,6 +689,68 @@
             "es": "Imagen entera",
             "pl": "Cały obraz",
             "ru": "Целиком"
+          }
+        }
+      ]
+    },
+    {
+      "type": "choice",
+      "key": "videoQuality",
+      "view": "video",
+      "label": {
+        "en": "Quality",
+        "de": "Qualität",
+        "es": "Calidad",
+        "pl": "Jakość",
+        "ru": "Качество"
+      },
+      "help": {
+        "en": "YouTube picks its stream from how large the player is, so this decides how much your machine decodes. A background is usually blurred and faint; higher costs a lot for little.",
+        "de": "YouTube wählt seinen Datenstrom nach der Größe des Players — das entscheidet also, wie viel dein Rechner dekodiert. Ein Hintergrund ist meist weichgezeichnet; höher kostet viel für wenig.",
+        "es": "YouTube elige el flujo según el tamaño del reproductor, así que esto decide cuánto decodifica tu equipo. Un fondo suele ir desenfocado; más alto cuesta mucho para poco.",
+        "pl": "YouTube dobiera strumień do wielkości odtwarzacza, więc to decyduje, ile dekoduje twój komputer. Tło zwykle jest rozmyte; wyżej kosztuje dużo za mało.",
+        "ru": "YouTube выбирает поток по размеру плеера, так что это решает, сколько декодирует компьютер. Фон обычно размыт; выше стоит дорого и даёт мало."
+      },
+      "default": "480",
+      "options": [
+        {
+          "value": "360",
+          "label": {
+            "en": "Low",
+            "de": "Niedrig",
+            "es": "Baja",
+            "pl": "Niska",
+            "ru": "Низкое"
+          }
+        },
+        {
+          "value": "480",
+          "label": {
+            "en": "Normal",
+            "de": "Normal",
+            "es": "Normal",
+            "pl": "Normalna",
+            "ru": "Обычное"
+          }
+        },
+        {
+          "value": "720",
+          "label": {
+            "en": "High",
+            "de": "Hoch",
+            "es": "Alta",
+            "pl": "Wysoka",
+            "ru": "Высокое"
+          }
+        },
+        {
+          "value": "1080",
+          "label": {
+            "en": "Full",
+            "de": "Voll",
+            "es": "Máxima",
+            "pl": "Pełna",
+            "ru": "Полное"
           }
         }
       ]

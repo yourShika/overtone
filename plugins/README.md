@@ -54,15 +54,21 @@ OBS on the source itself.
 Blur, zoom, brightness, contrast, colour, black-and-white, a tint and a vignette
 are all on the page, so what OBS gets is already the picture you want.
 
-Three things about it are worth knowing before you build a scene on it:
+**Quality** decides how hard your machine works. YouTube picks its stream from
+how large the player element is, so this is the setting that matters when the
+picture stutters — and a background behind a waiting screen is usually blurred
+and faint, which is why *Normal* is the default rather than the best available.
+The picture is scaled up to fill the scene either way.
+
+Things worth knowing before you build a scene on it:
 
 - **It plays muted, always.** The sound is already coming from wherever you are
   actually playing the song, and two of them a second apart is unusable.
-- **Some videos refuse to be embedded.** Their uploader disallowed it, and
-  YouTube shows a notice instead of playing. Nothing on this side can detect
-  that — the player is a frame from another site — so *Show → The artwork* is a
-  switch you flip rather than something that happens by itself. The artwork
-  drifts slowly and always works.
+- **Some videos will not play**, and the artwork takes over on its own. Either
+  the uploader disallowed embedding, or the browser inside OBS cannot decode
+  that stream — it is not the browser you opened the address in to test. The
+  player says which, and the page acts on it; *Show → The artwork* is there for
+  when you would rather not wait to find out.
 - **It is YouTube's own embedded player**, so it can show ads, and it decodes
   the video a second time on your machine.
 - **The player draws its own title and subtitles**, and neither can be switched
@@ -125,6 +131,7 @@ And on the video page:
 |---|---|
 | `videoSource` | `video` · `art` — the video, or the artwork drifting |
 | `videoFit` | `cover` · `contain` |
+| `videoQuality` | `360` · `480` · `720` · `1080` — how big the player is rendered |
 | `videoBlur` | 0–40 pixels |
 | `videoZoom` | 0–60 per cent |
 | `videoBrightness`, `videoContrast` | 10–200 per cent |

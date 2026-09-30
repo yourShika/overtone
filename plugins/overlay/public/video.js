@@ -86,6 +86,8 @@
   const GONE_QUIET_MS = 3000;
   /** How often to press play on a player that is not playing. */
   const PUSH_PLAY_EVERY_MS = 1500;
+  /** How long a player may fail to start before the artwork takes over. */
+  const GIVE_UP_MS = 12000;
   /** Hold the last frame this long after the agent goes quiet, then fade. */
   const GONE_AFTER_MS = 20000;
 
@@ -129,10 +131,28 @@
   let moving = false;
   /** The manual offset, in seconds. Minus shows the video later. */
   let trim = 0;
+  /** How much of the player is cut away, as a percentage. */
+  let cropPercent = 32;
+  /** What the frame was last fitted to, so a changed scene is noticed. */
+  let fittedTo = '';
+
+  /** Everything the placing depends on, as one string to compare. */
+  const shape = () =>
+    [window.innerWidth, window.innerHeight, quality, cropPercent, body.dataset.fit].join('x');
   /** The repeating handshake, while the player has not answered yet. */
   let helloTimer = 0;
   /** When play was last pressed, so it is not pressed every half second. */
   let pushedPlayAt = 0;
+  /**
+   * The player said it cannot play this one, or never managed to.
+   *
+   * Which is answerable now, and was not when this was written: the channel
+   * carries the player's errors, so a video whose uploader disallowed embedding
+   * no longer has to be noticed by a person and switched over by hand.
+   */
+  let failed = false;
+  /** How tall the player element is kept, in pixels. Quality follows size. */
+  let quality = 480;
 
   connect();
   setInterval(watch, 500);
@@ -177,6 +197,26 @@
       } catch {
         return;
       }
+    }
+
+    /*
+     * An error means this video is not going to play, ever.
+     *
+     * 101 and 150 are "the uploader does not allow embedding", 100 is gone, 5
+     * is the player itself giving up and 2 is a bad parameter. All of them end
+     * the same way: there is no picture coming, so the artwork takes over
+     * rather than leaving a black rectangle on somebody's stream.
+     */
+    const code = data?.event === 'onError' ? data.info : data?.info?.errorCode;
+    // Checked as a number, not coerced into one. An ordinary reading carries
+    // `errorCode: null`, and Number(null) is zero, which is finite — so
+    // coercing made every message an error, tore the player down on its first
+    // word, and left the artwork up for the whole song. Twice now this file has
+    // been caught by that same zero.
+    if (typeof code === 'number' && code > 0) {
+      failed = true;
+      paint();
+      return;
     }
 
     const info = data?.info;
@@ -296,7 +336,25 @@
     trim = number(value('videoSync', 0), -3, 3);
 
     // Grown past the box so the player's own title and subtitles fall outside.
-    root.setProperty('--crop', String(number(value('videoCrop', 32), 0, 60) / 100));
+    cropPercent = number(value('videoCrop', 32), 0, 60);
+
+    /*
+     * How big the player is rendered, which is how YouTube decides what to
+     * send. Lower is dramatically cheaper to decode, and this is a background
+     * behind a waiting screen — usually blurred, usually faint. 1080 is there
+     * for anyone showing it plainly on a fast machine.
+     */
+    quality = number(value('videoQuality', 480), 144, 1080);
+    fitFrame();
+
+    // A filter that changes nothing still costs a pass over every pixel.
+    const plain =
+      number(value('videoBlur', 0), 0, 40) === 0 &&
+      number(value('videoSaturate', 100), 0, 300) === 100 &&
+      number(value('videoBrightness', 100), 10, 200) === 100 &&
+      number(value('videoContrast', 100), 10, 200) === 100 &&
+      number(value('videoGrey', 0), 0, 100) === 0;
+    body.dataset.plain = plain ? 'yes' : 'no';
 
     root.setProperty('--tint', colour(value('videoTint', '#000000')));
     root.setProperty('--tint-strength', String(number(value('videoTintStrength', 0), 0, 100) / 100));
@@ -334,7 +392,7 @@
      * one that was being avoided. If the decode is not wanted, OBS has its own
      * switch for it: "Shutdown source when not visible".
      */
-    const still = body.dataset.source === 'art' || state.paused;
+    const still = body.dataset.source === 'art' || state.paused || failed;
     body.dataset.showing = still ? 'art' : 'video';
 
     if (still) {
@@ -438,6 +496,25 @@
   function sync() {
     const frame = els.frame.firstElementChild;
     if (!frame || !state || state.paused) return;
+
+    /*
+     * Long enough, and it has never played a frame. The artwork takes over.
+     *
+     * The one condition is that the clock has never advanced — deliberately
+     * not the player's state, which was the first attempt and missed the case
+     * it was written for: a player showing YouTube's own error panel reports
+     * nothing at all, so its state stays unknown and a check hanging off that
+     * never runs. Fifteen seconds of a black rectangle, measured.
+     *
+     * What gets a page here: a video whose uploader disallowed embedding, one
+     * that is gone, or a stream in a codec this browser cannot decode — and
+     * the browser inside OBS is not the browser the address was tested in.
+     */
+    if (!moving && performance.now() - showing.mountedAt > GIVE_UP_MS) {
+      failed = true;
+      paint();
+      return;
+    }
 
     /*
      * A player that has gone quiet gets asked again.
@@ -613,6 +690,7 @@
     reported = null;
     playerState = null;
     moving = false;
+    failed = false;
     nudgedAt = 0;
     nudgeMeasured = true;
     if (helloTimer) clearInterval(helloTimer);
@@ -624,8 +702,53 @@
 
     els.frame.textContent = '';
     els.frame.appendChild(frame);
+    fitFrame();
     showing = { video, at, mountedAt: performance.now() };
   }
+
+  /**
+   * Place and scale the player.
+   *
+   * The element stays at the chosen quality and the picture is scaled to fill
+   * the scene, so YouTube serves a stream of that size rather than one larger
+   * than the canvas. All in pixels: the crop has to come off the bottom three
+   * times as hard as off the top, and that is exact here in a way a percentage
+   * of a scaled box is not.
+   */
+  function fitFrame() {
+    const frame = els.frame.firstElementChild;
+    if (!frame) return;
+
+    const high = quality;
+    const wide = Math.round((high * 16) / 9);
+    frame.style.width = `${wide}px`;
+    frame.style.height = `${high}px`;
+
+    /*
+     * A viewport of nothing is not a viewport.
+     *
+     * A page that has not been laid out yet reports 0 × 0, and scaling to that
+     * leaves the player two pixels wide until something else happens to
+     * disturb it. Waiting is right: the loop below fits again the moment there
+     * is a real size, and there is nothing to see before then anyway.
+     */
+    if (!window.innerWidth || !window.innerHeight) return;
+    const view = { w: window.innerWidth, h: window.innerHeight };
+    fittedTo = shape();
+    const crop = 1 + number(cropPercent, 0, 60) / 100;
+    const fill = body.dataset.fit === 'contain' ? Math.min : Math.max;
+    const scale = fill(view.w / wide, view.h / high) * crop;
+
+    const shownH = high * scale;
+    const over = shownH - view.h;
+
+    frame.style.transform = `scale(${scale})`;
+    frame.style.left = `${Math.round((view.w - wide * scale) / 2)}px`;
+    // A quarter of the overflow off the top, three quarters off the bottom.
+    frame.style.top = `${Math.round(over > 0 ? -over * 0.25 : (view.h - shownH) / 2)}px`;
+  }
+
+  window.addEventListener('resize', fitFrame);
 
   function clearFrame() {
     if (!els.frame.childElementCount) return;
@@ -651,6 +774,11 @@
    * fade. A video from a song that ended minutes ago is worse than nothing.
    */
   function watch() {
+    // A Browser Source can be resized after it is added, and a page that was
+    // not laid out when the player was built reported no size at all. Cheap to
+    // compare, and it is the only thing that notices either.
+    if (shape() !== fittedTo) fitFrame();
+
     if (!state) return;
     sync();
     if (body.dataset.stale === 'yes' && performance.now() - receivedAt > GONE_AFTER_MS) {

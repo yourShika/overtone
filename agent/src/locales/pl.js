@@ -59,6 +59,8 @@ module.exports = {
   'look.typeWatching': 'Ogląda …',
   'look.typePlaying': 'Gra w …',
   'look.typeHelp': 'Ustawia tylko przedrostek. To, co po nim, określa pole poniżej.',
+  'look.onTop': 'Na pierwszym miejscu w profilu',
+  'look.onTopSub': 'Przed grami, transmisjami i Spotify. Discord sortuje według typu aktywności, więc podczas odtwarzania nagłówek brzmi „Competing in …”.',
   'look.activityName': 'Nagłówek aktywności',
   'look.activityNameHelp':
     'Zostaw puste, aby użyć nazwy swojej aplikacji Discord. Kilku wykonawców zapisywanych jest po przecinku. W trybie prywatnym wzór nie działa.',

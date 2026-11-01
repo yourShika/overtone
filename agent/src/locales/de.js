@@ -59,6 +59,8 @@ module.exports = {
   'look.typeWatching': 'Schaut …',
   'look.typePlaying': 'Spielt …',
   'look.typeHelp': 'Bestimmt nur das Präfix. Was dahinter steht, legt das Feld darunter fest.',
+  'look.onTop': 'Im Profil an erster Stelle',
+  'look.onTopSub': 'Vor Spielen, Streams und Spotify. Discord sortiert nach Aktivitätstyp, darum lautet die Überschrift „Competing in …“, solange etwas läuft.',
   'look.activityName': 'Überschrift der Aktivität',
   'look.activityNameHelp':
     'Leer lassen für den Namen deiner Discord-Application. Mehrere Künstler werden zur Komma-Form normalisiert. Im Privat-Modus greift die Vorlage nicht.',

@@ -20,6 +20,7 @@
 Deine Freunde sehen den Song — nicht bloß „schaut YouTube".
 
 - 🎵 **Der Song in der Überschrift** — `Hört doli, szevczor - 162020 zu`, statt immer nur „YouTube"
+- 🥇 **An erster Stelle im Profil** — vor Spielen, Streams und Spotify, und abschaltbar
 - 🖼️ **Das Cover** — das Video-Vorschaubild, bei YouTube Music das Albumcover
 - ⏱️ **Ein echter Fortschrittsbalken** — mit Restzeit, folgt Pausen und Sprüngen
 - 🎤 **Die Lyrics, Zeile für Zeile** — laufen mit dem Song mit, wahlweise als Absatz

@@ -614,7 +614,7 @@ const BASE_STATE = {
 };
 
 test('buildActivity produces title, channel, progress and a button', () => {
-  const activity = buildActivity({ state: BASE_STATE, config: DEFAULTS });
+  const activity = buildActivity({ state: BASE_STATE, config: { ...DEFAULTS, activityOnTop: false } });
 
   assert.equal(activity.type, 3); // watching
   assert.equal(activity.details, 'Never Gonna Give You Up');
@@ -683,7 +683,7 @@ test('buildActivity honours privacy mode over lyric prominence', () => {
 test('buildActivity emits the Listening type when forced', () => {
   const activity = buildActivity({
     state: BASE_STATE,
-    config: { ...DEFAULTS, activityType: 'listening' },
+    config: { ...DEFAULTS, activityOnTop: false, activityType: 'listening' },
   });
 
   assert.equal(activity.type, 2);
@@ -692,11 +692,40 @@ test('buildActivity emits the Listening type when forced', () => {
 test('buildActivity uses Listening for YouTube Music in auto mode', () => {
   const activity = buildActivity({
     state: { ...BASE_STATE, source: 'ytmusic', artist: 'Rick Astley' },
-    config: DEFAULTS,
+    config: { ...DEFAULTS, activityOnTop: false },
   });
 
   assert.equal(activity.type, 2); // listening
   assert.equal(activity.state, 'Rick Astley');
+});
+
+test('activityOnTop sends Competing, whatever type was chosen', () => {
+  for (const activityType of ['auto', 'listening', 'watching', 'playing']) {
+    const activity = buildActivity({
+      state: BASE_STATE,
+      config: { ...DEFAULTS, activityOnTop: true, activityType },
+    });
+
+    assert.equal(activity.type, 5, activityType);
+  }
+});
+
+test('activityOnTop gives the top back while paused', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, paused: true },
+    config: { ...DEFAULTS, activityOnTop: true, activityType: 'listening' },
+  });
+
+  assert.equal(activity.type, 2);
+});
+
+test('activityOnTop leaves browsing alone', () => {
+  const activity = buildActivity({
+    state: { ...BASE_STATE, idle: true, page: 'home', title: '' },
+    config: { ...DEFAULTS, activityOnTop: true },
+  });
+
+  assert.equal(activity.type, 3);
 });
 
 test('buildActivity omits the end timestamp for live streams', () => {

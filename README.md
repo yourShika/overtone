@@ -23,6 +23,7 @@ Your friends see the song, not just "watching YouTube".
 |  | |
 |---|---|
 | 🎵 **The song in the header** | `Listening to doli, szevczor - 162020`, instead of the same "YouTube" for everything |
+| 🥇 **First on your profile** | Above games, streams and Spotify, and you can switch it off |
 | 🖼️ **Cover art** | The video thumbnail, or the album art on YouTube Music |
 | ⏱️ **A real progress bar** | With time remaining, following pauses and skips |
 | 🎤 **Lyrics, line by line** | Moving along with the song, or as paragraphs |

@@ -59,6 +59,8 @@ module.exports = {
   'look.typeWatching': 'Viendo …',
   'look.typePlaying': 'Jugando a …',
   'look.typeHelp': 'Define solo el prefijo. Lo que va detrás lo decide el campo de abajo.',
+  'look.onTop': 'Primero en tu perfil',
+  'look.onTopSub': 'Por encima de juegos, directos y Spotify. Discord ordena por tipo de actividad, así que el encabezado dice «Competing in …» mientras algo se reproduce.',
   'look.activityName': 'Encabezado de la actividad',
   'look.activityNameHelp':
     'Déjalo vacío para usar el nombre de tu aplicación de Discord. Varios artistas se separan por comas. En modo privado la plantilla no se aplica.',

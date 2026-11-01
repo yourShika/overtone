@@ -37,6 +37,33 @@ away what the rest of the presence is hiding.
 
 ---
 
+## Staying first on the profile
+
+Discord has no priority field. It sorts a person's activities by type, and only
+then by whether they carry details and by which is newest:
+
+| Rank | Type |
+|---|---|
+| 1 | Custom status, which an app cannot set |
+| 2 | Competing |
+| 3 | Streaming |
+| 4 | Playing, and only one Playing activity is kept |
+| 5 | Listening, Watching |
+
+So `activityOnTop` sends Competing while something plays, and the header reads
+`Competing in …` instead of what `activityType` says. Playing would read better,
+but Discord keeps only one Playing activity, so either the game or the song
+would disappear.
+
+While paused or browsing, the normal type returns, so a game can take the first
+place back. Turn the switch off to keep `Listening to …` and accept the place
+Discord gives it.
+
+This order comes from Discord's web client as of November 2026. It is not
+documented, so Discord can change it without notice.
+
+---
+
 ## All settings
 
 ### Connection
@@ -51,6 +78,7 @@ away what the rest of the presence is hiding.
 | Setting | Default | Meaning |
 |---|---|---|
 | `activityType` | `auto` | Header prefix |
+| `activityOnTop` | `true` | Stay first on the profile; the header reads `Competing in …` |
 | `cleanTitles` | `true` | Strip "(Official Music Video)" and the like |
 | `activityName` | `{artist} - {title}` | Header name; empty = application name |
 | `showTimestamps` | `true` | Progress bar |

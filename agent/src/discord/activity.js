@@ -269,6 +269,12 @@ function secondLine(title, byline) {
 }
 
 function resolveType(state, config, isMusic) {
+  // Discord orders a person's activities by type, and no field lets an app ask
+  // for a better place: Competing, then Streaming, then Playing, then Listening
+  // and Watching together. Competing is the highest type SET_ACTIVITY accepts.
+  // Only while something plays: a paused video has no claim on the top.
+  if (config.activityOnTop && !state.paused) return ActivityType.COMPETING;
+
   if (config.activityType === 'auto') {
     return isMusic ? ActivityType.LISTENING : ActivityType.WATCHING;
   }

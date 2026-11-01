@@ -47,6 +47,16 @@ const DEFAULTS = {
   /** 'auto' | 'playing' | 'listening' | 'watching' */
   activityType: 'auto',
   /**
+   * Stay first on the profile, above games, streams and Spotify.
+   *
+   * Discord has no priority field: it sorts by activity type, so the only way
+   * up is the highest type an app may send, which is Competing. The header
+   * therefore reads "Competing in …" while something plays, replacing the choice
+   * above. Playing would read better and is not enough: Discord keeps a single
+   * Playing activity, so it would hide either the game or the song.
+   */
+  activityOnTop: true,
+  /**
    * Template for the activity header — the "Hört <name> zu" line.
    *
    * Empty keeps Discord's own behaviour: the application name from the

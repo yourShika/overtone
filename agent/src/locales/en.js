@@ -74,6 +74,8 @@ module.exports = {
   'look.typeWatching': 'Watching …',
   'look.typePlaying': 'Playing …',
   'look.typeHelp': 'Sets the prefix only. What follows it is decided by the field below.',
+  'look.onTop': 'Stay first on your profile',
+  'look.onTopSub': 'Above games, streams and Spotify. Discord sorts by activity type, so the header reads "Competing in …" while something plays.',
   'look.activityName': 'Activity header',
   'look.activityNameHelp':
     'Leave empty to use your Discord application name. Several artists are normalised to the comma form. The template is skipped in privacy mode.',
